@@ -1,0 +1,2356 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NUA STUDIO – Live Captions for Everyone</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=Ubuntu:wght@300;400;500;700&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xeicon@2.3.3/xeicon.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --black: #000000;
+            --white: #ffffff;
+            --gray: #666666;
+            --light-gray: #f5f5f5;
+            --accent: #0044ff;
+            --glow: #00ffcc;
+            --neon-blue: #00f0ff;
+            --neon-purple: #a259ff;
+            --dark-gray: #0a0a0a;
+            --accent-gradient: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            --ease: cubic-bezier(0.19, 1, 0.22, 1);
+            --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        ::selection {
+            background: var(--neon-blue);
+            color: var(--black);
+        }
+
+        html {
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--white);
+            color: var(--black);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Noise Overlay */
+        .noise-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.03;
+            z-index: 1;
+            pointer-events: none;
+            background-image: 
+                repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(255,255,255,.01) 35px, rgba(255,255,255,.01) 70px),
+                repeating-linear-gradient(-45deg, transparent, transparent 35px, rgba(255,255,255,.01) 35px, rgba(255,255,255,.01) 70px);
+        }
+
+        /* Magnetic Elements */
+        [data-magnetic] {
+            display: inline-block;
+            transition: transform 0.3s var(--ease);
+        }
+
+        /* Header styles */
+        .header {
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            background: transparent; 
+            z-index: 1000; 
+            padding-top: 32px;
+            transition: all 0.5s ease;
+        }
+        
+        .header .wrap {
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            margin: 0 auto; 
+            width: 95%;
+            max-width: 1708px;
+        }
+        
+        .header .logo {
+            width: 122px; 
+            flex-shrink: 0; 
+            position: relative; 
+            z-index: 101;
+        }
+        
+        .header .logo img,
+        .header .logo svg {
+            width: 100%;
+            height: auto;
+        }
+        
+        .header.on-dark .logo svg path {
+            fill: #fff;
+            transition: fill 0.3s ease;
+        }
+        
+        .header.on-dark .logo svg text {
+            fill: #000;
+        }
+        
+        .header.on-light .logo svg path {
+            fill: #000;
+            transition: fill 0.3s ease;
+        }
+        
+        .header.on-light .logo svg text {
+            fill: #fff;
+        }
+        
+        .header .menu {
+            font-size: 24px; 
+            display: flex; 
+            align-items: center;
+        }
+        
+        .header .menu ul {
+            display: flex; 
+            align-items: center; 
+            gap: calc(120/24*1em);
+            list-style: none;
+        }
+        
+        .header .menu li {
+            font-size: inherit; 
+            font-weight: 700; 
+            letter-spacing: 0.025em; 
+            font-family: 'Ubuntu', sans-serif; 
+            position: relative; 
+            transition: .4s;
+        }
+        
+        .header.on-dark .menu li {
+            color: #fff;
+        }
+        
+        .header.on-light .menu li {
+            color: #000;
+        }
+        
+        .header .menu li a {
+            position: relative; 
+            z-index: 1; 
+            padding: 5px;
+            color: inherit;
+            text-decoration: none;
+        }
+        
+        .header .menu li::before {
+            content: ''; 
+            z-index: -1; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            display: block; 
+            width: 0%; 
+            height: 100%; 
+            background: #00f0ff; 
+            transition: .4s;
+        }
+        
+        .header .menu li:hover::before {
+            width: 100%;
+        }
+        
+        .header .lang {
+            margin-left: calc(80/20*1em); 
+            position: relative; 
+            font-size: 20px; 
+            font-family: 'Ubuntu', sans-serif; 
+            font-weight: 500; 
+            letter-spacing: -0.025em; 
+            color: #fff;
+        }
+        
+        .header .lang_current {
+            display: flex; 
+            align-items: center; 
+            gap: calc(10/20*1em); 
+            color: #fff; 
+            background: #363638; 
+            padding: calc(8/20*1em) calc(10/20*1em); 
+            border-radius: calc(10/20*1em); 
+            cursor: pointer;
+        }
+        
+        .header .lang_list_wrap {
+            display: none; 
+            width: 100%; 
+            position: absolute; 
+            top: 100%; 
+            left: 0;
+        }
+        
+        .header .lang_list {
+            width: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: calc(3/20*1em); 
+            padding: calc(5/20*1em) 0; 
+            box-sizing: border-box; 
+            border-radius: calc(10/20*1em);
+        }
+        
+        .header .lang_list a {
+            display: block; 
+            width: 100%; 
+            font-size: calc(16/20*1em); 
+            padding: calc(8/16*1em) calc(10/16*1em); 
+            box-sizing: border-box; 
+            background: #000; 
+            color: #fff; 
+            text-align: center; 
+            border-radius: calc(10/20*1em); 
+            transition: .4s;
+        }
+        
+        .header .hamburger {
+            display: none; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            width: 25px; 
+            height: 20px; 
+            gap: 5px; 
+            position: relative; 
+            z-index: 101;
+        }
+        
+        .header .hamburger span {
+            display: block; 
+            width: 100%; 
+            height: 2px; 
+            background: #000; 
+            transition: .4s;
+        }
+        
+        .header.on-dark .hamburger span {
+            background: #fff;
+        }
+        
+        .header.HmActive .hamburger span {
+            position: absolute; 
+            top: 50%; 
+            margin-top: -1px;
+        }
+        
+        .header.HmActive .hamburger span:first-child {
+            transform: rotate(45deg);
+        }
+        
+        .header.HmActive .hamburger span:nth-child(2) {
+            opacity: 0;
+        }
+        
+        .header.HmActive .hamburger span:last-child {
+            transform: rotate(-45deg);
+        }
+
+        /* Scroll Indicator */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            opacity: 0;
+            animation: fadeInUp 1s 2s forwards;
+            transition: opacity 0.5s ease;
+            cursor: pointer;
+        }
+
+        .scroll-indicator.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .mouse-wheel {
+            width: 26px;
+            height: 42px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            position: relative;
+            margin: 0 auto;
+        }
+
+        .mouse-wheel::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 8px;
+            width: 4px;
+            height: 8px;
+            background: var(--neon-blue);
+            border-radius: 2px;
+            transform: translateX(-50%);
+            animation: scroll-down 1.5s infinite;
+        }
+
+        @keyframes scroll-down {
+            0% {
+                opacity: 0;
+                transform: translateX(-50%) translateY(0);
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: translateX(-50%) translateY(12px);
+            }
+        }
+
+        .scroll-text {
+            margin-top: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.4);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Chat button */
+        aside.chat {
+            cursor: pointer; 
+            position: fixed; 
+            font-size: 26px; 
+            bottom: clamp(15px, 15/1920*100vw, 20px); 
+            right: clamp(15px, 30/1920*100vw, 30px); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 100;
+        }
+        
+        aside.chat .logo {
+            position: relative; 
+            width: calc(78/26*1em); 
+            height: calc(78/26*1em); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-radius: 50%;
+        }
+        
+        aside.chat .logo::before, 
+        aside.chat .logo::after {
+            content: ''; 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            display: block; 
+            border-radius: 50%;
+        }
+        
+        aside.chat .logo::before {
+            width: 100%; 
+            height: 100%; 
+            background-image: linear-gradient(131deg, #00f0ff, #a259ff); 
+            background-clip: border-box; 
+            background-origin: border-box; 
+            border: 2px solid transparent;
+        }
+        
+        aside.chat .logo::after {
+            background: linear-gradient(131deg, #00f0ff, #a259ff); 
+            z-index: 1; 
+            width: calc(70/78*100%); 
+            height: calc(70/78*100%);
+        }
+        
+        aside.chat .logo span {
+            position: relative; 
+            z-index: 2; 
+            color: #fff;
+        }
+
+        /* Main Container */
+        .main-container {
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Enhanced Hero Section with Neon */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: var(--black);
+            overflow: hidden;
+        }
+
+        .hero-bg {
+            position: absolute;
+            inset: 0;
+            opacity: 0.1;
+            background: radial-gradient(circle at 50% 50%, 
+                        var(--neon-blue) 0%, 
+                        transparent 40%),
+                        radial-gradient(circle at 80% 20%, 
+                        var(--neon-purple) 0%, 
+                        transparent 45%),
+                        radial-gradient(circle at 20% 80%, 
+                        var(--neon-blue) 0%, 
+                        transparent 45%);
+            filter: blur(80px);
+            animation: gradient-shift 20s ease infinite;
+        }
+
+        @keyframes gradient-shift {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            33% { transform: rotate(120deg) scale(1.1); }
+            66% { transform: rotate(240deg) scale(0.95); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            max-width: 90vw;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hero-title-wrapper {
+            position: relative;
+            margin-bottom: 3rem;
+        }
+
+        .hero-title {
+            font-size: clamp(3rem, 10vw, 8rem);
+            font-weight: 900;
+            line-height: 0.9;
+            letter-spacing: -0.04em;
+            color: var(--white);
+            font-family: 'Poppins', 'Space Grotesk', sans-serif;
+            text-transform: uppercase;
+        }
+
+        .title-line {
+            display: block;
+            padding: 0.1em 0;
+            min-height: 1.2em;
+            height: 1.2em;
+            position: relative;
+        }
+
+        /* Enhanced Typing Effect */
+        .typing-char {
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        
+        .typing-char.random-number {
+            opacity: 0.2;
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
+        
+        .typing-char.revealed {
+            opacity: 1;
+            color: var(--white);
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            animation: reveal-glow 0.5s ease;
+        }
+
+        @keyframes reveal-glow {
+            0% { 
+                filter: brightness(2) drop-shadow(0 0 20px var(--neon-blue));
+                transform: scale(1.2);
+            }
+            100% { 
+                filter: brightness(1) drop-shadow(0 0 0px transparent);
+                transform: scale(1);
+            }
+        }
+
+        .typing-cursor {
+            display: inline-block;
+            width: 3px;
+            height: 1em;
+            background: var(--accent-gradient);
+            margin-left: 2px;
+            animation: blink 1s infinite;
+            border-radius: 2px;
+            transition: opacity 0.5s ease;
+        }
+
+        .typing-cursor.hidden {
+            opacity: 0;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1rem, 2vw, 1.5rem);
+            font-weight: 300;
+            color: var(--white);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 1s var(--ease);
+            margin-bottom: 3rem;
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        .hero-subtitle.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Enhanced Channel Form with Neon */
+        .channel-form-container {
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+            transition: all 1s var(--ease);
+        }
+
+        .channel-form-container.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .channel-form {
+            display: inline-block;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            backdrop-filter: blur(10px);
+            padding: 0;
+            position: relative;
+            overflow: visible;
+            transition: all 0.4s var(--ease);
+            box-shadow: 0 0 40px rgba(0, 240, 255, 0.1);
+        }
+
+        .channel-form:hover {
+            transform: translateY(-5px);
+            border-color: var(--neon-purple);
+            box-shadow: 0 10px 60px rgba(162, 89, 255, 0.3);
+        }
+
+        .form-row {
+            display: flex;
+        }
+
+        .form-row:first-child {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .form-row:last-child {
+            background: rgba(0, 0, 0, 0.8);
+            border-top: 1px solid rgba(0, 240, 255, 0.2);
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 50%;
+        }
+
+        .input-wrapper:first-child::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 15%;
+            height: 70%;
+            width: 1px;
+            background-image: repeating-linear-gradient(
+                to bottom,
+                var(--neon-blue) 0,
+                var(--neon-blue) 4px,
+                transparent 4px,
+                transparent 8px
+            );
+            opacity: 0.3;
+            transition: all 0.3s ease;
+        }
+
+        .form-row:first-child .form-input {
+            background: transparent;
+            border: none;
+            color: var(--white);
+            font-family: 'Poppins', 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 1.5rem 2rem;
+            outline: none;
+            transition: all 0.3s ease;
+            letter-spacing: 0.1em;
+            width: 100%;
+            text-transform: uppercase;
+        }
+
+        .form-row:first-child .form-input::placeholder {
+            color: rgba(0, 240, 255, 0.3);
+            font-weight: 400;
+            font-size: 0.85rem;
+            letter-spacing: 0.15em;
+        }
+
+        .form-row:first-child .form-input:focus {
+            background: rgba(0, 240, 255, 0.03);
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+        }
+
+        .role-section {
+            display: flex;
+            align-items: stretch;
+            flex: 0 0 60%;
+            background: rgba(0, 240, 255, 0.02);
+            border-right: 1px solid rgba(0, 240, 255, 0.2);
+        }
+
+        .role-label {
+            padding: 1rem 1.2rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            color: var(--neon-blue);
+            border-right: 1px solid rgba(0, 240, 255, 0.2);
+            display: flex;
+            align-items: center;
+            text-transform: uppercase;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .role-selector {
+            display: flex;
+            flex: 1;
+        }
+
+        .role-btn {
+            flex: 1;
+            padding: 1rem;
+            background: transparent;
+            border: none;
+            border-right: 1px solid rgba(0, 240, 255, 0.1);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .role-btn:last-child {
+            border-right: none;
+        }
+
+        .role-btn:hover {
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        .role-btn.active {
+            color: var(--white);
+            background: rgba(0, 240, 255, 0.1);
+            text-shadow: 0 0 15px var(--neon-blue);
+        }
+
+        .enter-btn {
+            flex: 0 0 40%;
+            padding: 1rem 2rem;
+            background: var(--accent-gradient);
+            border: none;
+            color: var(--black);
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 0.15em;
+            cursor: pointer;
+            text-transform: uppercase;
+            position: relative;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .enter-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.5);
+        }
+
+        /* Admin Login Modal */
+        .admin-login-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            display: none;
+        }
+
+        .admin-login-modal.show {
+            display: block;
+        }
+
+        .modal-backdrop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            border: 1px solid var(--neon-blue);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            min-width: 400px;
+            box-shadow: 0 0 60px rgba(0, 240, 255, 0.4);
+        }
+
+        .modal-content h3 {
+            color: var(--neon-blue);
+            margin-bottom: 2rem;
+            text-align: center;
+            font-family: 'Poppins', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            font-size: 1.5rem;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 1rem;
+            margin-bottom: 1.2rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            border-radius: 6px;
+            color: white;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .modal-content input:focus {
+            outline: none;
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+        }
+
+        .modal-content input::placeholder {
+            color: rgba(0, 240, 255, 0.4);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 1rem;
+            border: 1px solid var(--neon-blue);
+            background: transparent;
+            color: var(--neon-blue);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+        }
+
+        .modal-buttons button[type="submit"] {
+            background: var(--accent-gradient);
+            color: black;
+            border: none;
+        }
+
+        .modal-buttons button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 240, 255, 0.3);
+        }
+
+        .error-message {
+            color: #ff4444;
+            font-size: 0.9rem;
+            margin-top: -0.5rem;
+            margin-bottom: 1rem;
+            display: none;
+            text-align: center;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* Original About Section */
+        .about {
+            padding: 10vh 4vw;
+            background: var(--white);
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+
+        .about-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .section-header {
+            margin-bottom: 8vh;
+        }
+
+        .section-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--gray);
+            margin-bottom: 2rem;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            max-width: 900px;
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        /* Split Text Animation */
+        .split-text {
+            display: inline-block;
+            overflow: hidden;
+        }
+
+        .split-char {
+            display: inline-block;
+            transform: translateY(100%);
+            opacity: 0;
+            transition: all 0.6s var(--ease);
+        }
+
+        .split-text.reveal .split-char {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Feature Cards */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 8vh;
+        }
+
+        .feature-card {
+            padding: 3rem;
+            background: var(--light-gray);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s var(--ease);
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--black);
+            transform: translateY(100%);
+            transition: transform 0.5s var(--ease);
+        }
+
+        .feature-card:hover::before {
+            transform: translateY(0);
+        }
+
+        .feature-card * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-number {
+            font-size: 3rem;
+            font-weight: 900;
+            color: var(--accent);
+            margin-bottom: 1rem;
+            transition: color 0.3s var(--ease);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .feature-card:hover .feature-number {
+            color: var(--white);
+        }
+
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            transition: color 0.3s var(--ease);
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        .feature-card:hover .feature-title {
+            color: var(--white);
+        }
+
+        .feature-description {
+            line-height: 1.6;
+            color: var(--gray);
+            transition: color 0.3s var(--ease);
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        .feature-card:hover .feature-description {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Services Section */
+        .services {
+            padding: 10vh 4vw;
+            background: var(--black);
+            color: var(--white);
+            position: relative;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .service-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            position: relative;
+        }
+
+        .service-item {
+            padding: 4vh 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .service-item-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-left {
+            display: flex;
+            align-items: baseline;
+            gap: 3rem;
+        }
+
+        .service-number {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--gray);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .service-title {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            transition: transform 0.3s var(--ease);
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        .service-arrow {
+            font-size: 2rem;
+            transition: transform 0.3s var(--ease);
+        }
+
+        .service-item:hover .service-title {
+            transform: translateX(2rem);
+        }
+
+        .service-item:hover .service-arrow {
+            transform: rotate(45deg);
+        }
+
+        .service-bg {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--accent);
+            transition: left 0.5s var(--ease);
+            z-index: 0;
+        }
+
+        .service-item:hover .service-bg {
+            left: 0;
+        }
+
+        /* Service Expander Overlay */
+        .svc-expander {
+            position: absolute;
+            top: 0;
+            right: -50%;
+            width: 50%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            border-left: 1px solid var(--accent);
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s var(--ease);
+            z-index: 10;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .svc-expander.active {
+            right: 0;
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .expander-inner {
+            padding: 3rem 2.5rem;
+            color: var(--white);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .exp-title {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 2rem;
+            color: var(--accent);
+            letter-spacing: -0.02em;
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        .exp-body {
+            line-height: 1.6;
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        .exp-body ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .exp-body li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.9rem;
+        }
+
+        .exp-body li:before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+        }
+
+        /* Work Section */
+        .work {
+            padding: 10vh 4vw;
+            background: var(--white);
+        }
+
+        .work-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+
+        .work-item {
+            position: relative;
+            overflow: hidden;
+            aspect-ratio: 16/10;
+            background: var(--light-gray);
+            cursor: pointer;
+        }
+
+        .work-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.8s var(--ease);
+        }
+
+        .work-item:hover img {
+            transform: scale(1.1);
+        }
+
+        .work-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.8));
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 3rem;
+            opacity: 0;
+            transition: opacity 0.5s var(--ease);
+        }
+
+        .work-item:hover .work-overlay {
+            opacity: 1;
+        }
+
+        .work-category {
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            transform: translateY(20px);
+            transition: transform 0.5s var(--ease);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .work-item:hover .work-category {
+            transform: translateY(0);
+        }
+
+        .work-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--white);
+            transform: translateY(20px);
+            transition: transform 0.5s 0.1s var(--ease);
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        .work-item:hover .work-title {
+            transform: translateY(0);
+        }
+
+        /* Contact Section */
+        .contact {
+            padding: 15vh 4vw;
+            background: var(--black);
+            color: var(--white);
+            text-align: center;
+        }
+
+        .contact-title {
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            margin-bottom: 3rem;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .contact-email {
+            font-size: clamp(1.5rem, 3vw, 2.5rem);
+            font-weight: 300;
+            color: var(--white);
+            text-decoration: none;
+            position: relative;
+            display: inline-block;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .contact-email::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--white);
+            transform: translateX(-100%);
+            transition: transform 0.5s var(--ease);
+        }
+
+        .contact-email:hover::after {
+            transform: translateX(0);
+        }
+
+        /* Footer */
+        .footer {
+            padding: 3vh 4vw;
+            background: var(--black);
+            color: var(--white);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .footer-copy {
+            font-size: 0.875rem;
+            color: var(--gray);
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .footer-link {
+            color: var(--gray);
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color 0.3s var(--ease);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .footer-link:hover {
+            color: var(--white);
+        }
+
+        /* Scroll Progress Bar */
+        .scroll-progress {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 3px;
+            height: 0%;
+            background: linear-gradient(to bottom, var(--accent), var(--white));
+            z-index: 1001;
+            transition: height 0.1s ease;
+        }
+
+        /* Section Navigator */
+        .section-nav {
+            position: fixed;
+            right: 3vw;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 100;
+        }
+
+        .section-dot {
+            display: block;
+            width: 10px;
+            height: 10px;
+            margin: 20px 0;
+            border: 1px solid var(--gray);
+            border-radius: 50%;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .section-dot.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            transform: scale(1.5);
+        }
+
+        /* Responsive */
+        @media (max-width: 820px) {
+            .header .menu {
+                box-sizing: border-box; 
+                display: none; 
+                opacity: 0; 
+                position: fixed; 
+                left: 0; 
+                top: 0; 
+                width: 100vw; 
+                height: 100vh; 
+                transform: translateX(100%); 
+                background: #000; 
+                z-index: 100; 
+                padding-top: 100px; 
+                transition: .4s allow-discrete;
+            }
+            
+            .header.HmActive .menu {
+                display: block; 
+                opacity: 1; 
+                transform: translateX(0%);
+            }
+            
+            .header .menu ul {
+                flex-direction: column; 
+                align-items: center; 
+                gap: 0px;
+            }
+            
+            .header .menu li {
+                font-size: 20px; 
+                border-top: 1px solid #333; 
+                width: 100%;
+                color: #fff;
+            }
+            
+            .header .menu li a {
+                padding: 10px 2.5%; 
+                display: block; 
+                box-sizing: border-box; 
+                width: 100%;
+            }
+            
+            .header .hamburger {
+                display: flex;
+            }
+            
+            .header .lang {
+                position: absolute; 
+                bottom: 0; 
+                left: 0; 
+                margin-left: calc(30/16*1em); 
+                margin-bottom: calc(30/16*1em); 
+                font-size: 16px;
+            }
+            
+            .header .lang .lang_list_wrap {
+                top: auto; 
+                bottom: 100%;
+            }
+            
+            .scroll-indicator {
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .work-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .features {
+                grid-template-columns: 1fr;
+            }
+            
+            .service-title {
+                font-size: 1.5rem;
+            }
+            
+            .section-nav {
+                display: none;
+            }
+
+            .channel-form {
+                width: 100%;
+                max-width: 320px;
+            }
+
+            .form-row {
+                flex-direction: column;
+            }
+
+            .input-wrapper::after {
+                display: none;
+            }
+
+            .form-input {
+                width: 100% !important;
+            }
+
+            .role-section {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .role-label {
+                width: 100%;
+                text-align: center;
+                border-right: none;
+                border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+            }
+
+            .role-selector {
+                width: 100%;
+            }
+
+            .role-btn {
+                flex: 1;
+            }
+
+            .enter-btn {
+                width: 100%;
+                border-left: none;
+                border-top: 1px solid rgba(0, 240, 255, 0.15);
+            }
+
+            .svc-expander {
+                width: 100%;
+                right: -100%;
+            }
+            
+            .svc-expander.active {
+                right: 0;
+            }
+            
+            .scroll-indicator {
+                bottom: 80px;
+                right: 15px;
+            }
+            
+            .scroll-text {
+                writing-mode: horizontal-tb;
+                text-orientation: initial;
+            }
+
+            .modal-content {
+                min-width: 90%;
+                padding: 2rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Noise Overlay -->
+    <div class="noise-overlay"></div>
+
+    <!-- Scroll Progress -->
+    <div class="scroll-progress" id="scrollProgress"></div>
+
+    <!-- Section Navigator -->
+    <div class="section-nav">
+        <span class="section-dot active" data-section="hero"></span>
+        <span class="section-dot" data-section="about"></span>
+        <span class="section-dot" data-section="services"></span>
+        <span class="section-dot" data-section="work"></span>
+        <span class="section-dot" data-section="contact"></span>
+    </div>
+
+    <!-- Header -->
+    <header class="header on-dark" id="header">
+        <div class="wrap" max="1708">
+            <div class="logo">
+                <a href="/">
+                    <svg viewBox="0 0 122 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M0 25C0 11.193 11.193 0 25 0h72c13.807 0 25 11.193 25 25s-11.193 25-25 25H25C11.193 50 0 38.807 0 25z" fill="#fff"/>
+                        <text x="61" y="32" text-anchor="middle" fill="black" font-family="Poppins" font-size="20" font-weight="700">NUA</text>
+                    </svg>
+                </a>
+            </div>
+            <div class="menu">
+                <ul>
+                    <li><a href="#about">NUA STUDIO</a></li>
+                    <li><a href="#work">PORTFOLIO</a></li>
+                    <li><a href="/kor/contact">CONTACT</a></li>
+                    <li><a href="/kor/recruit">RECRUIT</a></li>
+                </ul>
+                <div class="lang">
+                    <div class="lang_current">
+                        <i class="xi-globus"></i>
+                        <span>KR</span>
+                        <i class="xi-angle-down"></i>
+                    </div>
+                    <div class="lang_list_wrap">
+                        <div class="lang_list">
+                            <a href="javascript:void(0)" onclick="alert('준비중입니다.')">EN</a>
+                            <a href="javascript:void(0)" onclick="alert('준비중입니다.')">JP</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Chat button -->
+    <aside class="chat">
+        <a href="/kor/contact/" class="logo">
+            <span>
+                <i class="xi-message"></i>
+            </span>
+        </a>
+    </aside>
+
+    <!-- Admin Login Modal -->
+    <div class="admin-login-modal" id="adminLoginModal">
+        <div class="modal-backdrop" onclick="closeAdminLogin()"></div>
+        <div class="modal-content">
+            <h3>시스템 관리자 로그인</h3>
+            <form id="adminLoginForm">
+                <input type="text" id="adminUsername" placeholder="Username" required autocomplete="username">
+                <input type="password" id="adminPassword" placeholder="Password" required autocomplete="current-password">
+                <div class="error-message" id="loginError"></div>
+                <div class="modal-buttons">
+                    <button type="submit">로그인</button>
+                    <button type="button" onclick="closeAdminLogin()">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Hero with Enhanced Design -->
+        <section class="hero" id="hero" data-bg="dark">
+            <div class="hero-bg"></div>
+            <div class="hero-content">
+                <div class="hero-title-wrapper">
+                    <h1 class="hero-title" id="heroTitle">
+                        <div class="title-line" id="line1"></div>
+                        <div class="title-line" id="line2"></div>
+                        <div class="title-line" id="line3"></div>
+                    </h1>
+                </div>
+                <p class="hero-subtitle" id="heroSubtitle">실시간 자막으로 모두를 위한 접근성을 실현합니다</p>
+                <!-- Enhanced Channel Entry Form -->
+                <div class="channel-form-container" id="channelFormContainer">
+                    <form class="channel-form" id="channelForm">
+                        <div class="form-row">
+                            <div class="input-wrapper">
+                                <input type="text" class="form-input" id="channelCode" placeholder="CHANNEL" maxlength="6" required />
+                            </div>
+                            <div class="input-wrapper">
+                                <input type="password" class="form-input" id="channelPassword" placeholder="PASSWORD" />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="role-section">
+                                <span class="role-label">ROLE</span>
+                                <div class="role-selector">
+                                    <button type="button" class="role-btn active" data-role="guest">GUEST</button>
+                                    <button type="button" class="role-btn" data-role="steno">STENO</button>
+                                    <button type="button" class="role-btn" data-role="admin">ADMIN</button>
+                                </div>
+                            </div>
+                            <button type="submit" class="enter-btn">ENTER →</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <!-- Scroll Indicator -->
+            <div class="scroll-indicator" id="scrollIndicator">
+                <div class="mouse-wheel"></div>
+                <div class="scroll-text">Scroll</div>
+            </div>
+        </section>
+
+        <!-- About -->
+        <section class="about" id="about" data-bg="light">
+            <div class="about-container">
+                <div class="section-header">
+                    <p class="section-label">WHO WE ARE</p>
+                    <h2 class="section-title">
+                        <span class="split-text" id="aboutText"></span>
+                    </h2>
+                </div>
+                
+                <div class="features">
+                    <div class="feature-card" data-magnetic>
+                        <div class="feature-number">250+</div>
+                        <h3 class="feature-title">프로젝트</h3>
+                        <p class="feature-description">
+                            다양한 산업 분야에서 성공적으로 완료한 실시간 자막 프로젝트
+                        </p>
+                    </div>
+                    <div class="feature-card" data-magnetic>
+                        <div class="feature-number">99%</div>
+                        <h3 class="feature-title">정확도</h3>
+                        <p class="feature-description">
+                            AI와 전문가의 협업으로 달성한 업계 최고 수준의 자막 정확도
+                        </p>
+                    </div>
+                    <div class="feature-card" data-magnetic>
+                        <div class="feature-number">24/7</div>
+                        <h3 class="feature-title">지원</h3>
+                        <p class="feature-description">
+                            언제 어디서나 안정적인 실시간 자막 서비스 제공
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Services -->
+        <section class="services" id="services" data-bg="dark">
+            <div class="container">
+                <div class="section-header">
+                    <p class="section-label" style="color: rgba(255,255,255,0.5);">WHAT WE DO</p>
+                    <h2 class="section-title" style="color: white;">우리의 서비스</h2>
+                </div>
+                
+                <div class="service-list">
+                    <div class="service-item" data-magnetic data-service="1">
+                        <div class="service-bg"></div>
+                        <div class="service-item-inner">
+                            <div class="service-left">
+                                <span class="service-number">01</span>
+                                <h3 class="service-title">실시간 현장 자막</h3>
+                            </div>
+                            <span class="service-arrow">→</span>
+                        </div>
+                    </div>
+                    
+                    <div class="service-item" data-magnetic data-service="2">
+                        <div class="service-bg"></div>
+                        <div class="service-item-inner">
+                            <div class="service-left">
+                                <span class="service-number">02</span>
+                                <h3 class="service-title">영상 자막</h3>
+                            </div>
+                            <span class="service-arrow">→</span>
+                        </div>
+                    </div>
+                    
+                    <div class="service-item" data-magnetic data-service="3">
+                        <div class="service-bg"></div>
+                        <div class="service-item-inner">
+                            <div class="service-left">
+                                <span class="service-number">03</span>
+                                <h3 class="service-title">배리어프리 공연 자막</h3>
+                            </div>
+                            <span class="service-arrow">→</span>
+                        </div>
+                    </div>
+                    
+                    <div class="service-item" data-magnetic data-service="4">
+                        <div class="service-bg"></div>
+                        <div class="service-item-inner">
+                            <div class="service-left">
+                                <span class="service-number">04</span>
+                                <h3 class="service-title">맞춤 솔루션</h3>
+                            </div>
+                            <span class="service-arrow">→</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Service Expander Overlay -->
+                <aside class="svc-expander" aria-hidden="true">
+                    <div class="expander-inner">
+                        <h3 class="exp-title"></h3>
+                        <div class="exp-body"></div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <!-- Work -->
+        <section class="work" id="work" data-bg="light">
+            <div class="container">
+                <div class="section-header">
+                    <p class="section-label">SELECTED WORK</p>
+                    <h2 class="section-title">프로젝트</h2>
+                </div>
+                
+                <div class="work-grid">
+                    <div class="work-item" data-magnetic>
+                        <img src="data:image/svg+xml,%3Csvg width='800' height='500' xmlns='http://www.w3.org/2000/svg'%3E%3Crect fill='%23222' width='800' height='500'/%3E%3Ctext x='50%25' y='50%25' font-size='24' fill='%23666' text-anchor='middle' dy='.3em'%3EKBS%3C/text%3E%3C/svg%3E" alt="KBS">
+                        <div class="work-overlay">
+                            <span class="work-category">Broadcasting</span>
+                            <h3 class="work-title">KBS 실시간 자막 시스템</h3>
+                        </div>
+                    </div>
+                    
+                    <div class="work-item" data-magnetic>
+                        <img src="data:image/svg+xml,%3Csvg width='800' height='500' xmlns='http://www.w3.org/2000/svg'%3E%3Crect fill='%23333' width='800' height='500'/%3E%3Ctext x='50%25' y='50%25' font-size='24' fill='%23777' text-anchor='middle' dy='.3em'%3ESamsung%3C/text%3E%3C/svg%3E" alt="Samsung">
+                        <div class="work-overlay">
+                            <span class="work-category">Conference</span>
+                            <h3 class="work-title">삼성 글로벌 컨퍼런스</h3>
+                        </div>
+                    </div>
+                    
+                    <div class="work-item" data-magnetic>
+                        <img src="data:image/svg+xml,%3Csvg width='800' height='500' xmlns='http://www.w3.org/2000/svg'%3E%3Crect fill='%23444' width='800' height='500'/%3E%3Ctext x='50%25' y='50%25' font-size='24' fill='%23888' text-anchor='middle' dy='.3em'%3ENaver%3C/text%3E%3C/svg%3E" alt="Naver">
+                        <div class="work-overlay">
+                            <span class="work-category">Platform</span>
+                            <h3 class="work-title">네이버 웨비나 플랫폼</h3>
+                        </div>
+                    </div>
+                    
+                    <div class="work-item" data-magnetic>
+                        <img src="data:image/svg+xml,%3Csvg width='800' height='500' xmlns='http://www.w3.org/2000/svg'%3E%3Crect fill='%23555' width='800' height='500'/%3E%3Ctext x='50%25' y='50%25' font-size='24' fill='%23999' text-anchor='middle' dy='.3em'%3ESeoul%3C/text%3E%3C/svg%3E" alt="Seoul">
+                        <div class="work-overlay">
+                            <span class="work-category">Government</span>
+                            <h3 class="work-title">서울시 공공행사</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact -->
+        <section class="contact" id="contact" data-bg="dark">
+            <div class="container">
+                <h2 class="contact-title">
+                    <span>Let's Work</span> <span>Together</span>
+                </h2>
+                <a href="mailto:contact@nua.studio" class="contact-email" data-magnetic>
+                    contact@nua.studio
+                </a>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-inner">
+                <p class="footer-copy">© 2025 NUA STUDIO</p>
+                <div class="footer-links">
+                    <a href="#" class="footer-link">Instagram</a>
+                    <a href="#" class="footer-link">LinkedIn</a>
+                    <a href="#" class="footer-link">Behance</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        // API Base URL
+        const API_BASE_URL = window.CONFIG ? window.CONFIG.SOCKET_URL : 'http://localhost:3000';
+
+        // 1. Hero Matrix Typing Effect
+        function startHeroTyping() {
+            const lines = [
+                { element: document.getElementById('line1'), text: "Live Captions" },
+                { element: document.getElementById('line2'), text: "For" },
+                { element: document.getElementById('line3'), text: "Everyone" }
+            ];
+            
+            const subtitle = document.getElementById('heroSubtitle');
+            const channelForm = document.getElementById('channelFormContainer');
+            let globalCharIndex = 0;
+            const allChars = [];
+            
+            // Create all characters as random numbers first
+            lines.forEach((line, lineIndex) => {
+                for (let i = 0; i < line.text.length; i++) {
+                    const char = document.createElement('span');
+                    char.className = 'typing-char random-number';
+                    char.textContent = line.text[i] === ' ' ? '\u00A0' : Math.floor(Math.random() * 10);
+                    line.element.appendChild(char);
+                    allChars.push({
+                        element: char,
+                        finalChar: line.text[i],
+                        lineIndex: lineIndex
+                    });
+                }
+            });
+            
+            // Single cursor at the beginning
+            const cursor = document.createElement('span');
+            cursor.className = 'typing-cursor';
+            cursor.id = 'mainCursor';
+            lines[0].element.insertBefore(cursor, lines[0].element.firstChild);
+            
+            // Random number animation
+            const randomInterval = setInterval(() => {
+                allChars.forEach((char, index) => {
+                    if (index >= globalCharIndex && char.finalChar !== ' ' && char.element.classList.contains('random-number')) {
+                        char.element.textContent = Math.floor(Math.random() * 10);
+                    }
+                });
+            }, 30);
+            
+            // Reveal actual text character by character
+            const revealInterval = setInterval(() => {
+                if (globalCharIndex < allChars.length) {
+                    const currentChar = allChars[globalCharIndex];
+                    currentChar.element.textContent = currentChar.finalChar === ' ' ? '\u00A0' : currentChar.finalChar;
+                    currentChar.element.classList.remove('random-number');
+                    currentChar.element.classList.add('revealed');
+                    
+                    // Move cursor to next position
+                    if (globalCharIndex < allChars.length - 1) {
+                        const nextChar = allChars[globalCharIndex + 1];
+                        
+                        if (currentChar.lineIndex !== nextChar.lineIndex) {
+                            lines[nextChar.lineIndex].element.insertBefore(cursor, lines[nextChar.lineIndex].element.firstChild);
+                        } else {
+                            currentChar.element.parentNode.insertBefore(cursor, currentChar.element.nextSibling);
+                        }
+                    } else {
+                        currentChar.element.parentNode.appendChild(cursor);
+                    }
+                    
+                    globalCharIndex++;
+                } else {
+                    clearInterval(randomInterval);
+                    clearInterval(revealInterval);
+                    
+                    setTimeout(() => {
+                        cursor.classList.add('hidden');
+                    }, 500);
+                    
+                    setTimeout(() => {
+                        subtitle.classList.add('visible');
+                        setTimeout(() => {
+                            channelForm.classList.add('visible');
+                        }, 500);
+                    }, 800);
+                }
+            }, 45);
+        }
+
+        // Mouse tracking spotlight effect
+        function initMouseSpotlight() {
+            const hero = document.querySelector('.hero');
+            let mouseX = 50;
+            let mouseY = 50;
+            
+            document.addEventListener('mousemove', (e) => {
+                const heroRect = hero.getBoundingClientRect();
+                if (e.clientY >= heroRect.top && e.clientY <= heroRect.bottom) {
+                    mouseX = (e.clientX / window.innerWidth) * 100;
+                    mouseY = ((e.clientY - heroRect.top) / heroRect.height) * 100;
+                    
+                    hero.style.background = `
+                        radial-gradient(
+                            circle 600px at ${mouseX}% ${mouseY}%,
+                            rgba(255, 255, 255, 0.03),
+                            rgba(255, 255, 255, 0.01) 40%,
+                            transparent 70%
+                        ),
+                        var(--black)
+                    `;
+                }
+            });
+        }
+
+        // Start typing effect on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(startHeroTyping, 500);
+            initMouseSpotlight();
+        });
+
+        // 2. Dynamic Header Color
+        function updateHeaderColor() {
+            const header = document.getElementById('header');
+            const sections = document.querySelectorAll('section[data-bg]');
+            
+            let currentBg = 'dark';
+            sections.forEach(section => {
+                const rect = section.getBoundingClientRect();
+                if (rect.top <= 100 && rect.bottom >= 100) {
+                    currentBg = section.getAttribute('data-bg');
+                }
+            });
+            
+            header.classList.remove('on-dark', 'on-light');
+            header.classList.add(`on-${currentBg}`);
+        }
+
+        window.addEventListener('scroll', updateHeaderColor);
+        window.addEventListener('load', updateHeaderColor);
+
+        // Hamburger menu toggle
+        document.querySelector('.hamburger').addEventListener('click', function() {
+            document.querySelector('.header').classList.toggle('HmActive');
+        });
+
+        // Language dropdown toggle
+        document.querySelector('.lang_current').addEventListener('click', function() {
+            const langList = document.querySelector('.lang_list_wrap');
+            if (langList.style.display === 'block') {
+                langList.style.display = 'none';
+            } else {
+                langList.style.display = 'block';
+            }
+        });
+
+        // Close language dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.lang')) {
+                document.querySelector('.lang_list_wrap').style.display = 'none';
+            }
+        });
+
+        // 3. Channel Form Functionality with Admin Login
+        const channelForm = document.getElementById('channelForm');
+        const channelCodeInput = document.getElementById('channelCode');
+        const channelPasswordInput = document.getElementById('channelPassword');
+        const roleBtns = document.querySelectorAll('.role-btn');
+        let selectedRole = 'guest';
+
+        // Role selection
+        roleBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                roleBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedRole = btn.getAttribute('data-role');
+            });
+        });
+
+        // Auto uppercase for channel code
+        channelCodeInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        });
+
+        // Admin Login Functions
+        function showAdminLogin() {
+            const modal = document.getElementById('adminLoginModal');
+            modal.classList.add('show');
+            document.getElementById('adminUsername').focus();
+        }
+
+        function closeAdminLogin() {
+            const modal = document.getElementById('adminLoginModal');
+            modal.classList.remove('show');
+            document.getElementById('adminLoginForm').reset();
+            document.getElementById('loginError').classList.remove('show');
+        }
+
+        // Admin Login Form Handler
+        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('adminUsername').value;
+            const password = document.getElementById('adminPassword').value;
+            const errorElement = document.getElementById('loginError');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/admin/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    localStorage.setItem('adminToken', data.token);
+                    localStorage.setItem('adminRole', data.role);
+                    window.location.href = 'channel-manager.html';
+                } else {
+                    errorElement.textContent = data.error || '로그인에 실패했습니다.';
+                    errorElement.classList.add('show');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorElement.textContent = '서버 연결에 실패했습니다.';
+                errorElement.classList.add('show');
+            }
+        });
+
+        // Channel Form submission with Admin check
+        channelForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const channelCode = channelCodeInput.value;
+            const password = channelPasswordInput.value;
+            
+            if (!channelCode) {
+                alert('채널 코드를 입력해주세요');
+                return;
+            }
+            
+            // Check for system admin access
+            if (selectedRole === 'admin') {
+                // Special channel codes for system admin
+                if (channelCode === 'SYSTEM' || channelCode === 'MASTER' || channelCode === 'ADMIN') {
+                    showAdminLogin();
+                } else {
+                    // Regular channel admin
+                    window.location.href = `admin.html?channel=${channelCode}&role=admin`;
+                }
+            } else if (selectedRole === 'guest') {
+                window.location.href = `viewer.html?channel=${channelCode}`;
+            } else if (selectedRole === 'steno') {
+                window.location.href = `steno_editor.html?channel=${channelCode}&role=steno`;
+            }
+        });
+
+        // Keyboard shortcut for admin access (Ctrl + Shift + A)
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+                e.preventDefault();
+                showAdminLogin();
+            }
+        });
+
+        // 4. About Text Split Animation
+        function initAboutTextAnimation() {
+            const textElement = document.getElementById('aboutText');
+            const text = "기술과 창의성을 결합하여 모든 사람이 참여할 수 있는 포용적인 디지털 경험을 만듭니다";
+            
+            textElement.innerHTML = '';
+            
+            for (let i = 0; i < text.length; i++) {
+                const span = document.createElement('span');
+                span.className = 'split-char';
+                span.textContent = text[i] === ' ' ? '\u00A0' : text[i];
+                span.style.transitionDelay = `${i * 0.02}s`;
+                textElement.appendChild(span);
+            }
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('reveal');
+                    } else {
+                        entry.target.classList.remove('reveal');
+                    }
+                });
+            }, { threshold: 0.1 });
+            
+            observer.observe(textElement);
+        }
+
+        initAboutTextAnimation();
+
+        // 5. Magnetic Effects
+        function initMagneticEffects() {
+            const magneticElements = document.querySelectorAll('[data-magnetic]');
+            
+            magneticElements.forEach(el => {
+                el.addEventListener('mousemove', (e) => {
+                    const rect = el.getBoundingClientRect();
+                    const x = e.clientX - rect.left - rect.width / 2;
+                    const y = e.clientY - rect.top - rect.height / 2;
+                    
+                    el.style.transform = `translate(${x * 0.15}px, ${y * 0.15}px)`;
+                });
+                
+                el.addEventListener('mouseleave', () => {
+                    el.style.transform = '';
+                });
+            });
+        }
+
+        initMagneticEffects();
+
+        // 6. Scroll Progress Bar
+        function updateScrollProgress() {
+            const scrollProgress = document.getElementById('scrollProgress');
+            const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrolled = (window.scrollY / scrollHeight) * 100;
+            scrollProgress.style.height = `${scrolled}%`;
+        }
+
+        window.addEventListener('scroll', updateScrollProgress);
+
+        // 7. Section Navigator
+        function initSectionNavigator() {
+            const dots = document.querySelectorAll('.section-dot');
+            const sections = document.querySelectorAll('section[id]');
+            
+            dots.forEach(dot => {
+                dot.addEventListener('click', () => {
+                    const sectionId = dot.getAttribute('data-section');
+                    const section = document.getElementById(sectionId);
+                    if (section) {
+                        section.scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+            
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const rect = section.getBoundingClientRect();
+                    if (rect.top <= window.innerHeight / 2 && rect.bottom >= window.innerHeight / 2) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                
+                dots.forEach(dot => {
+                    dot.classList.remove('active');
+                    if (dot.getAttribute('data-section') === current) {
+                        dot.classList.add('active');
+                    }
+                });
+            });
+        }
+
+        initSectionNavigator();
+
+        // 8. Scroll Triggered Animations
+        class ScrollAnimations {
+            constructor() {
+                this.elements = document.querySelectorAll('.section-label, .feature-card, .work-item');
+                this.init();
+            }
+            
+            init() {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach((entry, index) => {
+                        if (entry.isIntersecting) {
+                            setTimeout(() => {
+                                entry.target.style.opacity = '1';
+                                entry.target.style.transform = 'translateY(0)';
+                            }, index * 100);
+                        }
+                    });
+                }, {
+                    threshold: 0.1,
+                    rootMargin: '0px 0px -50px 0px'
+                });
+                
+                this.elements.forEach(el => {
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateY(30px)';
+                    el.style.transition = 'all 0.8s cubic-bezier(0.19, 1, 0.22, 1)';
+                    observer.observe(el);
+                });
+            }
+        }
+
+        new ScrollAnimations();
+
+        // 9. Service Hover Expander System
+        function initServiceExpander() {
+            const serviceItems = document.querySelectorAll('.service-item');
+            const expander = document.querySelector('.svc-expander');
+            const expanderTitle = expander.querySelector('.exp-title');
+            const expanderBody = expander.querySelector('.exp-body');
+            let currentService = null;
+            let isMobile = window.innerWidth <= 768;
+            let expanderTimeout = null;
+            
+            const serviceData = {
+                1: {
+                    title: '실시간 현장 자막',
+                    content: `
+                        <ul>
+                            <li>국제회의 / 학술대회 – 동시통역 부스와 함께 자막 제공</li>
+                            <li>세미나 / 공청회 / 포럼 – 발표자 발언을 즉시 화면에 자막 송출</li>
+                            <li>기업 행사 / 신제품 발표회 – 대형 스크린, 온라인 중계 병행 송출</li>
+                            <li>정부·지자체 공식 행사 – 행정 보고, 시민 설명회 등 공공기관 현장</li>
+                            <li>언론 중계 / 생방송 스튜디오 – 방송 자막과 병행 가능한 속기 송출</li>
+                            <li>교육 현장 – 대학 강연, 워크숍, 특강 등 학습 지원</li>
+                        </ul>
+                    `
+                },
+                2: {
+                    title: '영상 자막',
+                    content: `
+                        <ul>
+                            <li>영상 포맷 지원: MP4, MOV, AVI 등 일반 동영상 파일 전체 지원</li>
+                            <li>자막 포맷 산출: SRT, VTT, CAP, ASS 등 범용 자막 파일 제공</li>
+                            <li>내장형 자막(Burn-in): 영상 화면에 자막이 직접 합성된 완성본 납품</li>
+                            <li>외부 자막(파일 제공): 원본 영상은 그대로 두고, 자막 파일만 별도 전달</li>
+                            <li>다국어 번역 자막: 한국어 원본에 영어/중국어/일본어 등 다국어 자막 제작 가능</li>
+                            <li>방송 규격 맞춤: KBS/MBC/SBS 방송 송출용 표준 규격, OTT(넷플릭스, 유튜브 등) 최적화 지원</li>
+                            <li>브랜딩 맞춤 편집: 기업/기관 로고·폰트·컬러를 반영한 커스터마이즈 자막 디자인</li>
+                        </ul>
+                    `
+                },
+                3: {
+                    title: '배리어프리 공연 자막',
+                    content: `
+                        <ul>
+                            <li>연극 / 뮤지컬 – 대사 전체 및 배경 설명 자막 제공</li>
+                            <li>콘서트 / 페스티벌 – 가사 + 공연 중 멘트 자막 송출</li>
+                            <li>무용 / 오페라 – 동작 설명, 가사·대사 번역 자막 제공</li>
+                            <li>영화 상영회 / 시사회 – 음향 효과 + 대사 자막 함께 제공</li>
+                            <li>공공·문화예술기관 주최 행사 – 지자체, 극장, 예술의전당 등 배리어프리 인증 목적</li>
+                        </ul>
+                    `
+                },
+                4: {
+                    title: '맞춤 솔루션',
+                    content: `
+                        <ul>
+                            <li>실시간 뷰어 연동: 현장 스크린 + 원격 참가자에게 동시에 자막 송출</li>
+                            <li>회의록 자동 생성: 행사 종료 후 자막 데이터를 회의록 파일로 제공 (DOCX, PDF 등)</li>
+                            <li>플랫폼 호환성: Zoom, MS Teams, Webex, YouTube Live 등 주요 화상회의·스트리밍 플랫폼과 연동 지원</li>
+                            <li>브랜딩 커스터마이즈: 기관 로고, 지정 색상, 폰트 적용된 전용 자막 디자인</li>
+                            <li>보안/비공개 옵션: 민감한 내부 회의의 경우 암호화된 전용 뷰어 제공</li>
+                            <li>하드웨어 패키지: 투명 디스플레이, 전용 뷰어 PC, 네트워크 장비까지 일체형 제공 가능</li>
+                        </ul>
+                    `
+                }
+            };
+            
+            function showExpander(serviceId) {
+                const data = serviceData[serviceId];
+                if (!data) return;
+                
+                if (expanderTimeout) {
+                    clearTimeout(expanderTimeout);
+                    expanderTimeout = null;
+                }
+                
+                expanderTitle.textContent = data.title;
+                expanderBody.innerHTML = data.content;
+                expander.classList.add('active');
+                expander.setAttribute('aria-hidden', 'false');
+                currentService = serviceId;
+            }
+            
+            function hideExpander(immediate = false) {
+                if (immediate) {
+                    expander.classList.remove('active');
+                    expander.setAttribute('aria-hidden', 'true');
+                    currentService = null;
+                } else {
+                    expanderTimeout = setTimeout(() => {
+                        expander.classList.remove('active');
+                        expander.setAttribute('aria-hidden', 'true');
+                        currentService = null;
+                    }, 100);
+                }
+            }
+            
+            if (!isMobile) {
+                serviceItems.forEach(item => {
+                    item.addEventListener('mouseenter', () => {
+                        const serviceId = item.getAttribute('data-service');
+                        showExpander(serviceId);
+                    });
+                    
+                    item.addEventListener('mouseleave', (e) => {
+                        const relatedTarget = e.relatedTarget;
+                        if (!relatedTarget || !relatedTarget.closest('.svc-expander')) {
+                            hideExpander();
+                        }
+                    });
+                });
+                
+                expander.addEventListener('mouseenter', () => {
+                    if (expanderTimeout) {
+                        clearTimeout(expanderTimeout);
+                        expanderTimeout = null;
+                    }
+                });
+                
+                expander.addEventListener('mouseleave', (e) => {
+                    const relatedTarget = e.relatedTarget;
+                    if (!relatedTarget || !relatedTarget.closest('.service-item')) {
+                        hideExpander(true);
+                    }
+                });
+            }
+            
+            if (isMobile) {
+                serviceItems.forEach(item => {
+                    item.addEventListener('click', () => {
+                        const serviceId = item.getAttribute('data-service');
+                        
+                        if (currentService === serviceId) {
+                            hideExpander(true);
+                        } else {
+                            showExpander(serviceId);
+                        }
+                    });
+                });
+                
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.service-item') && !e.target.closest('.svc-expander')) {
+                        hideExpander(true);
+                    }
+                });
+            }
+            
+            window.addEventListener('resize', () => {
+                const wasMobile = isMobile;
+                isMobile = window.innerWidth <= 768;
+                
+                if (wasMobile !== isMobile) {
+                    hideExpander(true);
+                }
+            });
+        }
+        
+        initServiceExpander();
+
+        // 10. Scroll Indicator Visibility
+        function handleScrollIndicator() {
+            const scrollIndicator = document.getElementById('scrollIndicator');
+            const heroSection = document.getElementById('hero');
+            
+            window.addEventListener('scroll', () => {
+                const heroRect = heroSection.getBoundingClientRect();
+                const scrolled = window.scrollY;
+                
+                if (scrolled > 100) {
+                    scrollIndicator.classList.add('hidden');
+                } else {
+                    scrollIndicator.classList.remove('hidden');
+                }
+                
+                if (heroRect.top >= -100 && heroRect.bottom >= window.innerHeight / 2) {
+                    scrollIndicator.classList.remove('hidden');
+                }
+            });
+            
+            scrollIndicator.addEventListener('click', () => {
+                const aboutSection = document.getElementById('about');
+                aboutSection.scrollIntoView({ behavior: 'smooth' });
+            });
+        }
+        
+        handleScrollIndicator();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Channel Manager - NUA STUDIO</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=Ubuntu:wght@300;400;500;700&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xeicon@2.3.3/xeicon.min.css">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    :root {
+      --black: #000000;
+      --white: #ffffff;
+      --gray: #666666;
+      --light-gray: #f5f5f5;
+      --accent: #0044ff;
+      --neon-blue: #00f0ff;
+      --neon-purple: #a259ff;
+      --accent-gradient: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+      --ease: cubic-bezier(0.19, 1, 0.22, 1);
+    }
+    
+    body {
+      background: #0e0e0e;
+      color: #f0f0f0;
+      font-family: 'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    
+    /* Header - index.html과 동일한 스타일 */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(10, 10, 10, 0.95);
+      z-index: 1000;
+      padding: 1.5rem 0;
+      border-bottom: 1px solid #333;
+    }
+    
+    .header .wrap {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0 auto;
+      width: 95%;
+      max-width: 1708px;
+    }
+    
+    .header .logo {
+      width: 122px;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 101;
+    }
+    
+    .header .logo svg {
+      width: 100%;
+      height: auto;
+    }
+    
+    .header .logo svg path {
+      fill: #fff;
+      transition: fill 0.3s ease;
+    }
+    
+    .header .logo svg text {
+      fill: #000;
+    }
+    
+    .header .menu {
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .header .menu ul {
+      display: flex;
+      align-items: center;
+      gap: 3rem;
+      list-style: none;
+    }
+    
+    .header .menu li {
+      font-size: inherit;
+      font-weight: 700;
+      letter-spacing: 0.025em;
+      font-family: 'Ubuntu', sans-serif;
+      position: relative;
+      transition: .4s;
+      color: #fff;
+    }
+    
+    .header .menu li.active {
+      color: var(--neon-blue);
+    }
+    
+    .header .menu li a {
+      position: relative;
+      z-index: 1;
+      padding: 5px;
+      color: inherit;
+      text-decoration: none;
+    }
+    
+    .header .menu li::before {
+      content: '';
+      z-index: -1;
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: block;
+      width: 0%;
+      height: 100%;
+      background: var(--neon-blue);
+      transition: .4s;
+    }
+    
+    .header .menu li:hover::before {
+      width: 100%;
+    }
+    
+    .header .menu li.active::before {
+      width: 100%;
+      opacity: 0.2;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 6rem 2rem 2rem 2rem;
+    }
+    
+    /* Stats Dashboard */
+    .stats-dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+    
+    .stat-card {
+      background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--neon-blue);
+      margin-bottom: 0.5rem;
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    .stat-label {
+      font-size: 0.9rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-family: 'Pretendard', sans-serif;
+    }
+    
+    /* Create Channel Section */
+    .create-section {
+      background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 50%, #1e1e1e 100%);
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 2rem 0;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 2rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    .create-form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .form-label {
+      font-size: 0.85rem;
+      color: #a2c1ff;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 0.5px;
+    }
+    
+    input[type="text"], input[type="number"], input[type="datetime-local"], select {
+      padding: 0.8rem 1rem;
+      border-radius: 6px;
+      border: 1px solid #404040;
+      background: #0e0e0e;
+      color: #f0f0f0;
+      font-family: 'Courier New', monospace;
+      font-size: 0.95rem;
+      letter-spacing: 0.1em;
+      transition: all 0.2s ease;
+      width: 100%;
+      height: 42px;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: #555;
+      background: #111;
+      box-shadow: 
+        inset 0 1px 3px rgba(0,0,0,0.2),
+        0 0 0 1px rgba(255,255,255,0.1);
+    }
+    
+    /* Quick Actions */
+    .quick-actions {
+      display: flex;
+      gap: 1rem;
+      margin: 1rem 0;
+      justify-content: center;
+    }
+    
+    .quick-btn {
+      padding: 1rem 1.5rem;
+      background: #2a2a2a;
+      border: 1px solid #404040;
+      border-radius: 6px;
+      color: #f0f0f0;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.95rem;
+      font-family: 'Pretendard', sans-serif;
+      font-weight: 500;
+    }
+    
+    .quick-btn:hover {
+      background: #3a3a3a;
+      border-color: var(--neon-blue);
+      transform: translateY(-2px);
+    }
+    
+    /* Channel Type Radio */
+    .channel-types {
+      display: flex;
+      gap: 1rem;
+    }
+    
+    .type-option {
+      flex: 1;
+      position: relative;
+    }
+    
+    .type-option input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+    }
+    
+    .type-label {
+      display: block;
+      padding: 1rem;
+      background: #0e0e0e;
+      border: 1px solid #404040;
+      border-radius: 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .type-label:hover {
+      background: #1a1a1a;
+      border-color: #4a4a4a;
+    }
+    
+    .type-option input[type="radio"]:checked + .type-label {
+      background: #1a3d1a;
+      border-color: var(--neon-blue);
+      color: #fff;
+    }
+    
+    .passkey-group {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-end;
+    }
+    
+    .passkey-group input {
+      flex: 1;
+    }
+    
+    .dice-button {
+      background: transparent;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      color: #ccc;
+      font-size: 1.3rem;
+      transition: all 0.2s ease;
+      height: 42px;
+      width: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .dice-button:hover {
+      color: var(--neon-blue);
+      transform: scale(1.2);
+    }
+    
+    .btn-primary {
+      background: #2a2a2a;
+      color: #e0e0e0;
+      padding: 0.8rem 2rem;
+      border: 1px solid #404040;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #3a4a5a 0%, var(--neon-blue) 100%);
+      color: #fff;
+      border-color: var(--neon-blue);
+      transform: translateY(-2px);
+    }
+    
+    /* Channel List Table */
+    .channel-list {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 2rem 0;
+    }
+    
+    .list-header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .search-box {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    
+    .search-box input {
+      width: 250px;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    thead {
+      background: #252525;
+      border-bottom: 1px solid #333;
+    }
+    
+    th {
+      padding: 1rem;
+      text-align: left;
+      font-size: 0.85rem;
+      color: #a2c1ff;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      font-family: 'Courier New', monospace;
+    }
+    
+    td {
+      padding: 1rem;
+      border-bottom: 1px solid #2a2a2a;
+      font-size: 0.9rem;
+    }
+    
+    tbody tr {
+      transition: background 0.2s ease;
+    }
+    
+    tbody tr:hover {
+      background: #222;
+    }
+    
+    .channel-code {
+      font-family: 'Courier New', monospace;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+    }
+    
+    .channel-code:hover {
+      color: var(--neon-blue);
+    }
+    
+    .badge {
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      display: inline-block;
+    }
+    
+    .badge.public {
+      background: #2a4a2a;
+      color: #4ecdc4;
+      border: 1px solid #3a5a3a;
+    }
+    
+    .badge.secured {
+      background: #3a3a5a;
+      color: #74b9ff;
+      border: 1px solid #4a4a6a;
+    }
+    
+    .passkey {
+      font-family: 'Courier New', monospace;
+      background: #0e0e0e;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      border: 1px solid #333;
+    }
+    
+    .active-count {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    
+    .count-dot {
+      width: 8px;
+      height: 8px;
+      background: #4ecdc4;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.3; }
+      100% { opacity: 1; }
+    }
+    
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .btn-small {
+      padding: 0.4rem 0.8rem;
+      border: 1px solid #333;
+      background: #222;
+      color: #ccc;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: 'Pretendard', sans-serif;
+    }
+    
+    .btn-small:hover {
+      background: #333;
+      color: #fff;
+      border-color: #444;
+    }
+    
+    .btn-small.manage {
+      border-color: var(--neon-blue);
+      color: #74b9ff;
+    }
+    
+    .btn-small.copy {
+      border-color: #4a9e4a;
+      color: #4ecdc4;
+    }
+    
+    .btn-small.delete {
+      border-color: #a44;
+      color: #e06c75;
+    }
+    
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal.show {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    
+    .modal-header {
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #333;
+    }
+    
+    .modal-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #fff;
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    .modal-section {
+      margin-bottom: 1.5rem;
+    }
+    
+    .modal-section h4 {
+      color: #a2c1ff;
+      font-size: 0.9rem;
+      margin-bottom: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .url-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.8rem;
+    }
+    
+    .url-input {
+      flex: 1;
+      padding: 0.6rem;
+      background: #0e0e0e;
+      border: 1px solid #333;
+      border-radius: 4px;
+      color: #888;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+    }
+    
+    .copy-btn {
+      padding: 0.6rem 1rem;
+      background: #2a2a2a;
+      border: 1px solid #404040;
+      border-radius: 4px;
+      color: #4ecdc4;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: 'Pretendard', sans-serif;
+    }
+    
+    .copy-btn:hover {
+      background: #3a3a3a;
+      border-color: #4ecdc4;
+    }
+    
+    .type-toggle {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    
+    .type-toggle-btn {
+      flex: 1;
+      padding: 0.8rem;
+      background: #2a2a2a;
+      border: 1px solid #404040;
+      border-radius: 6px;
+      color: #f0f0f0;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+      font-family: 'Pretendard', sans-serif;
+    }
+    
+    .type-toggle-btn.active {
+      background: linear-gradient(135deg, #3a4a5a 0%, var(--neon-blue) 100%);
+      color: #fff;
+      border-color: var(--neon-blue);
+    }
+    
+    .type-toggle-btn:hover:not(.active) {
+      background: #3a3a3a;
+      border-color: var(--neon-blue);
+    }
+    
+    .status-info {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      padding: 1rem;
+      background: #0e0e0e;
+      border-radius: 8px;
+    }
+    
+    .status-item {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .status-label {
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 0.3rem;
+      font-family: 'Pretendard', sans-serif;
+    }
+    
+    .status-value {
+      font-size: 1.1rem;
+      color: #fff;
+      font-weight: 500;
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    .modal-footer {
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid #333;
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+    }
+    
+    /* Footer */
+    footer {
+      background: #0e0e0e;
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.9rem;
+      color: #888;
+      border-top: 1px solid #333;
+      margin-top: 4rem;
+      font-family: 'Pretendard', sans-serif;
+    }
+    
+    /* Loading */
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #333;
+      border-radius: 50%;
+      border-top-color: var(--neon-blue);
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #2a2a2a;
+      border: 1px solid var(--neon-blue);
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      color: #fff;
+      z-index: 3000;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+      font-family: 'Pretendard', sans-serif;
+    }
+    
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .toast.success {
+      border-color: #4ecdc4;
+      background: #2a4a2a;
+    }
+    
+    .toast.error {
+      border-color: #e06c75;
+      background: #3a2a2a;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container {
+        padding: 5rem 1rem 1rem 1rem;
+      }
+      
+      .header .menu ul {
+        gap: 1rem;
+        font-size: 16px;
+      }
+      
+      .create-form {
+        grid-template-columns: 1fr;
+      }
+      
+      .search-box input {
+        width: 150px;
+      }
+      
+      table {
+        font-size: 0.8rem;
+      }
+      
+      th, td {
+        padding: 0.5rem;
+      }
+      
+      .actions {
+        flex-direction: column;
+      }
+      
+      .stats-dashboard {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header - index.html과 동일한 스타일 -->
+  <header class="header" id="header">
+    <div class="wrap">
+      <div class="logo">
+        <a href="index.html">
+          <svg viewBox="0 0 122 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 25C0 11.193 11.193 0 25 0h72c13.807 0 25 11.193 25 25s-11.193 25-25 25H25C11.193 50 0 38.807 0 25z" fill="#fff"/>
+            <text x="61" y="32" text-anchor="middle" fill="black" font-family="Poppins" font-size="20" font-weight="700">NUA</text>
+          </svg>
+        </a>
+      </div>
+      <div class="menu">
+        <ul>
+          <li><a href="index.html">HOME</a></li>
+          <li class="active"><a href="#">ADMIN</a></li>
+          <li><a href="#" onclick="showStats()">STATS</a></li>
+          <li><a href="#" onclick="logout()">LOGOUT</a></li>
+        </ul>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Statistics Dashboard -->
+    <div class="stats-dashboard">
+      <div class="stat-card">
+        <div class="stat-number" id="totalChannels">0</div>
+        <div class="stat-label">활성 채널</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="totalUsers">0</div>
+        <div class="stat-label">전체 사용자</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="todayChannels">0</div>
+        <div class="stat-label">오늘 생성</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="avgDuration">0</div>
+        <div class="stat-label">평균 사용시간(분)</div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <button class="quick-btn" onclick="exportAllData()">
+        📊 전체 데이터 내보내기
+      </button>
+      <button class="quick-btn" onclick="exportAllSubtitles()">
+        📝 전체 자막 내보내기
+      </button>
+    </div>
+
+    <!-- Create New Channel -->
+    <div class="create-section">
+      <h2 class="section-title">📡 Create New Channel</h2>
+      <form class="create-form" onsubmit="createChannel(event)">
+        <div class="form-group">
+          <label class="form-label">CHANNEL CODE</label>
+          <div class="passkey-group">
+            <input type="text" id="newChannelCode" placeholder="ABCD12" maxlength="6" required />
+            <button type="button" class="dice-button" onclick="generateChannelCode()" title="Generate random code">🎲</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">CHANNEL TYPE</label>
+          <div class="channel-types">
+            <div class="type-option">
+              <input type="radio" id="typePublic" name="channelType" value="public" />
+              <label class="type-label" for="typePublic">🌐 공개</label>
+            </div>
+            <div class="type-option">
+              <input type="radio" id="typeSecured" name="channelType" value="secured" checked />
+              <label class="type-label" for="typeSecured">🔒 비공개</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group" id="passkeyField">
+          <label class="form-label">PASSKEY (4 DIGITS)</label>
+          <div class="passkey-group">
+            <input type="text" id="newPasskey" placeholder="1234" maxlength="4" pattern="[0-9]{4}" />
+            <button type="button" class="dice-button" onclick="generatePasskey()" title="Generate random passkey">🔐</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">EVENT NAME</label>
+          <input type="text" id="eventName" placeholder="예: 2025 신년 세미나" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">EVENT DATE & TIME</label>
+          <input type="datetime-local" id="eventDateTime" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">AUTO CLOSE</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <select id="autoCloseType" onchange="toggleAutoCloseInput()" style="flex: 1;">
+              <option value="none">자동 종료 안함</option>
+              <option value="hours" selected>시간 후 종료</option>
+              <option value="datetime">특정 시간 종료</option>
+            </select>
+            <select id="autoCloseHours" style="flex: 1;">
+              <option value="1">1시간 후</option>
+              <option value="2" selected>2시간 후</option>
+              <option value="3">3시간 후</option>
+              <option value="4">4시간 후</option>
+              <option value="6">6시간 후</option>
+              <option value="12">12시간 후</option>
+              <option value="24">24시간 후</option>
+            </select>
+            <input type="datetime-local" id="autoCloseDateTime" style="flex: 1; display: none;" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <button type="submit" class="btn-primary" id="createBtn">CREATE CHANNEL</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Channel List -->
+    <div class="channel-list">
+      <div class="list-header">
+        <h2 class="section-title">📋 Active Channels</h2>
+        <div class="search-box">
+          <input type="text" placeholder="Search channels..." onkeyup="searchChannels(this.value)" />
+          <button class="btn-small">Search</button>
+        </div>
+      </div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>CHANNEL</th>
+            <th>TYPE</th>
+            <th>PASSKEY</th>
+            <th>USERS</th>
+            <th>STATUS</th>
+            <th>CREATED</th>
+            <th style="width: 300px;">ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody id="channelTableBody">
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 2rem;">
+              <div class="loading"></div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Channel Management Modal -->
+  <div class="modal" id="channelModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">채널 관리: <span id="modalChannelCode"></span></h3>
+      </div>
+      
+      <div class="modal-section">
+        <h4>접속 URL</h4>
+        <div class="url-group">
+          <input type="text" class="url-input" id="viewerURL" readonly>
+          <button class="copy-btn" onclick="copyURL('viewerURL')">복사</button>
+        </div>
+        <div class="url-group">
+          <input type="text" class="url-input" id="stenoURL" readonly>
+          <button class="copy-btn" onclick="copyURL('stenoURL')">복사</button>
+        </div>
+      </div>
+      
+      <div class="modal-section">
+        <h4>채널 상태</h4>
+        <div class="status-info">
+          <div class="status-item">
+            <span class="status-label">현재 접속자</span>
+            <span class="status-value" id="modalViewers">0명</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">생성 시간</span>
+            <span class="status-value" id="modalCreated">-</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">경과 시간</span>
+            <span class="status-value" id="modalDuration">0분</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">자동 종료</span>
+            <span class="status-value" id="modalAutoClose">-</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-section">
+        <h4>채널 타입 변경</h4>
+        <div class="type-toggle">
+          <button class="type-toggle-btn" id="publicToggle" onclick="changeChannelType('public')">
+            🌐 공개로 변경
+          </button>
+          <button class="type-toggle-btn" id="securedToggle" onclick="changeChannelType('secured')">
+            🔒 비공개로 변경
+          </button>
+        </div>
+      </div>
+      
+      <div class="modal-section" id="passkeySection">
+        <h4>패스키 변경</h4>
+        <div class="url-group">
+          <input type="text" id="modalNewPasskey" placeholder="새 패스키 (4자리)" maxlength="4">
+          <button class="copy-btn" onclick="updatePasskey()">변경</button>
+        </div>
+      </div>
+      
+      <div class="modal-section">
+        <h4>채널 연장</h4>
+        <div class="quick-actions">
+          <button class="quick-btn" onclick="extendChannel(1)">+1시간</button>
+          <button class="quick-btn" onclick="extendChannel(2)">+2시간</button>
+          <button class="quick-btn" onclick="extendChannel(3)">+3시간</button>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn-primary" onclick="exportChannelData()">데이터 내보내기</button>
+        <button class="btn-small delete" onclick="deleteChannelFromModal()">채널 삭제</button>
+        <button class="btn-small" onclick="closeModal()">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
+  <footer>
+    &copy; 2025 NUA STUDIO · Channel Management System
+  </footer>
+
+  <script src="config.js"></script>
+  <script>
+    // API Base URL
+    const API_BASE_URL = window.CONFIG ? window.CONFIG.SOCKET_URL : 'http://localhost:3000';
+    let currentModalChannel = null;
+    let channels = [];
+    
+    // Auth check
+    window.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('adminToken');
+      
+      if (!token) {
+        alert('관리자 권한이 필요합니다.');
+        window.location.href = 'index.html';
+        return;
+      }
+      
+      // Load initial data
+      loadChannelList();
+      updateStats();
+      
+      // Auto refresh every 30 seconds
+      setInterval(() => {
+        loadChannelList();
+        updateStats();
+      }, 30000);
+    });
+    
+    // Logout
+    function logout() {
+      const token = localStorage.getItem('adminToken');
+      if (token) {
+        fetch(`${API_BASE_URL}/api/admin/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': token,
+            'ngrok-skip-browser-warning': 'true'
+          }
+        });
+      }
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminRole');
+      window.location.href = 'index.html';
+    }
+    
+    // Show stats (placeholder)
+    function showStats() {
+      showToast('통계 페이지 준비중입니다', 'info');
+    }
+    
+    // Update statistics
+    function updateStats() {
+      const today = new Date().toDateString();
+      const todayChannels = channels.filter(ch => 
+        new Date(ch.createdAt).toDateString() === today
+      ).length;
+      
+      document.getElementById('totalChannels').textContent = channels.length;
+      document.getElementById('totalUsers').textContent = channels.reduce((sum, ch) => sum + (ch.activeUsers || 0), 0);
+      document.getElementById('todayChannels').textContent = todayChannels;
+      
+      // Calculate average duration (mock data for now)
+      document.getElementById('avgDuration').textContent = Math.floor(Math.random() * 60 + 30);
+    }
+    
+    // Channel type toggle
+    document.querySelectorAll('input[name="channelType"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        const passkeyField = document.getElementById('passkeyField');
+        if (this.value === 'public') {
+          passkeyField.style.opacity = '0.5';
+          passkeyField.style.pointerEvents = 'none';
+          document.getElementById('newPasskey').value = '';
+        } else {
+          passkeyField.style.opacity = '1';
+          passkeyField.style.pointerEvents = 'auto';
+          generatePasskey();
+        }
+      });
+    });
+    
+    // Toggle auto close input
+    function toggleAutoCloseInput() {
+      const type = document.getElementById('autoCloseType').value;
+      const hoursSelect = document.getElementById('autoCloseHours');
+      const dateTimeInput = document.getElementById('autoCloseDateTime');
+      
+      if (type === 'none') {
+        hoursSelect.style.display = 'none';
+        dateTimeInput.style.display = 'none';
+      } else if (type === 'hours') {
+        hoursSelect.style.display = 'block';
+        dateTimeInput.style.display = 'none';
+      } else if (type === 'datetime') {
+        hoursSelect.style.display = 'none';
+        dateTimeInput.style.display = 'block';
+        
+        // Set minimum datetime to now
+        const now = new Date();
+        now.setMinutes(now.getMinutes() + 30); // Minimum 30 minutes from now
+        dateTimeInput.min = now.toISOString().slice(0, 16);
+        if (!dateTimeInput.value) {
+          dateTimeInput.value = now.toISOString().slice(0, 16);
+        }
+      }
+    }
+    
+    // Export all subtitles
+    async function exportAllSubtitles() {
+      const subtitlesData = {};
+      
+      // Collect subtitle data for each channel
+      for (const channel of channels) {
+        // Here you would fetch actual subtitle data from server
+        // For now, using placeholder
+        subtitlesData[channel.code] = {
+          channelCode: channel.code,
+          eventName: channel.eventName || 'Untitled',
+          createdAt: channel.createdAt,
+          subtitles: channel.accumulatedText || '[자막 데이터 없음]'
+        };
+      }
+      
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      const blob = new Blob([JSON.stringify(subtitlesData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `all_subtitles_${timestamp}.json`;
+      a.click();
+      
+      showToast('전체 자막이 내보내졌습니다', 'success');
+    }
+    
+    // Generate random channel code
+    function generateChannelCode() {
+      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let code = '';
+      for (let i = 0; i < 6; i++) {
+        code += characters.charAt(Math.floor(Math.random() * characters.length));
+      }
+      document.getElementById('newChannelCode').value = code;
+      animateInput('newChannelCode');
+    }
+    
+    // Generate random passkey
+    function generatePasskey() {
+      const passkey = Math.floor(1000 + Math.random() * 9000).toString();
+      document.getElementById('newPasskey').value = passkey;
+      animateInput('newPasskey');
+    }
+    
+    // Input animation
+    function animateInput(inputId) {
+      const input = document.getElementById(inputId);
+      input.style.background = '#1a3d1a';
+      setTimeout(() => {
+        input.style.background = '#0e0e0e';
+      }, 300);
+    }
+    
+    // Create channel
+    async function createChannel(event) {
+      event.preventDefault();
+      
+      const createBtn = document.getElementById('createBtn');
+      const originalText = createBtn.textContent;
+      createBtn.disabled = true;
+      createBtn.innerHTML = '<span class="loading" style="width: 16px; height: 16px;"></span>';
+      
+      // Get auto close settings
+      let autoCloseValue = null;
+      const autoCloseType = document.getElementById('autoCloseType').value;
+      
+      if (autoCloseType === 'hours') {
+        autoCloseValue = {
+          type: 'hours',
+          value: parseInt(document.getElementById('autoCloseHours').value)
+        };
+      } else if (autoCloseType === 'datetime') {
+        autoCloseValue = {
+          type: 'datetime',
+          value: document.getElementById('autoCloseDateTime').value
+        };
+      }
+      
+      const channelData = {
+        code: document.getElementById('newChannelCode').value,
+        type: document.querySelector('input[name="channelType"]:checked').value,
+        passkey: document.getElementById('newPasskey').value || null,
+        eventDateTime: document.getElementById('eventDateTime').value || null,
+        eventName: document.getElementById('eventName').value || null,
+        autoClose: autoCloseValue
+      };
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/channel/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true'
+          },
+          body: JSON.stringify(channelData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          showToast(`채널 ${channelData.code}가 생성되었습니다`, 'success');
+          document.querySelector('.create-form').reset();
+          document.getElementById('typeSecured').checked = true;
+          document.getElementById('autoCloseType').value = 'hours';
+          document.getElementById('autoCloseHours').value = '2';
+          toggleAutoCloseInput();
+          generatePasskey();
+          await loadChannelList();
+          
+          // Show URLs immediately
+          showChannelModal(channelData.code);
+        } else {
+          showToast(result.error || '채널 생성 실패', 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('서버 연결 실패', 'error');
+      } finally {
+        createBtn.disabled = false;
+        createBtn.textContent = originalText;
+      }
+    }
+    
+    // Load channel list
+    async function loadChannelList() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/channels`, {
+          headers: {
+            'ngrok-skip-browser-warning': 'true'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch channels');
+        }
+        
+        channels = await response.json();
+        const tbody = document.getElementById('channelTableBody');
+        
+        if (channels.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 2rem; color: #888;">
+                No channels created yet
+              </td>
+            </tr>
+          `;
+          return;
+        }
+        
+        tbody.innerHTML = channels.map(ch => {
+          const createdDate = new Date(ch.createdAt);
+          const now = new Date();
+          const duration = Math.floor((now - createdDate) / 60000); // minutes
+          
+          return `
+            <tr>
+              <td>
+                <span class="channel-code" onclick="showChannelModal('${ch.code}')">${ch.code}</span>
+              </td>
+              <td><span class="badge ${ch.type}" id="type-${ch.code}">${ch.type === 'public' ? '공개' : '비공개'}</span></td>
+              <td><span id="passkey-${ch.code}">${ch.passkey ? `<span class="passkey">${ch.passkey}</span>` : '-'}</span></td>
+              <td>
+                <div class="active-count">
+                  ${ch.activeUsers > 0 ? '<span class="count-dot"></span>' : ''}
+                  <span>${ch.activeUsers || 0}</span>
+                </div>
+              </td>
+              <td>
+                <span style="color: ${duration < 60 ? '#4ecdc4' : duration < 180 ? '#f0c674' : '#e06c75'}">
+                  ${duration < 60 ? '활성' : duration < 180 ? '진행중' : '장시간'}
+                </span>
+              </td>
+              <td>${createdDate.toLocaleString('ko-KR', { 
+                month: '2-digit', 
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}</td>
+              <td>
+                <div class="actions">
+                  <button class="btn-small manage" onclick="showChannelModal('${ch.code}')">관리</button>
+                  <button class="btn-small copy" onclick="copyChannelURL('${ch.code}')">URL복사</button>
+                  <button class="btn-small delete" onclick="deleteChannel('${ch.code}')">삭제</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+        
+        updateStats();
+      } catch (error) {
+        console.error('Error loading channels:', error);
+        const tbody = document.getElementById('channelTableBody');
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 2rem; color: #e06c75;">
+              Failed to load channels. Please check your connection.
+            </td>
+          </tr>
+        `;
+      }
+    }
+    
+    // Show channel modal
+    function showChannelModal(code) {
+      const channel = channels.find(ch => ch.code === code);
+      if (!channel) return;
+      
+      currentModalChannel = channel;
+      
+      document.getElementById('modalChannelCode').textContent = code;
+      document.getElementById('viewerURL').value = `${window.location.origin}/viewer.html?channel=${code}`;
+      document.getElementById('stenoURL').value = `${window.location.origin}/editor.html?channel=${code}`;
+      
+      document.getElementById('modalViewers').textContent = `${channel.activeUsers || 0}명`;
+      document.getElementById('modalCreated').textContent = new Date(channel.createdAt).toLocaleString('ko-KR');
+      
+      const duration = Math.floor((new Date() - new Date(channel.createdAt)) / 60000);
+      document.getElementById('modalDuration').textContent = `${duration}분`;
+      
+      // Display auto close information
+      let autoCloseText = '설정 안함';
+      if (channel.autoClose) {
+        if (channel.autoClose.type === 'hours') {
+          autoCloseText = `${channel.autoClose.value}시간 후`;
+        } else if (channel.autoClose.type === 'datetime') {
+          const closeDate = new Date(channel.autoClose.value);
+          autoCloseText = closeDate.toLocaleString('ko-KR');
+        }
+      }
+      document.getElementById('modalAutoClose').textContent = autoCloseText;
+      
+      // Update type toggle buttons
+      if (channel.type === 'public') {
+        document.getElementById('publicToggle').classList.add('active');
+        document.getElementById('securedToggle').classList.remove('active');
+        document.getElementById('passkeySection').style.display = 'none';
+      } else {
+        document.getElementById('publicToggle').classList.remove('active');
+        document.getElementById('securedToggle').classList.add('active');
+        document.getElementById('passkeySection').style.display = 'block';
+      }
+      
+      document.getElementById('channelModal').classList.add('show');
+    }
+    
+    // Change channel type
+    async function changeChannelType(newType) {
+      if (!currentModalChannel) return;
+      
+      const oldType = currentModalChannel.type;
+      if (oldType === newType) {
+        showToast('이미 해당 타입입니다', 'info');
+        return;
+      }
+      
+      // Update local data
+      currentModalChannel.type = newType;
+      
+      if (newType === 'public') {
+        currentModalChannel.passkey = null;
+        document.getElementById('publicToggle').classList.add('active');
+        document.getElementById('securedToggle').classList.remove('active');
+        document.getElementById('passkeySection').style.display = 'none';
+      } else {
+        // Generate new passkey for secured channel
+        const newPasskey = Math.floor(1000 + Math.random() * 9000).toString();
+        currentModalChannel.passkey = newPasskey;
+        document.getElementById('publicToggle').classList.remove('active');
+        document.getElementById('securedToggle').classList.add('active');
+        document.getElementById('passkeySection').style.display = 'block';
+        document.getElementById('modalNewPasskey').value = '';
+      }
+      
+      // Update table immediately
+      const typeElement = document.querySelector(`#type-${currentModalChannel.code}`);
+      const passkeyElement = document.querySelector(`#passkey-${currentModalChannel.code}`);
+      
+      if (typeElement) {
+        typeElement.className = `badge ${newType}`;
+        typeElement.textContent = newType === 'public' ? '공개' : '비공개';
+      }
+      
+      if (passkeyElement) {
+        passkeyElement.innerHTML = currentModalChannel.passkey ? 
+          `<span class="passkey">${currentModalChannel.passkey}</span>` : '-';
+      }
+      
+      // Here you would call API to update channel type
+      showToast(`채널이 ${newType === 'public' ? '공개' : '비공개'}로 변경되었습니다`, 'success');
+      
+      // Update channels array
+      const channelIndex = channels.findIndex(ch => ch.code === currentModalChannel.code);
+      if (channelIndex !== -1) {
+        channels[channelIndex] = currentModalChannel;
+      }
+    }
+    
+    // Close modal
+    function closeModal() {
+      document.getElementById('channelModal').classList.remove('show');
+      currentModalChannel = null;
+    }
+    
+    // Copy URL
+    function copyURL(inputId) {
+      const input = document.getElementById(inputId);
+      input.select();
+      document.execCommand('copy');
+      showToast('URL이 복사되었습니다', 'success');
+    }
+    
+    // Copy channel URL directly
+    function copyChannelURL(code) {
+      const url = `${window.location.origin}/viewer.html?channel=${code}`;
+      navigator.clipboard.writeText(url).then(() => {
+        showToast('뷰어 URL이 복사되었습니다', 'success');
+      });
+    }
+    
+    // Update passkey
+    async function updatePasskey() {
+      const newPasskey = document.getElementById('modalNewPasskey').value;
+      if (!newPasskey || newPasskey.length !== 4) {
+        showToast('4자리 패스키를 입력하세요', 'error');
+        return;
+      }
+      
+      if (currentModalChannel) {
+        currentModalChannel.passkey = newPasskey;
+        
+        // Update table
+        const passkeyElement = document.querySelector(`#passkey-${currentModalChannel.code}`);
+        if (passkeyElement) {
+          passkeyElement.innerHTML = `<span class="passkey">${newPasskey}</span>`;
+        }
+        
+        // Update channels array
+        const channelIndex = channels.findIndex(ch => ch.code === currentModalChannel.code);
+        if (channelIndex !== -1) {
+          channels[channelIndex].passkey = newPasskey;
+        }
+      }
+      
+      showToast('패스키가 변경되었습니다', 'success');
+      document.getElementById('modalNewPasskey').value = '';
+    }
+    
+    // Extend channel
+    function extendChannel(hours) {
+      if (!currentModalChannel) return;
+      
+      // Here you would call API to extend channel
+      showToast(`채널이 ${hours}시간 연장되었습니다`, 'success');
+    }
+    
+    // Export modal channel subtitles
+    function exportModalChannelSubtitles() {
+      if (currentModalChannel) {
+        exportChannelSubtitles(currentModalChannel.code);
+      }
+    }
+    
+    // Export channel data
+    function exportChannelData() {
+      if (!currentModalChannel) return;
+      
+      const data = {
+        channel: currentModalChannel.code,
+        type: currentModalChannel.type,
+        passkey: currentModalChannel.passkey,
+        created: currentModalChannel.createdAt,
+        event: currentModalChannel.eventName,
+        autoClose: currentModalChannel.autoClose,
+        // Add accumulated text data here when available
+      };
+      
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `channel_${currentModalChannel.code}_${Date.now()}.json`;
+      a.click();
+      
+      showToast('데이터가 내보내졌습니다', 'success');
+    }
+    
+    // Export all data
+    function exportAllData() {
+      const blob = new Blob([JSON.stringify(channels, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `all_channels_${Date.now()}.json`;
+      a.click();
+      
+      showToast('전체 데이터가 내보내졌습니다', 'success');
+    }
+    
+    // Delete channel
+    async function deleteChannel(code) {
+      if (confirm(`채널 ${code}를 삭제하시겠습니까?`)) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/channel/${code}`, {
+            method: 'DELETE',
+            headers: {
+              'ngrok-skip-browser-warning': 'true'
+            }
+          });
+          
+          if (response.ok) {
+            showToast('채널이 삭제되었습니다', 'success');
+            await loadChannelList();
+          } else {
+            const result = await response.json();
+            showToast(result.error || '삭제 실패', 'error');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          showToast('서버 연결 실패', 'error');
+        }
+      }
+    }
+    
+    // Delete channel from modal
+    function deleteChannelFromModal() {
+      if (currentModalChannel) {
+        deleteChannel(currentModalChannel.code);
+        closeModal();
+      }
+    }
+    
+    // Search channels
+    function searchChannels(query) {
+      const rows = document.querySelectorAll('#channelTableBody tr');
+      query = query.toLowerCase();
+      
+      rows.forEach(row => {
+        const channelCodeElement = row.querySelector('.channel-code');
+        if (channelCodeElement) {
+          const text = row.textContent.toLowerCase();
+          row.style.display = text.includes(query) ? '' : 'none';
+        }
+      });
+    }
+    
+    // Show toast notification
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast ${type}`;
+      toast.classList.add('show');
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+    
+    // Auto-format inputs
+    document.getElementById('newChannelCode').addEventListener('input', function(e) {
+      e.target.value = e.target.value.toUpperCase();
+    });
+    
+    document.getElementById('newPasskey').addEventListener('input', function(e) {
+      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+    });
+    
+    document.getElementById('modalNewPasskey').addEventListener('input', function(e) {
+      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+    });
+    
+    // Initialize
+    generatePasskey();
+  </script>
+</body>
+</html>

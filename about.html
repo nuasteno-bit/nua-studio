@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html lang="kr" class="kr">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="format-detection" content="telephone=no, address=no, email=no">
+    <meta name="robots" content="index, follow">
+    <title>NUA STUDIO - About</title>
+    <meta name="author" content="NUA STUDIO">
+    <meta name="description" content="NUA STUDIO는 실시간 자막(라이브 캡션)과 녹취/회의록 제작을 위한 'LiveSteno / NUA STENO' 플랫폼을 개발·운영합니다.">
+    
+    <!-- Font imports -->
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Poppins:100,100italic,200,200italic,300,300italic,regular,italic,500,500italic,600,600italic,700,700italic,800,800italic,900,900italic" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Raleway:100,200,300,regular,500,600,700,800,900,100italic,200italic,300italic,italic,500italic,600italic,700italic,800italic,900italic" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Ubuntu:300,300italic,regular,italic,500,500italic,700,700italic" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xeicon@2.3.3/xeicon.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+    
+    <!-- GSAP CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollToPlugin.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/TextPlugin.min.js"></script>
+    
+    <style>
+        /* Reset CSS */
+        html, body, div, span, applet, object, iframe,
+        h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+        a, abbr, acronym, address, big, cite, code,
+        del, dfn, em, img, ins, kbd, q, s, samp,
+        small, strike, strong, sub, sup, tt, var,
+        b, u, i, center,
+        dl, dt, dd, ol, ul, li,
+        fieldset, form, label, legend,
+        table, caption, tbody, tfoot, thead, tr, th, td,
+        article, aside, canvas, details, embed, 
+        figure, figcaption, footer, header, hgroup, 
+        menu, nav, output, ruby, section, summary,
+        time, mark, audio, video {
+            margin: 0;
+            padding: 0;
+            border: 0;
+            font-size: 100%;
+            font: inherit;
+            vertical-align: baseline;
+        }
+        article, aside, details, figcaption, figure, 
+        footer, header, hgroup, menu, nav, section {
+            display: block;
+        }
+        body {
+            line-height: 1; 
+            font-family: 'Pretendard';
+        }
+        ol, ul {
+            list-style: none;
+        }
+        a {text-decoration:none; color: inherit;}
+        img {max-width: 100%; height: auto; vertical-align: top;}
+
+        /* Scroll styles */
+        html::-webkit-scrollbar {width: 8px;}
+        html::-webkit-scrollbar-thumb {background-color: #2f3542; border-radius: 10px;}
+
+        /* General styles */
+        .wrap {margin: 0 auto; width: 95%;}
+        .wrap[max='1708'] {max-width: 1708px;}
+        .wrap[max='1440'] {max-width: 1440px;}
+        .wrap[max='1920'] {max-width: 1920px;}
+
+        .viewBtn {
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: #fff; 
+            font-size: 18px; 
+            font-weight: 500; 
+            letter-spacing: 0.025em; 
+            font-family: 'Ubuntu'; 
+            position: relative; 
+            padding: calc(25/18*1em) calc(50/18*1em);
+        }
+        .viewBtn::before,
+        .viewBtn::after {
+            content: ''; 
+            position: absolute; 
+            width: 100%; 
+            height: 50%; 
+            background: #000; 
+            z-index: -1; 
+            transition: .15s;
+        }
+        .viewBtn::before {transform: translateX(calc(-25/24*1em)); left: 0; top: 0;}
+        .viewBtn::after {transform: translateX(calc(25/24*1em)); right: 0; bottom: 0;}
+        .viewBtn:hover::before {transform: translateX(0%);}
+        .viewBtn:hover::after {transform: translateX(0%);}
+
+        /* Header styles */
+        .header {
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            background: transparent; 
+            z-index: 100; 
+            padding-top: 32px;
+            transition: filter 0.3s ease;
+        }
+        .header .wrap {display: flex; align-items: center; justify-content: space-between;}
+        .header .logo {width: 122px; flex-shrink: 0; position: relative; z-index: 101;}
+        .header .logo img {width: 100%;}
+        .header .menu {font-size: 24px; display: flex; align-items: center;}
+        .header .menu ul {display: flex; align-items: center; gap: calc(120/24*1em);}
+        .header .menu li {
+            font-size: inherit; 
+            font-weight: 700; 
+            letter-spacing: 0.025em; 
+            font-family: 'Ubuntu'; 
+            color: #000; 
+            position: relative; 
+            transition: .4s;
+        }
+        .header .menu li a {position: relative; z-index: 1; padding: 5px;}
+        .header .menu li::before {
+            content: ''; 
+            z-index: -1; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            display: block; 
+            width: 0%; 
+            height: 100%; 
+            background: #00f0ff; 
+            transition: .4s;
+        }
+        .header .menu li:hover::before {width: 100%;}
+        .header .lang {
+            margin-left: calc(80/20*1em); 
+            position: relative; 
+            font-size: 20px; 
+            font-family: 'Ubuntu'; 
+            font-weight: 500; 
+            letter-spacing: -0.025em; 
+            color: #fff;
+        }
+        .header .lang_current {
+            display: flex; 
+            align-items: center; 
+            gap: calc(10/20*1em); 
+            color: #fff; 
+            background: #363638; 
+            padding: calc(8/20*1em) calc(10/20*1em); 
+            border-radius: calc(10/20*1em); 
+            cursor: pointer;
+        }
+        .header .lang_list_wrap {
+            display: none; 
+            width: 100%; 
+            position: absolute; 
+            top: 100%; 
+            left: 0;
+        }
+        .header .lang_list {
+            width: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: calc(3/20*1em); 
+            padding: calc(5/20*1em) 0; 
+            box-sizing: border-box; 
+            border-radius: calc(10/20*1em);
+        }
+        .header .lang_list a {
+            display: block; 
+            width: 100%; 
+            font-size: calc(16/20*1em); 
+            padding: calc(8/16*1em) calc(10/16*1em); 
+            box-sizing: border-box; 
+            background: #000; 
+            color: #fff; 
+            text-align: center; 
+            border-radius: calc(10/20*1em); 
+            transition: .4s;
+        }
+        .header .hamburger {
+            display: none; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            width: 25px; 
+            height: 20px; 
+            gap: 5px; 
+            position: relative; 
+            z-index: 101;
+        }
+        .header .hamburger span {
+            display: block; 
+            width: 100%; 
+            height: 2px; 
+            background: #000; 
+            transition: .4s;
+        }
+        .header.HmActive .hamburger span {position: absolute; top: 50%; margin-top: -1px;}
+        .header.HmActive .hamburger span:first-child {transform: rotate(45deg);}
+        .header.HmActive .hamburger span:nth-child(2) {opacity: 0;}
+        .header.HmActive .hamburger span:last-child {transform: rotate(-45deg);}
+
+        /* Chat button - Enhanced gradient */
+        aside.chat {
+            cursor: pointer; 
+            position: fixed; 
+            font-size: 26px; 
+            bottom: clamp(15px, 15/1920*100vw, 20px); 
+            right: clamp(15px, 30/1920*100vw, 30px); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        aside.chat:hover {
+            transform: scale(1.1);
+        }
+        aside.chat .logo {
+            position: relative; 
+            width: calc(78/26*1em); 
+            height: calc(78/26*1em); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);
+        }
+        aside.chat .logo::before, 
+        aside.chat .logo::after {
+            content: ''; 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            display: block; 
+            border-radius: 50%;
+        }
+        aside.chat .logo::before {
+            width: 100%; 
+            height: 100%; 
+            background-image: linear-gradient(131deg, #00f0ff, #a259ff); 
+            background-clip: border-box; 
+            background-origin: border-box; 
+            border: 2px solid transparent;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        aside.chat .logo::after {
+            background: linear-gradient(131deg, #00f0ff, #a259ff); 
+            z-index: 1; 
+            width: calc(70/78*100%); 
+            height: calc(70/78*100%);
+        }
+        aside.chat .logo span {
+            position: relative; 
+            z-index: 2; 
+            color: #fff;
+            font-size: 1.2em;
+        }
+
+        /* Footer styles */
+        .footer {background: #000; padding: 80px 0 40px; position: relative;}
+        .footer .toTop {
+            position: absolute; 
+            top: 0; 
+            left: 50%; 
+            transform: translate(-50%, -40%); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            width: 90px; 
+            height: 90px; 
+            border-radius: 50%; 
+            background: #000; 
+            z-index: 10; 
+            cursor: pointer;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 2px solid #00f0ff;
+        }
+        .footer .toTop:hover {
+            transform: translate(-50%, -45%);
+            background: #00f0ff;
+        }
+        .footer .toTop::after {
+            content: '↑';
+            color: #00f0ff;
+            font-size: 32px;
+            font-weight: bold;
+            line-height: 1;
+            transition: color 0.3s ease;
+        }
+        .footer .toTop:hover::after {
+            color: #000;
+        }
+        .footer .wrap {display: flex; flex-direction: column; align-items: center;}
+        .footer .logo {padding-bottom: 50px;}
+        .footer .logo img {width: 180px;}
+        .footer .info {
+            padding-bottom: calc(45/22*1em); 
+            text-align: center; 
+            word-break: keep-all; 
+            font-size: 22px; 
+            font-weight: 500; 
+            letter-spacing: 0.02em; 
+            font-family: 'Pretendard'; 
+            color: #fff; 
+            line-height: calc(34/22*1em);
+        }
+        .footer .copy {
+            text-align: center; 
+            font-size: 18px; 
+            letter-spacing: 0.02em; 
+            font-family: 'Pretendard'; 
+            color: #666;
+        }
+
+        /* About page specific styles */
+        .about {overflow-x: hidden;}
+
+        /* Section 1 - Intro with animated sound wave icon */
+        .about .s1 {
+            position: relative; 
+            overflow: hidden; 
+            height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+        }
+        .about .s1 .introVisual {
+            opacity: 0; 
+            position: relative; 
+            font-size: clamp(100px, 12vw, 160px); 
+            font-weight: 700; 
+            letter-spacing: 0.01em; 
+            font-family: 'Poppins'; 
+            color: #000; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            gap: 10px;
+        }
+        .about .s1 .introVisual .icon {
+            width: 0; 
+            height: calc(100/160*1em); 
+            overflow: visible;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        /* Sound wave animation - Bigger and clearer */
+        .sound-wave {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            height: 100px;
+        }
+        .sound-bar {
+            width: 10px;
+            background: #000;
+            border-radius: 5px;
+            animation: sound-wave 1.5s ease-in-out infinite;
+        }
+        .sound-bar:nth-child(1) {
+            height: 35px;
+            animation-delay: 0s;
+        }
+        .sound-bar:nth-child(2) {
+            height: 60px;
+            animation-delay: 0.1s;
+        }
+        .sound-bar:nth-child(3) {
+            height: 85px;
+            animation-delay: 0.2s;
+        }
+        .sound-bar:nth-child(4) {
+            height: 60px;
+            animation-delay: 0.3s;
+        }
+        .sound-bar:nth-child(5) {
+            height: 35px;
+            animation-delay: 0.4s;
+        }
+        @keyframes sound-wave {
+            0%, 100% {
+                transform: scaleY(1);
+            }
+            50% {
+                transform: scaleY(1.2);
+            }
+        }
+        
+        .about .s1 .introVisual span {
+            padding-left: 0;
+        }
+        .about .s1 .introVisual span > * {
+            opacity: 0;
+            display: inline-block;
+        }
+        .about .s1 .introVisual span > *:nth-child(1) {transform: translateY(-10%);}
+        .about .s1 .introVisual span > *:nth-child(2) {transform: translateY(10%);}
+        .about .s1 .introVisual span > *:nth-child(3) {transform: translateY(-10%);}
+        .about .s1 .introVisual span > *:nth-child(4) {transform: translateY(10%);}
+        .about .s1 .scroll {
+            z-index: 1; 
+            position: absolute; 
+            bottom: 0; 
+            left: 50%; 
+            transform: translate(-50%, 50%); 
+            width: 200px;
+            opacity: 1;
+        }
+        .about .s1 .scroll::after {
+            content: ''; 
+            width: 100%; 
+            height: 20px; 
+            background: #000; 
+            position: absolute; 
+            top: 50%; 
+            left: 0; 
+            transform: translateY(-100%); 
+            z-index: 1;
+        }
+        .about .s1 .scroll svg {
+            animation: scroll 10s linear infinite; 
+            width: 100%; 
+            fill: #fff; 
+            height: auto; 
+            transform-origin: center;
+        }
+        @keyframes scroll {
+            0% {transform: rotate(0deg);}
+            100% {transform: rotate(360deg);}
+        }
+        .about .s1 .scroll span {
+            font-size: 23px; 
+            position: absolute; 
+            top: 40%; 
+            left: 50%; 
+            transform: translate(-50%, -100%); 
+            color: #fff; 
+            animation: scroll_arrow 2s ease-in-out infinite;
+        }
+        @keyframes scroll_arrow {
+            0% {transform: translate(-50%, -100%);}
+            50% {transform: translate(-50%, -130%);}
+            100% {transform: translate(-50%, -100%);}
+        }
+        .about .s1 .circle {
+            position: absolute; 
+            bottom: 0; 
+            left: 50%; 
+            transform: translate(-50%, 85%); 
+            width: calc(1752/1920*100vw);
+        }
+        .about .s1 .circle:before {
+            content: ''; 
+            width: 100%; 
+            padding-top: 100%; 
+            display: block; 
+            background: #000; 
+            border-radius: 50%;
+        }
+
+        /* Section 2 - Profile */
+        .about .s2 {background: #000; color: #fff; position: relative;}
+        .about .s2::after {
+            content: ''; 
+            width: 100%; 
+            height: 2px; 
+            background: #000; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            transform: translateY(-50%); 
+            z-index: 1;
+        }
+        .about .s2 .slogan {padding-top: 330px;}
+        .about .s2 .slogan p {
+            font-family: "Poppins"; 
+            font-size: 160px; 
+            letter-spacing: -0.025em; 
+            color: #535353; 
+            line-height: calc(160/160*1em);
+        }
+        .about .s2 .slogan p + p {margin-top: calc(10/160*1em);}
+        .about .s2 .slogan p:nth-child(1) {text-align: left; transform: translateX(-70%);}
+        .about .s2 .slogan p:nth-child(2) {text-align: right; transform: translateX(70%);}
+        .about .s2 .slogan p b {
+            font-weight: 700; 
+            position: relative; 
+            display: inline-block; 
+            color: #ffffff1e;
+        }
+        .about .s2 .slogan p b small {
+            opacity: 0; 
+            font-family: 'Pretendard'; 
+            letter-spacing: -0.025em; 
+            line-height: normal; 
+            white-space: nowrap; 
+            font-weight: 500; 
+            font-size: 20px;
+            font-weight: 500; 
+            color: #00f0ff; 
+            position: absolute; 
+            left: 50%; 
+            transform: translateX(-50%);
+        }
+        .about .s2 .slogan p:nth-child(1) small {
+            bottom: 100%; 
+            margin-left: calc(-40/20*1em); 
+            margin-bottom: calc(20/20*1em);
+        }
+        .about .s2 .slogan p:nth-child(2) small {
+            top: 100%; 
+            margin-left: calc(40/20*1em); 
+            margin-top: calc(20/20*1em);
+        }
+        /* Profile section - with initial states for animation */
+        .about .s2 .profile {display: flex; align-items: flex-start; padding-top: 150px;}
+        .about .s2 .profile .imgWrap {
+            display: flex; 
+            justify-content: center; 
+            width: calc(740/1440*100%);
+        }
+        .about .s2 .profile .imgWrap .img {
+            max-width: 435px;
+            will-change: transform, opacity;
+        }
+        .about .s2 .profile .imgWrap .img img {width: 100%;}
+        .about .s2 .profile .info {padding-top: calc(115/1440*100%); flex-grow: 1;}
+        .about .s2 .profile .info .name {display: flex; flex-direction: column; align-items: flex-start;}
+        .about .s2 .profile .info .name small,
+        .about .s2 .profile .info .name b,
+        .about .s2 .profile .info .his dl dt span,
+        .about .s2 .profile .info .his dl dt b,
+        .about .s2 .profile .info .his dl dd ul li {
+            will-change: transform, opacity;
+        }
+        .about .s2 .profile .info .name small {
+            display: inline-block; 
+            font-family: 'Poppins'; 
+            font-size: 14px; 
+            color: #fff; 
+            opacity: .32; 
+            letter-spacing: 0.01em;
+        }
+        .about .s2 .profile .info .name b {
+            display: inline-block; 
+            font-family: 'Poppins'; 
+            font-size: 61px; 
+            font-weight: 700; 
+            color: #fff; 
+            letter-spacing: -0.01em; 
+            padding-top: calc(5/61*1em);
+        }
+        .about .s2 .profile .info .his {padding-bottom: 130px;}
+        .about .s2 .profile .info .his dl {display: flex; flex-direction: column; align-items: flex-start;}
+        .about .s2 .profile .info .his dl dt {
+            display: flex; 
+            flex-direction: column; 
+            font-size: 24px; 
+            padding-top: calc(60/24*1em);
+        }
+        .about .s2 .profile .info .his dl dt span {
+            font-family: 'Poppins'; 
+            font-size: 14px; 
+            color: #00f0ff; 
+            letter-spacing: 0.025em;
+        }
+        .about .s2 .profile .info .his dl dt b {
+            font-family: 'Poppins'; 
+            font-size: inherit; 
+            font-weight: 700; 
+            color: #fff; 
+            letter-spacing: 0.025em; 
+            padding-top: calc(10/24*1em); 
+            padding-bottom: calc(20/24*1em);
+            line-height: 1.3;
+        }
+        .about .s2 .profile .info .his dl dt b em {font-family: 'Pretendard';}
+        .about .s2 .profile .info .his dl dd {
+            font-size: 16px; 
+            color: #fff; 
+            letter-spacing: 0.025em; 
+            font-family: 'Pretendard'; 
+            font-weight: 300;
+        }
+        .about .s2 .profile .info .his dl dd ul {list-style: none;}
+        .about .s2 .profile .info .his dl dd ul li {
+            word-break: keep-all; 
+            counter-increment: custom; 
+            line-height: calc(26/16*1em); 
+            display: flex; 
+            align-items: flex-start;
+        }
+        .about .s2 .profile .info .his dl dd ul li + li {margin-top: calc(15/16*1em);}
+        .about .s2 .profile .info .his dl dd ul li:before {
+            content: "0"counter(custom); 
+            text-align: center; 
+            font-family: 'Poppins'; 
+            font-size: inherit; 
+            color: inherit; 
+            letter-spacing: 0.025em; 
+            font-weight: inherit; 
+            display: inline-block; 
+            width: calc(25/16*1em); 
+            margin-right: calc(20/16*1em);
+            white-space: nowrap;
+        }
+        .about .s2 .profile .info .his dl dd ul li:first-child {counter-reset: custom;}
+        .about .s2 .profile .info .his dl dd ul li p {display: inline-block;}
+
+        /* Section 3 */
+        .about .s3 {position: relative; padding-top: 310px; padding-bottom: 175px;}
+        .about .s3 svg {display: none;}
+        .about .s3 .objWrap {
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            filter: url(#gooey);
+        }
+        .about .s3 .obj {position: absolute; background: linear-gradient(135deg, #00f0ff, #a259ff); border-radius: 50%; opacity: 0.3;}
+        .about .s3 .obj._big {
+            width: 360px; 
+            height: 360px; 
+            top: 125px; 
+            right: 15px; 
+            animation: obj_big 8s ease-in-out infinite;
+        }
+        .about .s3 .obj._small {
+            width: 100px; 
+            height: 100px; 
+            top: 480px; 
+            right: 15px; 
+            animation: obj_small 5s ease-in-out infinite;
+        }
+        @keyframes obj_big {
+            0% {transform: scale(1) translate(0, 0);}
+            50% {transform: scale(0.9) translate(-30px, -20px);}
+            100% {transform: scale(1) translate(0, 0);}
+        }
+        @keyframes obj_small {
+            0% {transform: scale(1) translate(0, 0);}
+            50% {transform: scale(1.1) translate(-50px, -40px);}
+            100% {transform: scale(1) translate(0, 0);}
+        }
+        .about .s3 .num {
+            position: absolute; 
+            font-size: 230px; 
+            top: 180px; 
+            left: 0%; 
+            width: calc(790/1920*100vw); 
+            height: calc(204/230*1em); 
+            text-align: right;
+        }
+        .about .s3 .num::after {
+            content: ''; 
+            width: 100%; 
+            height: 7px; 
+            background: #000; 
+            position: absolute; 
+            bottom: 0; 
+            right: 0; 
+            transform: translateY(calc(15/230*1em)) translateX(calc(-13.75/230*1em)); 
+            z-index: 1;
+        }
+        .about .s3 .num span {
+            font-family: 'Poppins'; 
+            font-weight: 600; 
+            letter-spacing: -0.025em; 
+            color: #000; 
+            display: inline-block; 
+            height: calc(195/230*1em); 
+            position: relative;
+        }
+        .about .s3 .num span::after {
+            content: ''; 
+            width: calc(118/230*1em); 
+            height: calc(118/230*1em); 
+            background: linear-gradient(135deg, #00f0ff, #a259ff); 
+            border-radius: 50%; 
+            position: absolute; 
+            top: calc(25/230*1em); 
+            left: calc(20/230*1em); 
+            transform: translate(-50%, -50%); 
+            z-index: -1; 
+            animation: num_big 5s ease-in-out infinite;
+            opacity: 0.3;
+        }
+        @keyframes num_big {
+            0% {transform: scale(1) translate(-50%, -50%);}
+            50% {transform: scale(1.1) translate(-50%, calc(-50% - (20px * -1)));}
+            100% {transform: scale(1) translate(-50%, -50%);}
+        }
+        .about .s3 .wrap {position: relative; z-index: 1;}
+        .about .s3 .txt {width: calc(780/1440*100%); margin-left: auto;}
+        .about .s3 .txt > span {
+            font-family: 'Poppins'; 
+            font-size: 18px; 
+            font-weight: 500; 
+            letter-spacing: -0.01em; 
+            color: #000; 
+            display: inline-block;
+        }
+        .about .s3 .txt .slogan {
+            font-family: 'Pretendard'; 
+            line-height: calc(94/64*1em); 
+            font-size: 64px; 
+            font-weight: 700; 
+            letter-spacing: -0.025em; 
+            color: #aeaeb1; 
+            padding-top: calc(20/64*1em); 
+            padding-bottom: calc(60/64*1em);
+        }
+        .about .s3 .txt .slogan b {color: #000;}
+        .about .s3 .txt dl dt {
+            font-family: 'Pretendard'; 
+            font-size: 26px; 
+            font-weight: 700; 
+            letter-spacing: -0.025em; 
+            color: #000; 
+            padding-bottom: calc(25/26*1em); 
+            line-height: calc(39/26*1em);
+        }
+        .about .s3 .txt dl dd {
+            font-family: 'Pretendard'; 
+            font-size: 16px; 
+            letter-spacing: -0.025em; 
+            color: #000; 
+            line-height: calc(26/16*1em);
+        }
+        .about .s3 .txt dl dd p + p {margin-top: calc(10/16*1em);}
+        .about .s3 .txt .btn .viewBtn {
+            margin-left: calc(25/24*1em); 
+            margin-top: calc(54/24*1em);
+        }
+
+        /* Section 4 - Key Values */
+        .about .s4 .keyWrap {display: flex; flex-direction: column;}
+        .about .s4 .keyWrap dl {display: flex; align-items: flex-start;}
+        .about .s4 .keyWrap dl dt {
+            width: calc(600/1440*100%); 
+            flex-shrink: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: flex-start;
+        }
+        .about .s4 .keyWrap dl dt small {
+            font-family: 'Poppins'; 
+            padding-left: calc(3/14*1em); 
+            font-size: 14px; 
+            font-weight: 500; 
+            color: #000; 
+            letter-spacing: 0.01em; 
+            position: relative;
+        }
+        .about .s4 .keyWrap dl dt small::after {
+            content: ''; 
+            position: absolute; 
+            top: 50%; 
+            right: 0; 
+            transform: translate(60%, -55%); 
+            font-size: calc(36/14*1em); 
+            font-weight: bold; 
+            font-family: 'Pretendard'; 
+            color: #000; 
+            opacity: .21; 
+            letter-spacing: -0.025em;
+        }
+        .about .s4 .keyWrap dl:nth-child(1) dt small::after {content: '01';}
+        .about .s4 .keyWrap dl:nth-child(2) dt small::after {content: '02';}
+        .about .s4 .keyWrap dl:nth-child(3) dt small::after {content: '03';}
+        .about .s4 .keyWrap dl dt p {
+            font-family: 'Pretendard'; 
+            font-size: 38px; 
+            font-weight: 700; 
+            letter-spacing: -0.025em; 
+            color: #000; 
+            padding-top: calc(18/38*1em); 
+            line-height: calc(59/38*1em);
+        }
+        .about .s4 .keyWrap dl dd {
+            border-top: 1px solid #565656; 
+            flex-grow: 1; 
+            padding: 0 calc(10/1440*100%); 
+            margin-top: 5px; 
+            padding-bottom: 110px;
+        }
+        .about .s4 .keyWrap dl dd b {
+            font-family: 'Pretendard'; 
+            font-size: 20px; 
+            font-weight: 700; 
+            letter-spacing: -0.025em; 
+            color: #000;  
+            margin-top: calc(40/20*1em); 
+            margin-bottom: calc(15/20*1em); 
+            text-decoration: underline; 
+            text-decoration-color: #00f0ff; 
+            text-underline-offset: calc(-7/20*1em); 
+            text-decoration-thickness: calc(10/20*1em); 
+            display: inline-block;
+        }
+        .about .s4 .keyWrap dl dd p {
+            font-family: 'Pretendard'; 
+            font-size: 16px; 
+            letter-spacing: -0.025em; 
+            color: #000; 
+            line-height: calc(26/16*1em);
+        }
+        .about .s4 .keyWrap dl dd p + p {margin-top: calc(10/16*1em);}
+
+        /* Section 5 - Partners */
+        .s5 {background: #fff; padding: 100px 0 180px;}
+        .s5 .titleBox {display: flex; flex-direction: column; align-items: center;}
+        .s5 .titleBox span {
+            font-family: 'Pretendard'; 
+            font-size: 16px; 
+            font-weight: 700; 
+            letter-spacing: -0.025em; 
+            color: #000; 
+            display: inline-block;
+        }
+        .s5 .titleBox b {
+            font-family: 'Poppins'; 
+            font-size: 76px; 
+            font-weight: 700; 
+            letter-spacing: -0.01em; 
+            color: #000; 
+            display: inline-block; 
+            padding-top: calc(30/76*1em); 
+            padding-bottom: calc(100/76*1em);
+        }
+        .s5 .mqWrap {position: relative; overflow: hidden;}
+        .s5 .mqWrap::after {
+            content: ''; 
+            width: 100%; 
+            height: 130%; 
+            position: absolute; 
+            top: 50%; 
+            left: 0; 
+            transform: translateY(-50%); 
+            z-index: 1; 
+            box-shadow: inset 0 0 25px 50px rgb(255, 255, 255);
+        }
+        .s5 .marquee {width: 100%; position: relative; overflow: hidden;}
+        .s5 .marquee + .marquee {margin-top: 40px;}
+        .s5 .marquee .absol {width: 100%; display: flex; align-items: center;}
+        .s5 .marquee .absol .mar_ch {display: flex; align-items: center;}
+        .s5 .marquee .absol .mar_ch img {
+            height: 65px; 
+            flex-shrink: 0; 
+            padding-right: 60px; 
+            max-width: none;
+        }
+
+        /* Responsive styles */
+        @media screen and (max-width: 820px) {
+            .header .menu {
+                box-sizing: border-box; 
+                display: none; 
+                opacity: 0; 
+                position: fixed; 
+                left: 0; 
+                top: 0; 
+                width: 100vw; 
+                height: 100vh; 
+                transform: translateX(100%); 
+                background: #000; 
+                z-index: 100; 
+                padding-top: 100px; 
+                transition: .4s allow-discrete;
+            }
+            .header.HmActive .menu {
+                display: block; 
+                opacity: 1; 
+                transform: translateX(0%);
+            }
+            .header .menu ul {
+                flex-direction: column; 
+                align-items: center; 
+                gap: 0px;
+            }
+            .header .menu li {
+                font-size: 20px; 
+                border-top: 1px solid #333; 
+                width: 100%;
+                color: #fff;
+            }
+            .header .menu li a {
+                padding: 10px 2.5%; 
+                display: block; 
+                box-sizing: border-box; 
+                width: 100%;
+            }
+            .header .hamburger {display: flex;}
+            .header .lang {
+                position: absolute; 
+                bottom: 0; 
+                left: 0; 
+                margin-left: calc(30/16*1em); 
+                margin-bottom: calc(30/16*1em); 
+                font-size: 16px;
+            }
+            .header .lang .lang_list_wrap {
+                top: auto; 
+                bottom: 100%;
+            }
+            .about .s2 .slogan {padding: 90px 10%;}
+            .about .s2 .slogan p {font-size: clamp(50px, 85/820*100vw, 85px);}
+            .about .s2 .profile {padding-top: 50px; flex-direction: column; align-items: center;}
+            .about .s3 {padding-top: 340px;}
+            .about .s4 .keyWrap dl {flex-direction: column;}
+            .about .s4 .keyWrap dl dt {width: 100%;}
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="wrap" max="1708">
+            <div class="logo">
+                <a href="/">
+                    <svg viewBox="0 0 122 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M0 25C0 11.193 11.193 0 25 0h72c13.807 0 25 11.193 25 25s-11.193 25-25 25H25C11.193 50 0 38.807 0 25z" fill="#000"/>
+                        <text x="61" y="32" text-anchor="middle" fill="white" font-family="Poppins" font-size="20" font-weight="700">NUA</text>
+                    </svg>
+                </a>
+            </div>
+            <div class="menu">
+                <ul>
+                    <li><a href="/kor/about">NUA STUDIO</a></li>
+                    <li><a href="/kor/portfolio">PORTFOLIO</a></li>
+                    <li><a href="/kor/contact">CONTACT</a></li>
+                    <li><a href="/kor/recruit">RECRUIT</a></li>
+                </ul>
+                <div class="lang">
+                    <div class="lang_current">
+                        <i class="xi-globus"></i>
+                        <span>KR</span>
+                        <i class="xi-angle-down"></i>
+                    </div>
+                    <div class="lang_list_wrap">
+                        <div class="lang_list">
+                            <a href="javascript:void(0)" onclick="alert('준비중입니다.')">EN</a>
+                            <a href="javascript:void(0)" onclick="alert('준비중입니다.')">JP</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Chat button with neon gradient -->
+    <aside class="chat">
+        <a href="/kor/contact/" class="logo" title="문의하기">
+            <span>
+                <i class="ri-chat-3-line"></i>
+            </span>
+        </a>
+    </aside>
+
+    <!-- Main Content -->
+    <div id="smooth-wrapper">
+        <div id="smooth-content">
+            <main class="sub about">
+                <!-- Section 1: Intro Visual with animated sound wave -->
+                <section class="s1">
+                    <div class="wrap" max="1440">
+                        <div class="introVisual">
+                            <div class="icon">
+                                <div class="sound-wave">
+                                    <div class="sound-bar"></div>
+                                    <div class="sound-bar"></div>
+                                    <div class="sound-bar"></div>
+                                    <div class="sound-bar"></div>
+                                    <div class="sound-bar"></div>
+                                </div>
+                            </div>
+                            <span><span>N</span><span>U</span><span>A</span><span></span></span>
+                        </div>
+                    </div>
+
+                    <div class="scroll">
+                        <svg viewBox="0 0 100 100">
+                            <defs>
+                                <path id="circle"
+                                d="
+                                    M 50, 50
+                                    m -37, 0
+                                    a 37,37 0 1,1 74,0
+                                    a 37,37 0 1,1 -74,0"/>
+                            </defs>
+                            <text font-size="7.8" fill="#fff">
+                                <textPath href="#circle">SCROLL DOWN SCROLL DOWN SCROLL DOWN SCROLL DOWN</textPath>
+                            </text>
+                        </svg>
+                        <span><i class="xi-long-arrow-down"></i></span>
+                    </div>
+                    <div class="circle"></div>
+                </section>
+
+                <!-- Section 2: Profile / Intro -->
+                <section class="s2">
+                    <div class="wrap" max="1440">
+                        <div class="slogan">
+                            <p>Let's <b>NUA STUDIO<small>누아스튜디오와 함께하다</small></b> with</p>
+                            <p>the <b>Live Caption<small>모든 순간에 실시간 자막을</small></b></p>
+                        </div>
+
+                        <div class="profile">
+                            <div class="imgWrap">
+                                <div class="img">
+                                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400" alt="profile">
+                                </div>
+                            </div>
+
+                            <div class="info">
+                                <div class="name">
+                                    <small>Platform / Studio</small>
+                                    <b>NUA STUDIO</b>
+                                </div>
+                                
+                                <div class="his">
+                                    <dl>
+                                        <dt>
+                                            <span>2019–NOW</span>
+                                            <b>LiveSteno · NUA STENO</b>
+                                        </dt>
+                                        <dd>
+                                            <ul>
+                                                <li><p>현장용 실시간 자막 플랫폼 개발(속기-뷰어-중계 전체 파이프라인)</p></li>
+                                                <li><p>2인1조 협업 속기 에디터·스피커 라벨·매크로 워크플로우 구축</p></li>
+                                                <li><p>웹 뷰어·일렉트론 오버레이·투명 디스플레이(HDMI) 데모 제작</p></li>
+                                            </ul>
+                                        </dd>
+                                    </dl>
+                                    <dl>
+                                        <dt>
+                                            <span>2017–2019</span>
+                                            <b><em>On-site / Remote</em> Stenography</b>
+                                        </dt>
+                                        <dd>
+                                            <ul>
+                                                <li><p>회의/포럼/공연 등 현장 기록 · 원격 속기 경험 축적, 실무 프로세스 표준화</p></li>
+                                            </ul>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 3: Vision -->
+                <section class="s3">
+                    <div class="objWrap">
+                        <div class="obj _big"></div>
+                        <div class="obj _small"></div>
+                    </div>
+                    <svg>
+                        <filter id="gooey">
+                            <feGaussianBlur in="SourceGraphic" stdDeviation="25" />
+                            <feColorMatrix values="
+                                        1 0 0 0 0
+                                        0 1 0 0 0
+                                        0 0 1 0 0
+                                        0 0 0 90 -25" />
+                        </filter>
+                    </svg>
+
+                    <div class="num">
+                        <span>No.1</span>
+                    </div>
+
+                    <div class="wrap" max="1440">
+                        <div class="txt">
+                            <span>About</span>
+                            <p class="slogan">
+                                우리는 <b>NO.1 실시간 자막</b><br>
+                                <b>솔루션 스튜디오</b>입니다.
+                            </p>
+
+                            <dl>
+                                <dt>NUA STUDIO · LiveSteno</dt>
+                                <dd>
+                                    <p>현장과 원격 어디서든 빠르게 세팅되어 즉시 자막을 제공합니다.</p>
+                                    <p>발표자 속도나 환경 변화에도 끊기지 않게, 청중이 읽기 쉬운 품질을 끝까지 유지합니다.</p>
+                                </dd>
+                            </dl>
+
+                            <div class="btn">
+                                <a href="/kor/contact" class="viewBtn">
+                                    <span>CONTACT</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 4: Key Strengths -->
+                <section class="s4">
+                    <div class="wrap" max="1440">
+                        <div class="keyWrap">
+                            <dl>
+                                <dt>
+                                    <small>KEY STRENGTH</small>
+                                    <p>빠른 세팅<br>안정적 운영</p>
+                                </dt>
+                                <dd>
+                                    <b>&nbsp;빠른 세팅, 안정적 운영&nbsp;</b>
+                                    <p>장비를 최소화해 현장 도착 후 바로 시작합니다.</p>
+                                    <p>발화자 라벨·타임코드 등 편의 기능으로 진행과 기록이 매끄럽습니다.</p>
+                                    <p>예기치 않은 상황에서도 즉시 복구·동기화로 중단 없이 진행합니다.</p>
+                                </dd>
+                            </dl>
+                            <dl>
+                                <dt>
+                                    <small>KEY STRENGTH</small>
+                                    <p>긴 행사에도<br>끊김 없는 품질</p>
+                                </dt>
+                                <dd>
+                                    <b>&nbsp;처음부터 끝까지 일정한 품질&nbsp;</b>
+                                    <p>수 시간에 걸친 행사에서도 안정적으로 유지됩니다.</p>
+                                    <p>청중이 읽기 쉬운 자막을 지속적으로 제공합니다.</p>
+                                </dd>
+                            </dl>
+                            <dl>
+                                <dt>
+                                    <small>KEY STRENGTH</small>
+                                    <p>장소 제약 없이<br>바로 출력</p>
+                                </dt>
+                                <dd>
+                                    <b>&nbsp;어떤 현장에도 맞는 출력 옵션&nbsp;</b>
+                                    <p>웹 브라우저/전용 오버레이/투명 디스플레이(데모) 등 상황에 맞게 선택합니다.</p>
+                                    <p>글꼴·색상·배경 투명도 프리셋으로 어떤 장소에서도 시인성을 확보합니다.</p>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 5: Partners -->
+                <section class="s5">
+                    <div class="wrap" max="1440">
+                        <div class="titleBox">
+                            <span>누아와 함께한 기관/기업</span>
+                            <b>Our Partners</b>
+                        </div>
+
+                        <div class="mqWrap">
+                            <!-- marquee 1 -->
+                            <div class="marquee _1">
+                                <div class="absol">
+                                    <div class="mar_ch">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+1" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+2" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+3" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+4" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+5" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+6" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+7" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+8" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+9" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+10" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+11" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+12" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+13" alt="">
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- marquee 2 -->
+                            <div class="marquee _2">
+                                <div class="absol"> 
+                                    <div class="mar_ch">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+14" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+15" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+16" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+17" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+18" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+19" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+20" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+21" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+22" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+23" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+24" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+25" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+26" alt="">
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- marquee 3 -->
+                            <div class="marquee _3">
+                                <div class="absol">
+                                    <div class="mar_ch">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+27" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+28" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+29" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+30" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+31" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+32" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+33" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+34" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+35" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+36" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+37" alt="">
+                                        <img src="https://via.placeholder.com/150x65/fff/000?text=Partner+38" alt="">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <!-- Footer with neon blue accent -->
+            <footer class="footer">
+                <div class="toTop"></div>
+                <div class="wrap" max="1920">
+                    <div class="logo">
+                        <svg viewBox="0 0 122 50" fill="none" xmlns="http://www.w3.org/2000/svg" width="180">
+                            <path d="M0 25C0 11.193 11.193 0 25 0h72c13.807 0 25 11.193 25 25s-11.193 25-25 25H25C11.193 50 0 38.807 0 25z" fill="#fff"/>
+                            <text x="61" y="32" text-anchor="middle" fill="black" font-family="Poppins" font-size="20" font-weight="700">NUA</text>
+                        </svg>
+                    </div>
+                    
+                    <div class="info">
+                        <p>contact@nua.studio</p>
+                        <p>Seoul, Republic of Korea</p>
+                    </div>
+                    <div class="copy">
+                        <p>Copyright©2025 NUA STUDIO. All rights reserved.</p>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // Interactive logic preserved
+        gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+
+        // Header interactions
+        $('.header .hamburger').on('click', function() {
+            $('.header').toggleClass('HmActive');
+        });
+
+        $('.header .lang_current').on('click', function() {
+            $('.lang .lang_list_wrap').slideToggle(200);
+        });
+
+        $('.footer .toTop').on('click', function() {
+            gsap.to(window, {
+                scrollTo: 0,
+                duration: 1,
+                ease: 'power1.inOut'
+            });
+        });
+
+        // Section 1 animations - updated for icon
+        gsap.timeline()
+        .to('.s1 .introVisual', {opacity: 1, duration: .8})
+        .to('.s1 .introVisual .icon', {width: 'calc(120/160*1em)', duration: .6}, '-=80%')
+        .to('.about .s1 .introVisual span', {paddingLeft: 'calc(10/160*1em)', duration: .6}, '-=100%')
+        .to('.about .s1 .introVisual span > *', {transform: 'translateY(0)', opacity: 1, duration: .8, stagger: .1});
+
+        gsap.timeline({
+            scrollTrigger: {
+                trigger: '.about .s1',
+                start: 'top top',
+                end: 'bottom 50%',
+                scrub: 1
+            }
+        })
+        .to('.about .s1 .scroll', {opacity: 0})
+        .to('.about .s1 .circle', {width: '250%'},'-=100%')
+        .to('header', {filter: 'invert(1)'})
+
+        // Section 2 animations
+        gsap.utils.toArray('.about .s2 .slogan p').forEach(el => {
+            gsap.timeline({
+                scrollTrigger: {
+                    trigger: '.about .s2 .slogan',
+                    start: 'top 100%',
+                    end: 'bottom 30%',
+                    scrub: 1
+                }
+            })
+            .to('header', {filter: 'invert(0)'})
+            .to(el, {x: 0})
+            .to(el.querySelector('b'), {color: '#fff'}, '-=30%')
+            .to(el.querySelector('b small'), {opacity: 1, margin: '0'}, '-=90%')
+        })
+
+        gsap.from('.about .s2 .profile .imgWrap .img', {
+            opacity: 0, duration: .8,
+            scrollTrigger: {
+                trigger: '.about .s2 .profile .imgWrap .img',
+                start: 'top 90%',
+                end: 'bottom 90%',
+                toggleActions: 'play none none reverse'
+            }
+        })
+
+        // Section 3 animations
+        ScrollTrigger.create({
+            trigger: '.about .s3',
+            start: 'top 30%',
+            end: 'top 30%',
+            onEnter: () => {
+                gsap.to('header', {filter: 'invert(0)'})
+            },
+            onEnterBack: () => {
+                gsap.to('header', {filter: 'invert(1)'})
+            }
+        })
+
+        // No.1 animation
+        gsap.timeline({
+            scrollTrigger: {
+                trigger: '.about .s3',
+                start: 'top 80%',
+                end: 'bottom 80%',
+                toggleActions: 'play none none reverse'
+            }
+        })
+        .from('.about .s3 .num', {x: '-100%', duration: .6})
+        .from('.about .s3 .num span', {x: '-100%', opacity: 0, duration: 1.4, ease: 'bounce.out'}, '-=10%')
+
+        // "About" text fade in
+        gsap.from('.about .s3 .txt > span', {
+            opacity: 0, 
+            y: 30, 
+            duration: .8,
+            scrollTrigger: {
+                trigger: '.about .s3 .txt > span',
+                start: 'top 85%',
+                end: 'bottom 85%',
+                toggleActions: 'play none none reverse'
+            }
+        })
+
+        // Slogan text sequential fade in
+        const sloganTimeline = gsap.timeline({
+            scrollTrigger: {
+                trigger: '.about .s3 .txt .slogan',
+                start: 'top 85%',
+                end: 'bottom 85%',
+                toggleActions: 'play none none reverse'
+            }
+        });
+
+        // Split the slogan text for sequential animation
+        const sloganElement = document.querySelector('.about .s3 .txt .slogan');
+        if (sloganElement) {
+            const sloganHTML = sloganElement.innerHTML;
+            // Wrap each part in spans for animation
+            sloganElement.innerHTML = sloganHTML
+                .replace('우리는', '<span class="s3-text-1">우리는</span>')
+                .replace('NO.1 실시간 자막', '<span class="s3-text-2">NO.1 실시간 자막</span>')
+                .replace('솔루션 스튜디오', '<span class="s3-text-3">솔루션 스튜디오</span>')
+                .replace('입니다.', '<span class="s3-text-4">입니다.</span>');
+
+            // Animate each span sequentially
+            sloganTimeline
+                .from('.s3-text-1', {opacity: 0, y: 20, duration: .5})
+                .from('.s3-text-2', {opacity: 0, y: 20, duration: .6}, '-=0.2')
+                .from('.s3-text-3', {opacity: 0, y: 20, duration: .6}, '-=0.2')
+                .from('.s3-text-4', {opacity: 0, y: 20, duration: .5}, '-=0.2');
+        }
+
+        // Title fade in
+        gsap.from('.about .s3 .txt dl dt', {
+            opacity: 0, 
+            y: 30, 
+            duration: .8,
+            delay: 0.3,
+            scrollTrigger: {
+                trigger: '.about .s3 .txt dl dt',
+                start: 'top 85%',
+                end: 'bottom 85%',
+                toggleActions: 'play none none reverse'
+            }
+        })
+
+        // Description paragraphs fade in with stagger
+        gsap.from('.about .s3 .txt dl dd p', {
+            opacity: 0, 
+            y: 25, 
+            duration: .8, 
+            stagger: .2,
+            scrollTrigger: {
+                trigger: '.about .s3 .txt dl dd',
+                start: 'top 85%',
+                end: 'bottom 85%',
+                toggleActions: 'play none none reverse'
+            }
+        })
+
+        // Button fade in
+        gsap.from('.about .s3 .txt .btn .viewBtn', {
+            opacity: 0, 
+            scale: 0.9,
+            duration: .8,
+            scrollTrigger: {
+                trigger: '.about .s3 .txt .btn',
+                start: 'top 90%',
+                end: 'bottom 85%',
+                toggleActions: 'play none none reverse'
+            }
+        })
+
+        // Section 4 animations
+        gsap.utils.toArray('.about .s4 .keyWrap dl').forEach(el => {
+            gsap.timeline({
+                scrollTrigger: {
+                    trigger: el.querySelector('dt'),
+                    start: 'top 80%',
+                    end: 'bottom 80%',
+                    toggleActions: 'play none none reverse'
+                }
+            })
+            .from(el.querySelectorAll('dt > *'), {x: -40, opacity: 0, duration: .6, stagger: .1})
+
+            gsap.timeline({
+                scrollTrigger: {
+                    trigger: el.querySelector('dd'),
+                    start: 'top 80%',
+                    end: 'bottom 80%',
+                    toggleActions: 'play none none reverse'
+                }
+            })
+            .from(el.querySelectorAll('dd > *'), {y: 40, opacity: 0, duration: .6, stagger: .1})
+        });
+
+        // Section 5 marquee animations
+        gsap.from('.s5 .titleBox > *', {
+            opacity: 0, y: 40, duration: .8, stagger: .1,
+            scrollTrigger: {
+                trigger: '.s5 .titleBox',
+                start: 'top 80%',
+                end: 'bottom 80%',
+                toggleActions: 'play none none reverse'
+            }
+        })
+
+        // Marquee 1
+        const s5_1_marquees = document.querySelector('.s5 .marquee._1 .absol');
+        const marqueeChildSize_1 = s5_1_marquees.querySelector('.mar_ch');
+        const childClone_1 = marqueeChildSize_1.cloneNode(true); 
+        s5_1_marquees.appendChild(childClone_1);
+        gsap.fromTo(s5_1_marquees.querySelectorAll('.mar_ch'), {
+            xPercent: 0
+        }, {
+            xPercent: -100,
+            repeat: -1,
+            duration: 20,
+            ease: 'none'
+        });
+
+        // Marquee 2
+        const s5_2_marquees = document.querySelector('.s5 .marquee._2 .absol');
+        const marqueeChildSize_2 = s5_2_marquees.querySelector('.mar_ch');
+        const childClone_2 = marqueeChildSize_2.cloneNode(true); 
+        s5_2_marquees.appendChild(childClone_2);
+        gsap.fromTo(s5_2_marquees.querySelectorAll('.mar_ch'), {
+            xPercent: -100
+        }, {
+            xPercent: 0,
+            repeat: -1,
+            duration: 20,
+            ease: 'none'
+        });
+
+        // Marquee 3
+        const s5_3_marquees = document.querySelector('.s5 .marquee._3 .absol');
+        const marqueeChildSize_3 = s5_3_marquees.querySelector('.mar_ch');
+        const childClone_3 = marqueeChildSize_3.cloneNode(true); 
+        s5_3_marquees.appendChild(childClone_3);
+        gsap.fromTo(s5_3_marquees.querySelectorAll('.mar_ch'), {
+            xPercent: 0
+        }, {
+            xPercent: -100,
+            repeat: -1,
+            duration: 20,
+            ease: 'none'
+        });
+    </script>
+</body>
+</html>

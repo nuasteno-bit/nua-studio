@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+   <meta charset="utf-8"/>
+   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+   <title>Steno Editor (실시간 협업)</title>
+   
+   <!-- CSS 파일 연결 -->
+   <link rel="stylesheet" href="editor_styles.css">
+   
+   <!-- Socket.io 라이브러리 -->
+   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="config.js"></script>
+</head>
+<body>
+   <header>
+       <strong>LiveSteno</strong>
+       <!-- 중앙에 권한매칭 단어 수 설정 UI (드롭다운) -->
+       <span id="matchControl" style="position:absolute; left:50%; transform:translateX(-50%); text-align:center;">
+           <span style="font-size:13px; color:#a2c1ff;">권한매칭 단어 수:</span>
+           <select id="matchWordSelect" style="font-size:13px; padding:2px 8px; border-radius:4px; border:1px solid #444; background:#232323; color:#a2c1ff;">
+               <option value="3">3</option>
+               <option value="4">4</option>
+               <option value="5">5</option>
+               <option value="6">6</option>
+               <option value="7">7</option>
+           </select>
+       </span>
+       <span style="float:right; color:#a2c1ff; font-size:13px;">채널: <span id="channelInfo">default</span> | 내 역할: <span id="roleInfo">속기사1</span> | 상태: <span id="statusInfo">HTML 모드</span></span>
+   </header>
+   
+   <div class="main">
+       <div class="layout-container" id="layoutContainer">
+           <!-- 동적으로 생성될 레이아웃 -->
+       </div>
+   </div>
+   
+   <footer>
+       <div class="theme-toggle">
+           <div class="theme-btn dark active" onclick="setTheme('dark')" title="다크 테마"></div>
+           <div class="theme-btn light" onclick="setTheme('light')" title="라이트 테마"></div>
+           <div class="layout-reset-btn" onclick="resetToDefaultLayout()" title="기본 레이아웃으로 복귀">
+               <svg viewBox="0 0 24 24">
+                   <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/>
+               </svg>
+           </div>
+       </div>
+       UI Prototype + 실시간 협업 기능 완전 결합<br>Designed to match dev tools aesthetic.
+   </footer>
+   
+   <!-- JavaScript 파일 연결 -->
+   <script src="editor_script.js"></script>
+</body>
+</html>
