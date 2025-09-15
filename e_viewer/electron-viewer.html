@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Jua&family=Do+Hyeon&family=Nanum+Gothic&family=Nanum+Myeongjo&family=Nanum+Pen+Script&family=Gothic+A1&family=IBM+Plex+Sans+KR&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        /* 기본 배경 - 투명창을 위해 rgba 사용 */
+        html {
+            background: rgba(0, 0, 0, 1);
+        }
+        
+        body {
+            width: 100vw; 
+            height: 100vh; 
+            margin: 0; 
+            padding: 0;
+            background: rgba(0, 0, 0, 1); 
+            color: #fff; 
+            overflow: hidden;
+        }
+        
+        /* 연결 상태 표시 */
+        #connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-family: 'Noto Sans KR', sans-serif;
+            z-index: 10001;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        #connection-status.connecting {
+            background: rgba(255, 193, 7, 0.9);
+            color: #000;
+        }
+        
+        #connection-status.connected {
+            background: rgba(40, 167, 69, 0.9);
+            color: #fff;
+        }
+        
+        #connection-status.disconnected {
+            background: rgba(220, 53, 69, 0.9);
+            color: #fff;
+        }
+        
+        #connection-status .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* 드래그 헤더 - 상단 20px만 드래그 가능 */
+        .drag-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: transparent;
+            -webkit-app-region: drag;
+            z-index: 9999;
+            transition: background 0.3s ease;
+        }
+        
+        /* 테두리 표시 시 드래그 헤더 보이기 */
+        body.show-border .drag-header {
+            background: rgba(0, 212, 255, 0.2);  /* 반투명 사이버 블루 */
+            border-bottom: 1px solid rgba(0, 212, 255, 0.5);
+        }
+        
+        /* 투명 모드 + 테두리 표시 시 */
+        body.transparent-mode.show-border .drag-header {
+            background: rgba(0, 212, 255, 0.15);  /* 더 투명하게 */
+            border-bottom: 1px solid rgba(0, 212, 255, 0.4);
+        }
+        
+        /* 투명 모드 */
+        html.transparent-mode,
+        body.transparent-mode {
+            background: rgba(0, 0, 0, 0.01) !important;  /* 완전 투명 대신 1% 불투명도 */
+        }
+        
+        body.transparent-mode #viewer {
+            background: rgba(0, 0, 0, 0.01) !important;  /* 완전 투명 대신 1% 불투명도 */
+            box-shadow: 0 0 1px rgba(0,0,0,0.01);  /* Emily 권장 - 추가!! */
+        }
+        
+        body.transparent-mode #viewer-text {
+            color: white !important;
+            text-shadow: 
+                -1px -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000,
+                1px 1px 0 #000,
+                0 0 2px rgba(0,0,0,1);
+            -webkit-text-stroke: 0.5px black;
+        }
+        
+        /* 테두리 - box-sizing으로 내부 크기 유지 */
+        body.show-border {
+            border: 4px solid #00d4ff;  /* 사이버 블루 */
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);  /* 발광 효과 */
+            box-sizing: border-box;  /* 테두리가 안쪽으로 그려지도록 */
+        }
+        
+        body.transparent-mode.show-border {
+            border: 4px solid #00d4ff;  /* 투명 모드에서도 같은 색 */
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.8);  /* 더 강한 발광 */
+            box-sizing: border-box;  /* 테두리가 안쪽으로 그려지도록 */
+        }
+        
+        #viewer {
+            position: relative;
+            width: 100vw; 
+            height: 100vh;
+            font-size: 32px; 
+            line-height: 1.5; 
+            text-align: left;
+            transition: background 0.3s;
+            z-index: 1;
+            padding: 40px 30px;
+            box-sizing: border-box;
+        }
+        
+        #viewer-text {
+            position: absolute;
+            top: 40px; 
+            left: 30px; 
+            right: 30px; 
+            bottom: 40px;
+            width: calc(100% - 60px);
+            height: calc(100% - 80px);
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #8884 #0000;
+            background: none;
+            word-break: break-all;
+            white-space: pre-wrap;
+            padding: 0;
+            font-size: inherit;
+            font-family: inherit;
+            color: inherit;
+            text-align: inherit;
+            line-height: inherit;
+            transition: color 0.2s, background 0.2s;
+            box-sizing: border-box;
+        }
+        
+        #viewer-text::-webkit-scrollbar {
+            width: 8px;
+            background: transparent;
+        }
+        
+        /* 스크롤바 숨김 클래스 */
+        #viewer-text.hide-scrollbar {
+            scrollbar-width: none;  /* Firefox */
+        }
+        
+        #viewer-text.hide-scrollbar::-webkit-scrollbar {
+            display: none;  /* Chrome, Safari */
+        }
+        
+        /* 설정 아이콘 */
+        #setting-icon {
+            position: fixed;
+            top: 18px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            width: 44px; 
+            height: 44px;
+            background: rgba(45,45,45,0.9);
+            border: 1px solid #444;
+            border-radius: 8px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            opacity: 0;
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+        
+        #setting-icon.visible {
+            opacity: 1;
+        }
+        
+        #setting-icon:hover {
+            background: rgba(58,58,58,0.95);
+            border-color: #5a78ff;
+            box-shadow: 0 4px 16px rgba(90,120,255,0.2);
+        }
+        
+        #setting-icon svg { 
+            width: 24px; 
+            height: 24px; 
+            fill: #a2c1ff; 
+            transition: fill 0.2s ease;
+        }
+        
+        #setting-icon:hover svg { 
+            fill: #fff; 
+        }
+        
+        /* 옵션 패널 - viewer.html에서 복사 */
+        #option-panel {
+            position: fixed;
+            top: -500%;
+            left: 50%; 
+            transform: translateX(-50%);
+            min-width: 420px;
+            max-width: 480px;
+            background: #1e1e1e;
+            border: 2px solid #333;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+            padding: 0;
+            display: flex; 
+            flex-direction: column;
+            transition: top 0.4s cubic-bezier(0.4,1.6,0.4,1);
+            z-index: 20;
+            pointer-events: auto;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+            color: #e0e0e0;
+        }
+        
+        #option-panel.open { 
+            top: 0;
+        }
+        
+        /* 패널 헤더 */
+        .panel-header {
+            background: #252526;
+            padding: 12px 16px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .panel-header::before {
+            content: "⚙";
+            font-size: 16px;
+            color: #5a78ff;
+        }
+        
+        .panel-title {
+            font-weight: 600;
+            color: #fff;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+        
+        /* 탭 네비게이션 */
+        .tab-nav {
+            display: flex;
+            background: #2d2d2d;
+            border-bottom: 1px solid #333;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 10px 16px;
+            background: none;
+            border: none;
+            color: #a0a0a0;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+        }
+        
+        .tab-btn:hover {
+            color: #fff;
+            background: #383838;
+        }
+        
+        .tab-btn.active {
+            color: #5a78ff;
+            background: #1e1e1e;
+        }
+        
+        .tab-btn.active::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #5a78ff;
+        }
+        
+        /* 탭 콘텐츠 */
+        .tab-content {
+            display: none;
+            max-height: calc(80vh - 120px);  /* 패널 헤더와 탭 높이를 뺀 값 */
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .tab-content::-webkit-scrollbar {
+            width: 8px;
+            background: #1e1e1e;
+        }
+        
+        .tab-content::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+        
+        fieldset.option-group {
+            border: 1px solid #444;
+            border-radius: 6px;
+            margin: 8px 16px;
+            padding: 12px 16px 8px 16px;
+            background: #232323;
+        }
+        
+        legend {
+            color: #5a78ff; 
+            font-size: 12px; 
+            font-weight: 600;
+            padding: 4px 12px;
+            background: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .option-row {
+            display: grid;
+            grid-template-columns: 80px 1fr auto;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid #2a2a2a;
+            min-height: 32px;
+        }
+        
+        .option-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .option-row.wide {
+            grid-template-columns: 80px 1fr 50px 24px 24px;
+            gap: 8px;
+        }
+        
+        .option-row label {
+            color: #a2c1ff; 
+            font-size: 12px;
+            font-weight: 500;
+            text-align: left;
+            white-space: nowrap;
+            text-transform: capitalize;
+            line-height: 1.2;
+        }
+        
+        .option-row input[type="color"] {
+            width: 36px; 
+            height: 32px; 
+            border: 1px solid #444; 
+            background: #181818; 
+            cursor: pointer;
+            border-radius: 4px;
+            padding: 2px;
+            transition: border-color 0.2s ease;
+            vertical-align: middle;
+        }
+        
+        .option-row input[type="checkbox"] {
+            width: 18px; 
+            height: 18px;
+            accent-color: #5a78ff;
+            cursor: pointer;
+            vertical-align: middle;
+        }
+        
+        .option-row input[type="number"] {
+            width: 50px; 
+            height: 28px;
+            font-size: 12px; 
+            padding: 0 6px; 
+            border-radius: 4px; 
+            border: 1px solid #444;
+            background: #181818; 
+            color: #e0e0e0; 
+            text-align: center;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            line-height: 1;
+            box-sizing: border-box;
+            -moz-appearance: textfield;
+        }
+        
+        .option-row input[type="number"]::-webkit-inner-spin-button,
+        .option-row input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            appearance: none;
+            margin: 0;
+            display: none;
+        }
+        
+        .option-row input[type="number"]:focus {
+            outline: none;
+            border-color: #5a78ff;
+            box-shadow: 0 0 0 2px rgba(90,120,255,0.2);
+        }
+        
+        .option-row select {
+            height: 32px;
+            font-size: 12px; 
+            border-radius: 4px; 
+            border: 1px solid #444;
+            background: #181818; 
+            color: #e0e0e0; 
+            padding: 6px 8px;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+        
+        .option-row select:focus {
+            outline: none;
+            border-color: #5a78ff;
+            box-shadow: 0 0 0 2px rgba(90,120,255,0.2);
+        }
+        
+        .option-row input[type="range"] {
+            width: 100px;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #444;
+            border-radius: 3px;
+            outline: none;
+            vertical-align: middle;
+        }
+        
+        .option-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #5a78ff;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .option-row input[type="range"]::-webkit-slider-thumb:hover {
+            background: #7b9eff;
+            transform: scale(1.1);
+        }
+        
+        .option-row .num-btns {
+            display: flex; 
+            flex-direction: column; 
+            gap: 1px;
+            justify-self: end;
+        }
+        
+        .option-row .num-btns button {
+            width: 24px; 
+            height: 14px; 
+            font-size: 10px; 
+            border: none; 
+            background: #3a3a3a; 
+            color: #ccc;
+            border-radius: 2px; 
+            cursor: pointer; 
+            padding: 0;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: inherit;
+            line-height: 1;
+        }
+        
+        .option-row .num-btns button:hover { 
+            background: #5a78ff; 
+            color: #fff;
+            transform: scale(1.05);
+        }
+        
+        .unit-label {
+            color: #888;
+            font-size: 11px;
+            line-height: 1;
+            vertical-align: middle;
+            justify-self: start;
+        }
+        
+        /* 알림 */
+        .notification {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            z-index: 10000;
+            display: none;
+            pointer-events: none;
+        }
+        
+        /* 애니메이션 효과 CSS (viewer.html 기반) */
+        .shake { animation: shake 0.5s ease-in-out 3; }
+        @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+        .fade-in { animation: fadeIn 2s ease-in-out; }
+        @keyframes fadeIn { 0%{opacity:0;transform:translateY(20px);} 100%{opacity:1;transform:translateY(0);} }
+        .zoom { animation: zoom 1.5s ease-in-out; }
+        @keyframes zoom { 0%{transform:scale(0.8);} 50%{transform:scale(1.1);} 100%{transform:scale(1);} }
+        .gradient-text { background:linear-gradient(45deg,#ff6b6b,#4ecdc4,#45b7d1,#96ceb4);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:gradient-flow 3s ease infinite; }
+        @keyframes gradient-flow { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
+        .neon { color:#fff;text-shadow:0 0 5px #00ffff,0 0 10px #00ffff,0 0 15px #00ffff,0 0 20px #00ffff;animation:neon-flicker 2s infinite alternate; }
+        @keyframes neon-flicker { 0%,100%{text-shadow:0 0 5px #00ffff,0 0 10px #00ffff,0 0 15px #00ffff,0 0 20px #00ffff;} 50%{text-shadow:0 0 2px #00ffff,0 0 5px #00ffff,0 0 8px #00ffff,0 0 12px #00ffff;} }
+        .typewriter { border-right:3px solid #fff;animation:typewriter-blink 1s infinite; }
+        @keyframes typewriter-blink { 0%,50%{border-color:#fff;} 51%,100%{border-color:transparent;} }
+        .rotate { animation: rotate-360 2s ease-in-out; }
+        @keyframes rotate-360 { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
+        .slide-left { animation: slideLeft 1s ease-out; }
+        @keyframes slideLeft { 0%{transform:translateX(100%);opacity:0;} 100%{transform:translateX(0);opacity:1;} }
+        .slide-right { animation: slideRight 1s ease-out; }
+        @keyframes slideRight { 0%{transform:translateX(-100%);opacity:0;} 100%{transform:translateX(0);opacity:1;} }
+        .bg-party { background:linear-gradient(45deg,#ff6b6b,#4ecdc4,#45b7d1,#96ceb4);background-size:400% 400%;animation:bg-party 3s ease infinite; }
+        @keyframes bg-party { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
+    </style>
+</head>
+<body class="show-border">
+    <div class="drag-header"></div>
+    <div id="connection-status" class="connecting">
+        <div class="status-dot"></div>
+        <span>연결 중...</span>
+    </div>
+    <div id="viewer">
+        <div id="viewer-text">자막 대기 중...</div>
+        <div id="setting-icon" title="설정">
+            <svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7zm7.43-2.9l1.77-1.02a1 1 0 0 0 .37-1.36l-1.68-2.92a1 1 0 0 0-1.28-.46l-1.77 1.02a7.03 7.03 0 0 0-1.52-.88l-.27-2A1 1 0 0 0 13.5 3h-3a1 1 0 0 0-1 .88l-.27 2a7.03 7.03 0 0 0-1.52.88l-1.77-1.02a1 1 0 0 0-1.36.37l-1.68 2.92a1 1 0 0 0 .37 1.36l1.77 1.02c-.09.32-.16.65-.22.99l-2 .27A1 1 0 0 0 3 10.5v3a1 1 0 0 0 .88 1l2 .27c.06.34.13.67.22.99l-1.77 1.02a1 1 0 0 0-.37 1.36l1.68 2.92a1 1 0 0 0 1.28.46l1.77-1.02c.47.34.97.64 1.52.88l.27 2A1 1 0 0 0 10.5 21h3a1 1 0 0 0 1-.88l.27-2c.55-.24 1.05-.54 1.52-.88l1.77 1.02a1 1 0 0 0 1.36-.37l1.68-2.92a1 1 0 0 0-.37-1.36l-1.77-1.02c.09-.32.16-.65.22-.99l2-.27A1 1 0 0 0 21 13.5v-3a1 1 0 0 0-.88-1l-2-.27a7.03 7.03 0 0 0-.22-.99zM12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
+        </div>
+        
+        <div id="option-panel">
+            <div class="panel-header">
+                <span class="panel-title">Viewer Settings</span>
+            </div>
+            
+            <div class="tab-nav">
+                <button class="tab-btn active" data-tab="tab1">설정</button>
+            </div>
+            
+            <div id="tab1" class="tab-content active">
+                <fieldset class="option-group display-group">
+                    <legend>Display</legend>
+                    <div class="option-row">
+                        <label>배경색</label>
+                        <input type="color" id="bgColor" value="#000000">
+                        <input type="range" id="bgAlpha" min="0" max="100" value="100">
+                    </div>
+                    <div class="option-row">
+                        <label>글자색</label>
+                        <input type="color" id="fontColor" value="#ffffff">
+                    </div>
+                    <div class="option-row">
+                        <label>글꼴</label>
+                        <select id="fontFamily">
+                            <option value="sans-serif">기본 고딕</option>
+                            <option value="serif">기본 명조</option>
+                            <option value="monospace">고정폭</option>
+                            <option value="'Noto Sans KR', sans-serif">Noto Sans KR</option>
+                            <option value="'Nanum Gothic', sans-serif">나눔고딕</option>
+                            <option value="'Nanum Myeongjo', serif">나눔명조</option>
+                            <option value="'Nanum Pen Script', cursive">나눔펜체</option>
+                            <option value="'Jua', sans-serif">주아체</option>
+                            <option value="'Do Hyeon', sans-serif">도현체</option>
+                            <option value="'Gothic A1', sans-serif">고딕 A1</option>
+                            <option value="'IBM Plex Sans KR', sans-serif">IBM Plex 한글</option>
+                        </select>
+                    </div>
+                    <div class="option-row wide">
+                        <label>글자크기</label>
+                        <input type="number" id="fontSize" min="10" max="200" value="32">
+                        <span class="unit-label">px</span>
+                        <div class="num-btns">
+                            <button type="button" id="fontSizeUp">▲</button>
+                            <button type="button" id="fontSizeDown">▼</button>
+                        </div>
+                    </div>
+                </fieldset>
+                
+                <fieldset class="option-group effects-group">
+                    <legend>Effects</legend>
+                    <div class="option-row">
+                        <label>테두리</label>
+                        <input type="checkbox" id="outlineOn">
+                        <input type="color" id="outlineColor" value="#000000">
+                    </div>
+                    <div class="option-row wide">
+                        <label>굵기</label>
+                        <input type="number" id="outlineWidth" min="0" max="10" value="2" step="0.1">
+                        <span class="unit-label">px</span>
+                        <div class="num-btns">
+                            <button type="button" id="outlineWidthUp">▲</button>
+                            <button type="button" id="outlineWidthDown">▼</button>
+                        </div>
+                    </div>
+                    <div class="option-row">
+                        <label>그림자</label>
+                        <input type="checkbox" id="shadowOn">
+                        <input type="color" id="shadowColor" value="#000000">
+                    </div>
+                    <div class="option-row wide">
+                        <label>흐림</label>
+                        <input type="number" id="shadowBlur" min="0" max="20" value="3" step="0.5">
+                        <span class="unit-label">px</span>
+                        <div class="num-btns">
+                            <button type="button" id="shadowBlurUp">▲</button>
+                            <button type="button" id="shadowBlurDown">▼</button>
+                        </div>
+                    </div>
+                    <div class="option-row wide">
+                        <label>거리</label>
+                        <input type="number" id="shadowDistance" min="0" max="10" value="2" step="0.5">
+                        <span class="unit-label">px</span>
+                        <div class="num-btns">
+                            <button type="button" id="shadowDistanceUp">▲</button>
+                            <button type="button" id="shadowDistanceDown">▼</button>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        
+        let channelCode = null;
+        let socket = null;
+        let isTransparent = false;
+        let borderVisible = true;
+        let lastClickTime = 0;
+        
+        const viewerText = document.getElementById('viewer-text');
+        const settingIcon = document.getElementById('setting-icon');
+        const optionPanel = document.getElementById('option-panel');
+        const connectionStatus = document.getElementById('connection-status');
+        
+        // 누적 텍스트 관리
+        let accumulatedText = '';
+        let activeStenographer = '1';
+        let currentActiveInput = '';
+        let lastProcessedText = '';
+        
+        // 연결 상태 업데이트 함수
+        function updateConnectionStatus(status, message) {
+            connectionStatus.className = status;
+            connectionStatus.querySelector('span').textContent = message;
+            
+            // 3초 후 연결됨 상태에서는 숨김
+            if (status === 'connected') {
+                setTimeout(() => {
+                    connectionStatus.style.opacity = '0';
+                }, 3000);
+            } else {
+                connectionStatus.style.opacity = '1';
+            }
+        }
+        
+        // Socket.IO 동적 로드 함수
+        function loadSocketIO() {
+            return new Promise((resolve, reject) => {
+                // 이미 로드되어 있는지 확인
+                if (typeof io !== 'undefined') {
+                    console.log('[Socket.IO] 이미 로드됨');
+                    resolve();
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = 'https://cdn.socket.io/4.5.4/socket.io.min.js';
+                script.onload = () => {
+                    console.log('[Socket.IO] 로드 성공');
+                    resolve();
+                };
+                script.onerror = () => {
+                    console.error('[Socket.IO] 로드 실패');
+                    reject(new Error('Socket.IO 로드 실패'));
+                };
+                document.head.appendChild(script);
+            });
+        }
+        
+        // 채널 코드 수신
+        ipcRenderer.on('channel-code', async (event, code) => {
+            channelCode = code;
+            console.log('[Electron] 채널 코드 수신:', code);
+            
+            try {
+                await loadSocketIO();
+                connectToSocket();
+            } catch (error) {
+                console.error('[Socket.IO] 로드 에러:', error);
+                updateConnectionStatus('disconnected', '라이브러리 로드 실패');
+                showNotification('Socket.IO 라이브러리 로드 실패');
+            }
+        });
+        
+        // Socket.io 연결
+        function connectToSocket() {
+            try {
+                const socketUrl = 'https://81b5c4d8eea5.ngrok-free.app';
+                
+                const socketOptions = {
+                    transports: ['websocket', 'polling'],
+                    upgrade: true,
+                    reconnection: true,
+                    reconnectionDelay: 1000,
+                    reconnectionDelayMax: 5000,
+                    reconnectionAttempts: 10,
+                    timeout: 20000,
+                    forceNew: true
+                };
+                
+                console.log('[Socket] 연결 시도:', socketUrl);
+                socket = io(socketUrl, socketOptions);
+                
+                // 연결 성공
+                socket.on('connect', () => {
+                    console.log('[Socket] 연결 성공!');
+                    console.log('[Socket] Socket ID:', socket.id);
+                    updateConnectionStatus('connected', '연결됨');
+                    showNotification('서버 연결 성공');
+                    
+                    // 채널 참가
+                    console.log('[Socket] 채널 참가:', channelCode);
+                    socket.emit('join_channel', { 
+                        channel: channelCode, 
+                        role: 'viewer'
+                    });
+                });
+                
+                // 연결 에러
+                socket.on('connect_error', (error) => {
+                    console.error('[Socket] 연결 에러:', error.message);
+                    updateConnectionStatus('disconnected', '연결 실패');
+                });
+                
+                // 연결 끊김
+                socket.on('disconnect', (reason) => {
+                    console.log('[Socket] 연결 끊김:', reason);
+                    updateConnectionStatus('disconnected', '연결 끊김');
+                });
+                
+                // 재연결 시도
+                socket.on('reconnect_attempt', (attemptNumber) => {
+                    console.log('[Socket] 재연결 시도:', attemptNumber);
+                    updateConnectionStatus('connecting', `재연결 시도 중... (${attemptNumber})`);
+                });
+                
+                // 재연결 성공
+                socket.on('reconnect', () => {
+                    console.log('[Socket] 재연결 성공');
+                    updateConnectionStatus('connected', '재연결됨');
+                    
+                    // 채널 재참가
+                    socket.emit('join_channel', { 
+                        channel: channelCode, 
+                        role: 'viewer'
+                    });
+                });
+                
+               // 채널 참가 성공
+                socket.on('joined_channel', (data) => {
+                    console.log('[Socket] 채널 참가 성공:', data);
+                    showNotification(`채널 ${channelCode} 참가 완료`);
+                    
+                    // 초기 상태 요청
+                    socket.emit('request_sync', { channel: channelCode });
+                });
+                
+                // 채널 참가 실패
+                socket.on('error', (error) => {
+                    console.error('[Socket] 에러:', error);
+                    if (error.message && error.message.includes('Channel not found')) {
+                        showNotification('채널을 찾을 수 없습니다');
+                        updateConnectionStatus('disconnected', '채널 없음');
+                    }
+                });
+                
+                // 누적 텍스트 동기화 (최초 진입/동기화용)
+socket.on('sync_accumulated', (data) => {
+    console.log('[Socket] 누적 텍스트 동기화:', data);
+    
+    // accumulatedText 처리
+    if (data.accumulatedText !== undefined) {
+        accumulatedText = data.accumulatedText;
+        currentActiveInput = '';
+        updateViewerDisplay(accumulatedText, true);
+        console.log('[동기화] 누적 텍스트 설정:', accumulatedText);
+    }
+    
+    // activeStenographer가 없으면 초기 상태 요청
+    if (!data.activeStenographer) {
+        console.log('[동기화] 활성 속기사 정보 없음, 상태 요청');
+        socket.emit('get_channel_state', { channel: channelCode });
+    } else {
+        activeStenographer = data.activeStenographer === 'steno1' ? '1' : '2';
+        console.log('[동기화] 활성 속기사:', activeStenographer);
+    }
+});
+
+                // 채널 상태 수신
+                socket.on('channel_state', (data) => {
+                    console.log('[Socket] 채널 상태:', data);
+                    if (data.state) {
+                        if (data.state.activeStenographer) {
+                            activeStenographer = data.state.activeStenographer === 'steno1' ? '1' : '2';
+                            console.log('[상태] 활성 속기사:', activeStenographer);
+                        }
+                        if (data.state.accumulatedText !== undefined) {
+                            accumulatedText = data.state.accumulatedText;
+                            currentActiveInput = '';
+                            updateViewerDisplay(accumulatedText, true);
+                        }
+                    }
+                });
+
+                // 실시간 입력 수신
+                socket.on('steno_input', (data) => {
+                    console.log('[Socket] 실시간 입력:', {
+                        role: data.role,
+                        text: data.text,
+                        activeStenographer: activeStenographer,
+                        dataLength: data.text ? data.text.length : 0
+                    });
+                    
+                    // role 매핑
+                    let inputRole;
+                    if (data.role === 'steno1' || data.role === '1') {
+                        inputRole = '1';
+                    } else if (data.role === 'steno2' || data.role === '2') {
+                        inputRole = '2';
+                    } else {
+                        inputRole = data.role;
+                    }
+                    
+                    console.log('[입력] 매핑된 역할:', inputRole, '현재 활성:', activeStenographer);
+                    
+                    if (inputRole === activeStenographer) {
+                        currentActiveInput = data.text || '';
+                        const fullText = accumulatedText + currentActiveInput;
+                        updateViewerDisplay(fullText, false);
+                        console.log('[표시] 텍스트 업데이트:', fullText.length, '자');
+                    }
+                });
+
+                // 역할 전환
+                socket.on('switch_role', (data) => {
+                    console.log('[Socket] 역할 전환:', data);
+                    
+                    if (data.newActive === 'steno1' || data.newActive === '1') {
+                        activeStenographer = '1';
+                    } else if (data.newActive === 'steno2' || data.newActive === '2') {
+                        activeStenographer = '2';
+                    }
+                    
+                    if (data.accumulatedText !== undefined) {
+                        accumulatedText = data.accumulatedText;
+                        currentActiveInput = '';
+                        updateViewerDisplay(accumulatedText, true);
+                    }
+                    
+                    showNotification(`속기사 ${activeStenographer} 활성화`);
+                });
+
+                // 텍스트 클리어
+                socket.on('clear_text', () => {
+                    console.log('[Socket] 텍스트 클리어');
+                    accumulatedText = '';
+                    currentActiveInput = '';
+                    updateViewerDisplay('', true);
+                    showNotification('텍스트 초기화됨');
+                });
+
+                // viewer_text_update 이벤트 추가
+                socket.on('viewer_text_update', (data) => {
+                    console.log('[Socket] viewer_text_update 이벤트:', data);
+                    if (data.text !== undefined) {
+                        viewerText.textContent = data.text || '자막 대기 중...';
+                        viewerText.scrollTop = viewerText.scrollHeight;
+                    }
+                });
+
+                // 디버깅용 - 모든 이벤트 로깅
+                socket.onAny((eventName, ...args) => {
+                    console.log('[Socket Event]', eventName, JSON.stringify(args, null, 2));
+                });
+                
+            } catch (error) {
+                console.error('[Socket] 연결 에러:', error);
+                updateConnectionStatus('disconnected', '연결 실패: ' + error.message);
+            }
+        }
+
+
+        // 애니메이션 트리거 변환 함수
+        function processRealisticEmotions(text) {
+            let processedText = text;
+            let effectClass = '';
+            
+            if (text.includes('(진동)')) {
+                processedText = text.replace(/\(진동\)/g, '📳');
+                effectClass = 'shake';
+            } else if (text.includes('(페이드)')) {
+                processedText = text.replace(/\(페이드\)/g, '✨');
+                effectClass = 'fade-in';
+            } else if (text.includes('(확대)')) {
+                processedText = text.replace(/\(확대\)/g, '🔍');
+                effectClass = 'zoom';
+            } else if (text.includes('(무지개)')) {
+                processedText = text.replace(/\(무지개\)/g, '🌈');
+                effectClass = 'gradient-text';
+            } else if (text.includes('(네온)')) {
+                processedText = text.replace(/\(네온\)/g, '💡');
+                effectClass = 'neon';
+            } else if (text.includes('(타자기)')) {
+                processedText = text.replace(/\(타자기\)/g, '⌨️');
+                effectClass = 'typewriter';
+            } else if (text.includes('(회전)')) {
+                processedText = text.replace(/\(회전\)/g, '🔄');
+                effectClass = 'rotate';
+            } else if (text.includes('(왼슬라이드)')) {
+                processedText = text.replace(/\(왼슬라이드\)/g, '←');
+                effectClass = 'slide-left';
+            } else if (text.includes('(오른슬라이드)')) {
+                processedText = text.replace(/\(오른슬라이드\)/g, '→');
+                effectClass = 'slide-right';
+            } else if (text.includes('(파티)')) {
+                processedText = text.replace(/\(파티\)/g, '🎉');
+                effectClass = 'bg-party';
+            }
+            
+            return { text: processedText, effect: effectClass };
+        }
+        
+        // 1단어 지연 처리 함수
+        function updateViewerDisplay(fullText, isImmediate = false) {
+            let displayText = '';
+            if (isImmediate) {
+                displayText = fullText;
+            } else {
+                if (fullText.endsWith(' ')) {
+                    displayText = fullText;
+                } else {
+                    const words = fullText.split(' ');
+                    if (words.length > 1) {
+                        displayText = words.slice(0, -1).join(' ') + ' ';
+                    } else {
+                        displayText = '';
+                    }
+                }
+            }
+            
+            const { text, effect } = processRealisticEmotions(displayText);
+            viewerText.textContent = text || '자막 대기 중...';
+            viewerText.className = effect || '';
+            viewerText.scrollTop = viewerText.scrollHeight;
+        }
+        
+        // 설정 아이콘 표시
+        let isMouseInTopArea = false;
+        let isMouseOnIcon = false;
+        
+        function updateIconVisibility() {
+            if (isMouseInTopArea || isMouseOnIcon || optionPanel.classList.contains('open')) {
+                settingIcon.classList.add('visible');
+            } else {
+                settingIcon.classList.remove('visible');
+            }
+        }
+        
+        document.addEventListener('mousemove', e => {
+            isMouseInTopArea = e.clientY < 100;
+            updateIconVisibility();
+        });
+        
+        settingIcon.addEventListener('mouseenter', () => {
+            isMouseOnIcon = true;
+            updateIconVisibility();
+        });
+        
+        settingIcon.addEventListener('mouseleave', () => {
+            isMouseOnIcon = false;
+            updateIconVisibility();
+        });
+        
+        // 옵션 패널 토글
+        settingIcon.addEventListener('click', e => {
+            e.stopPropagation();
+            
+            // 현재 설정 값들 수집
+            const currentSettings = {
+                bgColor: document.getElementById('bgColor').value,
+                bgAlpha: document.getElementById('bgAlpha').value,
+                fontColor: document.getElementById('fontColor').value,
+                fontSize: document.getElementById('fontSize').value,
+                fontFamily: document.getElementById('fontFamily').value,
+                outlineOn: document.getElementById('outlineOn').checked,
+                outlineColor: document.getElementById('outlineColor').value,
+                outlineWidth: document.getElementById('outlineWidth').value,
+                shadowOn: document.getElementById('shadowOn').checked,
+                shadowColor: document.getElementById('shadowColor').value,
+                shadowBlur: document.getElementById('shadowBlur').value,
+                shadowDistance: document.getElementById('shadowDistance').value,
+                isTransparent: isTransparent
+            };
+            
+            // 별도 창 열기
+            ipcRenderer.send('open-options', currentSettings);
+        });
+        
+        // 더블클릭 감지
+        document.addEventListener('mousedown', (e) => {
+            if (e.target.closest('#option-panel') || e.target.closest('#setting-icon')) return;
+            
+            const now = Date.now();
+            if (now - lastClickTime < 300) {
+                e.preventDefault();
+                toggleBorder();
+            }
+            lastClickTime = now;
+        });
+        
+        // 테두리 토글
+        function toggleBorder() {
+            borderVisible = !borderVisible;
+            
+            if (borderVisible) {
+                document.body.classList.add('show-border');
+                showNotification('테두리 표시');
+            } else {
+                document.body.classList.remove('show-border');
+                showNotification('테두리 숨김');
+            }
+        }
+        
+        // 우클릭 메뉴
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            
+            // 스크롤바 숨김 상태 확인
+            const isScrollbarHidden = viewerText.classList.contains('hide-scrollbar');
+            
+            ipcRenderer.send('show-context-menu', {
+                isTransparent: isTransparent,
+                isScrollbarHidden: isScrollbarHidden,
+                x: e.clientX,
+                y: e.clientY
+            });
+        });
+        
+        // 옵션 기능들
+        function applyBasicOptions() {
+            // 투명 모드가 아닐 때만 배경색 적용
+            if (!isTransparent) {
+                const bgHex = document.getElementById('bgColor').value;
+                const alpha = (parseInt(document.getElementById('bgAlpha').value) / 100).toFixed(2);
+                const r = parseInt(bgHex.slice(1, 3), 16);
+                const g = parseInt(bgHex.slice(3, 5), 16);
+                const b = parseInt(bgHex.slice(5, 7), 16);
+                document.getElementById('viewer').style.backgroundColor = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                document.body.style.backgroundColor = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            } else {
+                // 투명 모드일 때는 극히 낮은 불투명도 유지
+                document.getElementById('viewer').style.backgroundColor = 'rgba(0,0,0,0.01)';
+                document.body.style.backgroundColor = 'rgba(0,0,0,0.01)';
+            }
+            
+            viewerText.style.color = document.getElementById('fontColor').value;
+            viewerText.style.fontSize = document.getElementById('fontSize').value + 'px';
+            viewerText.style.fontFamily = document.getElementById('fontFamily').value;
+            
+            // 테두리 적용
+            const outlineOn = document.getElementById('outlineOn').checked;
+            const outlineColor = document.getElementById('outlineColor').value;
+            const outlineWidth = document.getElementById('outlineWidth').value;
+            
+            // 그림자 적용
+            const shadowOn = document.getElementById('shadowOn').checked;
+            const shadowColor = document.getElementById('shadowColor').value;
+            const shadowBlur = document.getElementById('shadowBlur').value;
+            const shadowDistance = document.getElementById('shadowDistance').value || '2';
+            
+            let textShadow = '';
+            
+            if (outlineOn && parseFloat(outlineWidth) > 0) {
+                const outline = `-${outlineWidth}px -${outlineWidth}px 0 ${outlineColor}, ${outlineWidth}px -${outlineWidth}px 0 ${outlineColor}, -${outlineWidth}px ${outlineWidth}px 0 ${outlineColor}, ${outlineWidth}px ${outlineWidth}px 0 ${outlineColor}`;
+                textShadow = outline;
+            }
+            
+            if (shadowOn && parseFloat(shadowDistance) > 0) {
+                const dropShadow = `${shadowDistance}px ${shadowDistance}px ${shadowBlur}px ${shadowColor}`;
+                textShadow = textShadow ? textShadow + ', ' + dropShadow : dropShadow;
+            }
+            
+            viewerText.style.textShadow = textShadow;
+        }
+        
+        // 이벤트 리스너들
+        document.getElementById('bgColor').addEventListener('input', applyBasicOptions);
+        document.getElementById('bgAlpha').addEventListener('input', applyBasicOptions);
+        document.getElementById('fontColor').addEventListener('input', applyBasicOptions);
+        document.getElementById('fontSize').addEventListener('input', applyBasicOptions);
+        document.getElementById('fontFamily').addEventListener('change', applyBasicOptions);
+        
+        document.getElementById('fontSizeUp').addEventListener('click', () => {
+            const fontSize = document.getElementById('fontSize');
+            fontSize.value = Math.min(200, Number(fontSize.value) + 1);
+            applyBasicOptions();
+        });
+        
+        document.getElementById('fontSizeDown').addEventListener('click', () => {
+            const fontSize = document.getElementById('fontSize');
+            fontSize.value = Math.max(10, Number(fontSize.value) - 1);
+            applyBasicOptions();
+        });
+        
+        // 테두리 옵션
+        document.getElementById('outlineOn').addEventListener('change', applyBasicOptions);
+        document.getElementById('outlineColor').addEventListener('input', applyBasicOptions);
+        document.getElementById('outlineWidth').addEventListener('input', applyBasicOptions);
+        
+        document.getElementById('outlineWidthUp').addEventListener('click', () => {
+            const outlineWidth = document.getElementById('outlineWidth');
+            outlineWidth.value = Math.min(10, Number(outlineWidth.value) + 0.1).toFixed(1);
+            applyBasicOptions();
+        });
+        
+        document.getElementById('outlineWidthDown').addEventListener('click', () => {
+            const outlineWidth = document.getElementById('outlineWidth');
+            outlineWidth.value = Math.max(0, Number(outlineWidth.value) - 0.1).toFixed(1);
+            applyBasicOptions();
+        });
+        
+        // 그림자 옵션
+        document.getElementById('shadowOn').addEventListener('change', applyBasicOptions);
+        document.getElementById('shadowColor').addEventListener('input', applyBasicOptions);
+        document.getElementById('shadowBlur').addEventListener('input', applyBasicOptions);
+        
+        const shadowDistance = document.getElementById('shadowDistance');
+        if (shadowDistance) {
+            shadowDistance.addEventListener('input', applyBasicOptions);
+        }
+        
+        document.getElementById('shadowBlurUp').addEventListener('click', () => {
+            const shadowBlur = document.getElementById('shadowBlur');
+            shadowBlur.value = Math.min(20, Number(shadowBlur.value) + 0.5).toFixed(1);
+            applyBasicOptions();
+        });
+        
+        document.getElementById('shadowBlurDown').addEventListener('click', () => {
+            const shadowBlur = document.getElementById('shadowBlur');
+            shadowBlur.value = Math.max(0, Number(shadowBlur.value) - 0.5).toFixed(1);
+            applyBasicOptions();
+        });
+        
+        const shadowDistanceUp = document.getElementById('shadowDistanceUp');
+        const shadowDistanceDown = document.getElementById('shadowDistanceDown');
+        
+        if (shadowDistanceUp) {
+            shadowDistanceUp.addEventListener('click', () => {
+                const shadowDistance = document.getElementById('shadowDistance');
+                shadowDistance.value = Math.min(10, Number(shadowDistance.value) + 0.5).toFixed(1);
+                applyBasicOptions();
+            });
+        }
+        
+        if (shadowDistanceDown) {
+            shadowDistanceDown.addEventListener('click', () => {
+                const shadowDistance = document.getElementById('shadowDistance');
+                shadowDistance.value = Math.max(0, Number(shadowDistance.value) - 0.5).toFixed(1);
+                applyBasicOptions();
+            });
+        }
+        
+        // 투명 배경 토글
+        ipcRenderer.on('toggle-transparent', () => {
+            isTransparent = !isTransparent;
+            
+            if (isTransparent) {
+                // html과 body 모두에 클래스 추가
+                document.documentElement.classList.add('transparent-mode');
+                document.body.classList.add('transparent-mode');
+                
+                // 모든 배경을 극히 낮은 불투명도로 설정
+                document.documentElement.style.backgroundColor = 'rgba(0,0,0,0.01)';
+                document.body.style.backgroundColor = 'rgba(0,0,0,0.01)';
+                document.getElementById('viewer').style.backgroundColor = 'rgba(0,0,0,0.01)';
+                document.getElementById('bgAlpha').value = '1';  // 1%로 설정
+                
+                // 배경색 input도 변경
+                const bgColorInput = document.getElementById('bgColor');
+                bgColorInput.dataset.originalColor = bgColorInput.value;
+                bgColorInput.value = '#000000';
+                
+                document.body.classList.add('show-border');
+                borderVisible = true;
+                
+                showNotification('투명 배경 활성화');
+                console.log('[투명모드] 활성화됨');
+                
+                // main 프로세스에 알림 (Windows 11 버그 대응)
+                ipcRenderer.send('toggle-transparent-main', true);
+                
+                // 아이콘 가시성 업데이트
+                updateIconVisibility();
+            } else {
+                document.documentElement.classList.remove('transparent-mode');
+                document.body.classList.remove('transparent-mode');
+                document.documentElement.style.backgroundColor = '';
+                document.body.style.backgroundColor = '';
+                document.getElementById('viewer').style.backgroundColor = '';
+                
+                // 원래 색상으로 복원
+                const bgColorInput = document.getElementById('bgColor');
+                if (bgColorInput.dataset.originalColor) {
+                    bgColorInput.value = bgColorInput.dataset.originalColor;
+                }
+                
+                document.getElementById('bgAlpha').value = '100';
+                // 원래 설정으로 복원
+                applyBasicOptions();
+                
+                showNotification('기본 배경 활성화');
+                console.log('[투명모드] 비활성화됨');
+                
+                // main 프로세스에 알림 (Windows 11 버그 대응)
+                ipcRenderer.send('toggle-transparent-main', false);
+                
+                // 아이콘 가시성 업데이트
+                updateIconVisibility();
+            }
+        });
+        
+        // 항상 위 상태 변경
+        ipcRenderer.on('always-on-top-changed', (event, enabled) => {
+            showNotification(enabled ? '항상 위 활성화' : '항상 위 비활성화');
+        });
+        
+        // 알림 표시
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+        
+        // ESC 키
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                ipcRenderer.send('exit-fullscreen');
+                if (optionPanel.classList.contains('open')) {
+                    optionPanel.classList.remove('open');
+                }
+            }
+        });
+        
+        // 옵션 창에서 설정 변경 수신
+        ipcRenderer.on('update-settings', (event, settings) => {
+            // 설정 값 적용
+            document.getElementById('bgColor').value = settings.bgColor;
+            document.getElementById('bgAlpha').value = settings.bgAlpha;
+            document.getElementById('fontColor').value = settings.fontColor;
+            document.getElementById('fontSize').value = settings.fontSize;
+            document.getElementById('fontFamily').value = settings.fontFamily;
+            document.getElementById('outlineOn').checked = settings.outlineOn;
+            document.getElementById('outlineColor').value = settings.outlineColor;
+            document.getElementById('outlineWidth').value = settings.outlineWidth;
+            document.getElementById('shadowOn').checked = settings.shadowOn;
+            document.getElementById('shadowColor').value = settings.shadowColor;
+            document.getElementById('shadowBlur').value = settings.shadowBlur;
+            document.getElementById('shadowDistance').value = settings.shadowDistance;
+            
+            // 투명 모드 처리
+            if (settings.isTransparent !== isTransparent) {
+                ipcRenderer.emit('toggle-transparent');
+            }
+            
+            // 설정 적용
+            applyBasicOptions();
+            
+            // 특별 스타일 적용 (프리셋용)
+            if (settings.specialStyle) {
+                if (settings.specialStyle.textShadow) {
+                    viewerText.style.textShadow = settings.specialStyle.textShadow;
+                }
+                if (settings.specialStyle.webkitTextStroke) {
+                    viewerText.style.webkitTextStroke = settings.specialStyle.webkitTextStroke;
+                }
+                if (settings.specialStyle.fontWeight) {
+                    viewerText.style.fontWeight = settings.specialStyle.fontWeight;
+                }
+            }
+        });
+        
+        // 스크롤바 토글 수신
+        ipcRenderer.on('toggle-scrollbar', () => {
+            viewerText.classList.toggle('hide-scrollbar');
+            const isHidden = viewerText.classList.contains('hide-scrollbar');
+            showNotification(isHidden ? '스크롤바 숨김' : '스크롤바 표시');
+        });
+        
+        // 초기 설정 적용
+        applyBasicOptions();
+        
+        // 페이지 로드 시 바로 소켓 연결 시도 (테스트용)
+        if (!channelCode) {
+            // 개발 중 테스트를 위해 자동으로 채널 코드 설정
+            setTimeout(() => {
+                if (!channelCode && window.location.hostname === 'localhost') {
+                    console.log('[개발모드] 테스트 채널 자동 연결');
+                    channelCode = 'AAAAAA';
+                    loadSocketIO().then(() => {
+                        connectToSocket();
+                    }).catch(console.error);
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

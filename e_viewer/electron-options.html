@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>자막 뷰어 설정</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Jua&family=Do+Hyeon&family=Nanum+Gothic&family=Nanum+Myeongjo&family=Nanum+Pen+Script&family=Gothic+A1&family=IBM+Plex+Sans+KR&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #1e1e1e;
+            color: #e0e0e0;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        
+        /* 메인 컨텐츠 */
+        .main-content {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 460px;  /* 최대 너비 제한 */
+            margin: 0 auto;    /* 중앙 정렬 */
+        }
+        
+        h1 {
+            font-size: 18px;
+            color: #5a78ff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        /* 탭 네비게이션 */
+        .tab-nav {
+            display: flex;
+            background: #2d2d2d;
+            border: 1px solid #333;
+            border-radius: 6px 6px 0 0;
+            overflow: hidden;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 12px 16px;
+            background: none;
+            border: none;
+            color: #a0a0a0;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+        }
+        
+        .tab-btn:hover {
+            color: #fff;
+            background: #383838;
+        }
+        
+        .tab-btn.active {
+            color: #5a78ff;
+            background: #1e1e1e;
+        }
+        
+        .tab-btn.active::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #5a78ff;
+        }
+        
+        /* 탭 콘텐츠 */
+        .tab-content {
+            display: none;
+            background: #252525;
+            border: 1px solid #333;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        fieldset.option-group {
+            border: 1px solid #444;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            padding: 16px;
+            background: #2a2a2a;
+        }
+        
+        legend {
+            color: #5a78ff; 
+            font-size: 12px; 
+            font-weight: 600;
+            padding: 4px 12px;
+            background: #1e1e1e;
+            border: 1px solid #444;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .option-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+            padding: 8px 0;
+            border-bottom: 1px solid #333;
+        }
+        
+        .option-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .option-row > label {
+            width: 90px;
+            flex-shrink: 0;
+            color: #a2c1ff;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .option-row select {
+            flex: 1;
+            height: 32px;
+            font-size: 12px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            background: #181818;
+            color: #e0e0e0;
+            padding: 6px 8px;
+            font-family: inherit;
+        }
+        
+        .color-input-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: nowrap;
+        }
+        
+        .option-row input[type="color"] {
+            width: 40px;
+            height: 32px;
+            border: 1px solid #444;
+            background: #181818;
+            cursor: pointer;
+            border-radius: 4px;
+            padding: 2px;
+            flex-shrink: 0;
+        }
+        
+        .option-row input[type="text"].color-hex {
+            width: 80px;
+            height: 32px;
+            font-size: 11px;
+            padding: 0 8px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            background: #181818;
+            color: #e0e0e0;
+            text-align: center;
+            font-family: monospace;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+        
+        .option-row input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #5a78ff;
+            cursor: pointer;
+        }
+        
+        .option-row input[type="number"] {
+            width: 60px;
+            height: 32px;
+            font-size: 12px;
+            padding: 0 8px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            background: #181818;
+            color: #e0e0e0;
+            text-align: center;
+            font-family: inherit;
+        }
+        
+        .option-row input[type="range"] {
+            width: 120px;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #444;
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        .option-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #5a78ff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .option-row select {
+            height: 32px;
+            font-size: 12px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            background: #181818;
+            color: #e0e0e0;
+            padding: 6px 8px;
+            font-family: inherit;
+            width: 100%;
+        }
+        
+        .option-row .num-btns {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-left: auto;  /* 자동으로 오른쪽 끝으로 밀기 */
+        }
+        
+        .option-row .num-btns button {
+            width: 28px;
+            height: 15px;
+            font-size: 10px;
+            border: none;
+            background: #3a3a3a;
+            color: #ccc;
+            border-radius: 3px;
+            cursor: pointer;
+            padding: 0;
+            transition: all 0.2s ease;
+        }
+        
+        .option-row .num-btns button:hover {
+            background: #5a78ff;
+            color: #fff;
+        }
+        
+        .unit-label {
+            color: #888;
+            font-size: 11px;
+        }
+        
+        /* 프리셋 스타일 */
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+            padding: 8px;
+        }
+        
+        .preset-card {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+        
+        .preset-card:hover {
+            background: #333;
+            border-color: #5a78ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(90, 120, 255, 0.2);
+        }
+        
+        .preset-card.active {
+            background: #3a3a3a;
+            border-color: #5a78ff;
+            box-shadow: 0 0 0 2px rgba(90, 120, 255, 0.3);
+        }
+        
+        .preset-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        .preset-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        
+        .preset-desc {
+            font-size: 11px;
+            color: #888;
+            line-height: 1.3;
+        }
+        
+        /* 하단 버튼 */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+            padding: 20px;
+            background: #1e1e1e;
+            border-top: 1px solid #333;
+        }
+        
+        button.apply-btn, button.cancel-btn {
+            padding: 10px 30px;
+            font-size: 13px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        button.apply-btn {
+            background: #5a78ff;
+            color: #fff;
+        }
+        
+        button.apply-btn:hover {
+            background: #7b9eff;
+        }
+        
+        button.cancel-btn {
+            background: #444;
+            color: #ccc;
+        }
+        
+        button.cancel-btn:hover {
+            background: #555;
+            color: #fff;
+        }
+        
+        /* 스크롤바 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            background: #1e1e1e;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <h1>자막 뷰어 설정</h1>
+        
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="tab1">기본 설정</button>
+            <button class="tab-btn" data-tab="tab2">프리셋</button>
+        </div>
+        
+        <!-- 탭 1: 기본 설정 -->
+        <div id="tab1" class="tab-content active">
+            <fieldset class="option-group">
+                <legend>Display</legend>
+                <div class="option-row">
+                    <label>배경색</label>
+                    <div class="color-input-group">
+                        <input type="color" id="bgColor" value="#000000">
+                        <input type="text" class="color-hex" id="bgColorHex" value="#000000" maxlength="7">
+                        <input type="range" id="bgAlpha" min="0" max="100" value="100" style="width: 80px;">
+                        <span class="unit-label" id="bgAlphaLabel" style="min-width: 35px;">100%</span>
+                    </div>
+                </div>
+                <div class="option-row">
+                    <label>글자색</label>
+                    <div class="color-input-group">
+                        <input type="color" id="fontColor" value="#ffffff">
+                        <input type="text" class="color-hex" id="fontColorHex" value="#ffffff" maxlength="7">
+                    </div>
+                </div>
+                <div class="option-row">
+                    <label>글꼴</label>
+                    <select id="fontFamily">
+                        <option value="sans-serif">기본 고딕</option>
+                        <option value="serif">기본 명조</option>
+                        <option value="monospace">고정폭</option>
+                        <option value="'Noto Sans KR', sans-serif">Noto Sans KR</option>
+                        <option value="'Nanum Gothic', sans-serif">나눔고딕</option>
+                        <option value="'Nanum Myeongjo', serif">나눔명조</option>
+                        <option value="'Nanum Pen Script', cursive">나눔펜체</option>
+                        <option value="'Jua', sans-serif">주아체</option>
+                        <option value="'Do Hyeon', sans-serif">도현체</option>
+                        <option value="'Gothic A1', sans-serif">고딕 A1</option>
+                        <option value="'IBM Plex Sans KR', sans-serif">IBM Plex 한글</option>
+                    </select>
+                </div>
+                <div class="option-row">
+                    <label>글자크기</label>
+                    <input type="number" id="fontSize" min="10" max="200" value="32">
+                    <span class="unit-label">px</span>
+                    <div class="num-btns">
+                        <button type="button" id="fontSizeUp">▲</button>
+                        <button type="button" id="fontSizeDown">▼</button>
+                    </div>
+                </div>
+            </fieldset>
+            
+            <fieldset class="option-group">
+                <legend>Effects</legend>
+                <div class="option-row">
+                    <label>테두리</label>
+                    <div class="color-input-group">
+                        <input type="checkbox" id="outlineOn" style="margin-right: 8px;">
+                        <input type="color" id="outlineColor" value="#000000">
+                        <input type="text" class="color-hex" id="outlineColorHex" value="#000000" maxlength="7">
+                    </div>
+                </div>
+                <div class="option-row">
+                    <label>굵기</label>
+                    <input type="number" id="outlineWidth" min="0" max="10" value="2" step="0.1">
+                    <span class="unit-label">px</span>
+                    <div class="num-btns">
+                        <button type="button" id="outlineWidthUp">▲</button>
+                        <button type="button" id="outlineWidthDown">▼</button>
+                    </div>
+                </div>
+                <div class="option-row">
+                    <label>그림자</label>
+                    <div class="color-input-group">
+                        <input type="checkbox" id="shadowOn" style="margin-right: 8px;">
+                        <input type="color" id="shadowColor" value="#000000">
+                        <input type="text" class="color-hex" id="shadowColorHex" value="#000000" maxlength="7">
+                    </div>
+                </div>
+                <div class="option-row">
+                    <label>흐림</label>
+                    <input type="number" id="shadowBlur" min="0" max="20" value="3" step="0.5">
+                    <span class="unit-label">px</span>
+                    <div class="num-btns">
+                        <button type="button" id="shadowBlurUp">▲</button>
+                        <button type="button" id="shadowBlurDown">▼</button>
+                    </div>
+                </div>
+                <div class="option-row">
+                    <label>거리</label>
+                    <input type="number" id="shadowDistance" min="0" max="10" value="2" step="0.5">
+                    <span class="unit-label">px</span>
+                    <div class="num-btns">
+                        <button type="button" id="shadowDistanceUp">▲</button>
+                        <button type="button" id="shadowDistanceDown">▼</button>
+                    </div>
+                </div>
+            </fieldset>
+            
+            <fieldset class="option-group">
+                <legend>Special</legend>
+                <div class="option-row">
+                    <label>투명 배경</label>
+                    <input type="checkbox" id="transparentMode">
+                    <span class="unit-label">창 배경을 투명하게</span>
+                </div>
+            </fieldset>
+        </div>
+        
+        <!-- 탭 2: 프리셋 -->
+        <div id="tab2" class="tab-content">
+            <fieldset class="option-group">
+                <legend>Presets</legend>
+                <div class="option-row">
+                    <label>프리셋 적용</label>
+                    <button type="button" id="resetPreset" style="
+                        padding: 6px 12px; 
+                        font-size: 11px; 
+                        background: #444; 
+                        color: #ccc; 
+                        border: 1px solid #666; 
+                        border-radius: 4px; 
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                    ">해제</button>
+                    <span style="color: #888; font-size: 11px; margin-left: 8px;">원클릭 적용</span>
+                </div>
+            </fieldset>
+            
+            <div class="preset-grid">
+                <!-- 투명 자막 프리셋 -->
+                <div class="preset-card" data-preset="transparent">
+                    <span class="preset-icon">🪟</span>
+                    <div class="preset-name">투명 자막</div>
+                    <div class="preset-desc">투명 배경 + 굵은 테두리</div>
+                </div>
+                
+                <!-- 크로마키 프리셋 -->
+                <div class="preset-card" data-preset="green-white">
+                    <span class="preset-icon">🟢</span>
+                    <div class="preset-name">크로마 그린</div>
+                    <div class="preset-desc">#00FF00 / #FFFFFF</div>
+                </div>
+                
+                <div class="preset-card" data-preset="blue-white">
+                    <span class="preset-icon">🔵</span>
+                    <div class="preset-name">크로마 블루</div>
+                    <div class="preset-desc">#0000FF / #FFFFFF</div>
+                </div>
+                
+                <div class="preset-card" data-preset="magenta-white">
+                    <span class="preset-icon">🟣</span>
+                    <div class="preset-name">크로마 마젠타</div>
+                    <div class="preset-desc">#FF00FF / #FFFFFF</div>
+                </div>
+                
+                <!-- 고대비 프리셋 -->
+                <div class="preset-card" data-preset="black-white">
+                    <span class="preset-icon">⚫</span>
+                    <div class="preset-name">블랙 + 화이트</div>
+                    <div class="preset-desc">#000000 / #FFFFFF</div>
+                </div>
+                
+                <div class="preset-card" data-preset="navy-white">
+                    <span class="preset-icon">🔷</span>
+                    <div class="preset-name">네이비 + 화이트</div>
+                    <div class="preset-desc">#000080 / #FFFFFF</div>
+                </div>
+                
+                <div class="preset-card" data-preset="white-black">
+                    <span class="preset-icon">⚪</span>
+                    <div class="preset-name">화이트 + 블랙</div>
+                    <div class="preset-desc">#FFFFFF / #000000</div>
+                </div>
+                
+                <!-- 추가 프리셋 -->
+                <div class="preset-card" data-preset="netflix">
+                    <span class="preset-icon">🎬</span>
+                    <div class="preset-name">넷플릭스</div>
+                    <div class="preset-desc">부드러운 그림자</div>
+                </div>
+                
+                <div class="preset-card" data-preset="youtube">
+                    <span class="preset-icon">▶️</span>
+                    <div class="preset-name">유튜브</div>
+                    <div class="preset-desc">검은 배경 + 흰 글씨</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="button-group">
+        <button class="cancel-btn" onclick="window.close()">닫기</button>
+    </div>
+    
+    <script>
+        const { ipcRenderer } = require('electron');
+        
+        let currentSettings = {};
+        let isRealtime = true;
+        
+        // 프리셋 정의
+        const presets = {
+            transparent: {
+                bgColor: '#000000',
+                bgAlpha: '1',
+                fontColor: '#ffffff',
+                fontSize: '36',
+                fontFamily: 'sans-serif',
+                outlineOn: true,
+                outlineColor: '#000000',
+                outlineWidth: '2',
+                shadowOn: true,
+                shadowColor: '#000000',
+                shadowBlur: '0',
+                shadowDistance: '0',
+                transparentMode: true,
+                // 특별 스타일 (렌더러에서 처리)
+                specialStyle: {
+                    textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0px 2px 0 #000, 2px 0px 0 #000, 0px -2px 0 #000, -2px 0px 0 #000',
+                    webkitTextStroke: '2px black',
+                    fontWeight: 'bold'
+                }
+            },
+            'green-white': { 
+                bgColor: '#00FF00', 
+                bgAlpha: '100',
+                fontColor: '#FFFFFF',
+                fontSize: '32',
+                fontFamily: 'sans-serif',
+                outlineOn: false,
+                outlineColor: '#000000',
+                outlineWidth: '0',
+                shadowOn: false,
+                shadowColor: '#000000',
+                shadowBlur: '0',
+                shadowDistance: '0',
+                transparentMode: false
+            },
+            'blue-white': { 
+                bgColor: '#0000FF', 
+                bgAlpha: '100',
+                fontColor: '#FFFFFF',
+                fontSize: '32',
+                fontFamily: 'sans-serif',
+                outlineOn: false,
+                outlineColor: '#000000',
+                outlineWidth: '0',
+                shadowOn: false,
+                shadowColor: '#000000',
+                shadowBlur: '0',
+                shadowDistance: '0',
+                transparentMode: false
+            },
+            'magenta-white': { 
+                bgColor: '#FF00FF', 
+                bgAlpha: '100',
+                fontColor: '#FFFFFF',
+                fontSize: '32',
+                fontFamily: 'sans-serif',
+                outlineOn: false,
+                outlineColor: '#000000',
+                outlineWidth: '0',
+                shadowOn: false,
+                shadowColor: '#000000',
+                shadowBlur: '0',
+                shadowDistance: '0',
+                transparentMode: false
+            },
+            'black-white': { 
+                bgColor: '#000000', 
+                bgAlpha: '100',
+                fontColor: '#FFFFFF',
+                fontSize: '32',
+                fontFamily: 'sans-serif',
+                outlineOn: false,
+                outlineColor: '#000000',
+                outlineWidth: '0',
+                shadowOn: false,
+                shadowColor: '#000000',
+                shadowBlur: '0',
+                shadowDistance: '0',
+                transparentMode: false
+            },
+            'navy-white': { 
+                bgColor: '#000080', 
+                bgAlpha: '100',
+                fontColor: '#FFFFFF',
+                fontSize: '32',
+                fontFamily: 'sans-serif',
+                outlineOn: false,
+                outlineColor: '#000000',
+                outlineWidth: '0',
+                shadowOn: false,
+                shadowColor: '#000000',
+                shadowBlur: '0',
+                shadowDistance: '0',
+                transparentMode: false
+            },
+            'white-black': { 
+                bgColor: '#FFFFFF', 
+                bgAlpha: '100',
+                fontColor: '#000000',
+                fontSize: '32',
+                fontFamily: 'sans-serif',
+                outlineOn: false,
+                outlineColor: '#000000',
+                outlineWidth: '0',
+                shadowOn: false,
+                shadowColor: '#000000',
+                shadowBlur: '0',
+                shadowDistance: '0',
+                transparentMode: false
+            },
+            netflix: {
+                bgColor: '#000000',
+                bgAlpha: '0',
+                fontColor: '#ffffff',
+                fontSize: '32',
+                fontFamily: "'Noto Sans KR', sans-serif",
+                outlineOn: false,
+                outlineColor: '#000000',
+                outlineWidth: '0',
+                shadowOn: true,
+                shadowColor: '#000000',
+                shadowBlur: '4',
+                shadowDistance: '2',
+                transparentMode: false
+            },
+            youtube: {
+                bgColor: '#000000',
+                bgAlpha: '80',
+                fontColor: '#ffffff',
+                fontSize: '28',
+                fontFamily: 'sans-serif',
+                outlineOn: false,
+                outlineColor: '#000000',
+                outlineWidth: '0',
+                shadowOn: false,
+                shadowColor: '#000000',
+                shadowBlur: '0',
+                shadowDistance: '0',
+                transparentMode: false
+            },
+            twitch: {
+                bgColor: '#18181b',
+                bgAlpha: '90',
+                fontColor: '#ffffff',
+                fontSize: '24',
+                fontFamily: "'Gothic A1', sans-serif",
+                outlineOn: false,
+                outlineColor: '#000000',
+                outlineWidth: '0',
+                shadowOn: true,
+                shadowColor: '#9146ff',
+                shadowBlur: '8',
+                shadowDistance: '0',
+                transparentMode: false
+            },
+            karaoke: {
+                bgColor: '#000080',
+                bgAlpha: '70',
+                fontColor: '#ffff00',
+                fontSize: '42',
+                fontFamily: "'Jua', sans-serif",
+                outlineOn: true,
+                outlineColor: '#ff0000',
+                outlineWidth: '3',
+                shadowOn: true,
+                shadowColor: '#0000ff',
+                shadowBlur: '10',
+                shadowDistance: '5',
+                transparentMode: false
+            },
+            minimal: {
+                bgColor: '#000000',
+                bgAlpha: '0',
+                fontColor: '#ffffff',
+                fontSize: '30',
+                fontFamily: "'IBM Plex Sans KR', sans-serif",
+                outlineOn: false,
+                outlineColor: '#000000',
+                outlineWidth: '0',
+                shadowOn: false,
+                shadowColor: '#000000',
+                shadowBlur: '0',
+                shadowDistance: '0',
+                transparentMode: false
+            }
+        };
+        
+        // 색상 HEX 입력 연동
+        function setupColorSync(colorId, hexId) {
+            const colorInput = document.getElementById(colorId);
+            const hexInput = document.getElementById(hexId);
+            
+            colorInput.addEventListener('input', () => {
+                hexInput.value = colorInput.value.toUpperCase();
+                if (isRealtime) applyRealtimeSettings();
+            });
+            
+            hexInput.addEventListener('input', (e) => {
+                let value = e.target.value;
+                if (!value.startsWith('#')) value = '#' + value;
+                value = value.slice(0, 7);
+                e.target.value = value.toUpperCase();
+                
+                if (/^#[0-9A-F]{6}$/i.test(value)) {
+                    colorInput.value = value;
+                    if (isRealtime) applyRealtimeSettings();
+                }
+            });
+            
+            hexInput.addEventListener('blur', (e) => {
+                if (!/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                    e.target.value = colorInput.value.toUpperCase();
+                }
+            });
+        }
+        
+        // 색상 HEX 연동 설정
+        setupColorSync('bgColor', 'bgColorHex');
+        setupColorSync('fontColor', 'fontColorHex');
+        setupColorSync('outlineColor', 'outlineColorHex');
+        setupColorSync('shadowColor', 'shadowColorHex');
+        
+        // 알파값 라벨 업데이트
+        document.getElementById('bgAlpha').addEventListener('input', (e) => {
+            document.getElementById('bgAlphaLabel').textContent = e.target.value + '%';
+            if (isRealtime) applyRealtimeSettings();
+        });
+        
+        // 설정 로드
+        ipcRenderer.on('load-settings', (event, settings) => {
+            currentSettings = settings;
+            isRealtime = false; // 로드 중에는 실시간 업데이트 비활성화
+            
+            // 설정 값 적용
+            document.getElementById('bgColor').value = settings.bgColor;
+            document.getElementById('bgColorHex').value = settings.bgColor.toUpperCase();
+            document.getElementById('bgAlpha').value = settings.bgAlpha;
+            document.getElementById('bgAlphaLabel').textContent = settings.bgAlpha + '%';
+            document.getElementById('fontColor').value = settings.fontColor;
+            document.getElementById('fontColorHex').value = settings.fontColor.toUpperCase();
+            document.getElementById('fontSize').value = settings.fontSize;
+            document.getElementById('fontFamily').value = settings.fontFamily;
+            document.getElementById('outlineOn').checked = settings.outlineOn;
+            document.getElementById('outlineColor').value = settings.outlineColor;
+            document.getElementById('outlineColorHex').value = settings.outlineColor.toUpperCase();
+            document.getElementById('outlineWidth').value = settings.outlineWidth;
+            document.getElementById('shadowOn').checked = settings.shadowOn;
+            document.getElementById('shadowColor').value = settings.shadowColor;
+            document.getElementById('shadowColorHex').value = settings.shadowColor.toUpperCase();
+            document.getElementById('shadowBlur').value = settings.shadowBlur;
+            document.getElementById('shadowDistance').value = settings.shadowDistance;
+            document.getElementById('transparentMode').checked = settings.isTransparent;
+            
+            isRealtime = true; // 로드 완료 후 실시간 업데이트 활성화
+        });
+        
+        // 탭 전환
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetTab = btn.dataset.tab;
+                
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                btn.classList.add('active');
+                document.getElementById(targetTab).classList.add('active');
+            });
+        });
+        
+        // 프리셋 클릭 처리
+        document.querySelectorAll('.preset-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const presetName = card.dataset.preset;
+                const preset = presets[presetName];
+                
+                if (preset) {
+                    // 모든 프리셋 카드의 active 클래스 제거
+                    document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    
+                    // 프리셋 값 적용
+                    isRealtime = false;
+                    
+                    document.getElementById('bgColor').value = preset.bgColor;
+                    document.getElementById('bgColorHex').value = preset.bgColor.toUpperCase();
+                    document.getElementById('bgAlpha').value = preset.bgAlpha;
+                    document.getElementById('bgAlphaLabel').textContent = preset.bgAlpha + '%';
+                    document.getElementById('fontColor').value = preset.fontColor;
+                    document.getElementById('fontColorHex').value = preset.fontColor.toUpperCase();
+                    document.getElementById('fontSize').value = preset.fontSize;
+                    document.getElementById('fontFamily').value = preset.fontFamily;
+                    document.getElementById('outlineOn').checked = preset.outlineOn;
+                    document.getElementById('outlineColor').value = preset.outlineColor;
+                    document.getElementById('outlineColorHex').value = preset.outlineColor.toUpperCase();
+                    document.getElementById('outlineWidth').value = preset.outlineWidth;
+                    document.getElementById('shadowOn').checked = preset.shadowOn;
+                    document.getElementById('shadowColor').value = preset.shadowColor;
+                    document.getElementById('shadowColorHex').value = preset.shadowColor.toUpperCase();
+                    document.getElementById('shadowBlur').value = preset.shadowBlur;
+                    document.getElementById('shadowDistance').value = preset.shadowDistance;
+                    document.getElementById('transparentMode').checked = preset.transparentMode;
+                    
+                    isRealtime = true;
+                    
+                    // 특별 스타일 포함하여 적용
+                    const settings = {
+                        ...preset,
+                        isTransparent: preset.transparentMode
+                    };
+                    
+                    if (preset.specialStyle) {
+                        settings.specialStyle = preset.specialStyle;
+                    }
+                    
+                    ipcRenderer.send('apply-settings', settings);
+                }
+            });
+        });
+        
+        // 프리셋 해제 버튼
+        const resetPreset = document.getElementById('resetPreset');
+        if (resetPreset) {
+            resetPreset.addEventListener('click', () => {
+                // 모든 프리셋 비활성화
+                document.querySelectorAll('.preset-card').forEach(p => p.classList.remove('active'));
+                
+                // 기본값으로 복원
+                isRealtime = false;
+                
+                document.getElementById('bgColor').value = '#000000';
+                document.getElementById('bgColorHex').value = '#000000';
+                document.getElementById('bgAlpha').value = '100';
+                document.getElementById('bgAlphaLabel').textContent = '100%';
+                document.getElementById('fontColor').value = '#ffffff';
+                document.getElementById('fontColorHex').value = '#FFFFFF';
+                document.getElementById('fontSize').value = '32';
+                document.getElementById('fontFamily').value = 'sans-serif';
+                document.getElementById('outlineOn').checked = false;
+                document.getElementById('outlineColor').value = '#000000';
+                document.getElementById('outlineColorHex').value = '#000000';
+                document.getElementById('outlineWidth').value = '2';
+                document.getElementById('shadowOn').checked = false;
+                document.getElementById('shadowColor').value = '#000000';
+                document.getElementById('shadowColorHex').value = '#000000';
+                document.getElementById('shadowBlur').value = '3';
+                document.getElementById('shadowDistance').value = '2';
+                document.getElementById('transparentMode').checked = false;
+                
+                isRealtime = true;
+                applyRealtimeSettings();
+            });
+            
+            resetPreset.addEventListener('mouseenter', () => {
+                resetPreset.style.background = '#666';
+                resetPreset.style.color = '#fff';
+            });
+            
+            resetPreset.addEventListener('mouseleave', () => {
+                resetPreset.style.background = '#444';
+                resetPreset.style.color = '#ccc';
+            });
+        }
+        
+        // 실시간 설정 적용
+        function applyRealtimeSettings() {
+            const newSettings = {
+                bgColor: document.getElementById('bgColor').value,
+                bgAlpha: document.getElementById('bgAlpha').value,
+                fontColor: document.getElementById('fontColor').value,
+                fontSize: document.getElementById('fontSize').value,
+                fontFamily: document.getElementById('fontFamily').value,
+                outlineOn: document.getElementById('outlineOn').checked,
+                outlineColor: document.getElementById('outlineColor').value,
+                outlineWidth: document.getElementById('outlineWidth').value,
+                shadowOn: document.getElementById('shadowOn').checked,
+                shadowColor: document.getElementById('shadowColor').value,
+                shadowBlur: document.getElementById('shadowBlur').value,
+                shadowDistance: document.getElementById('shadowDistance').value,
+                isTransparent: document.getElementById('transparentMode').checked
+            };
+            
+            ipcRenderer.send('apply-settings', newSettings);
+        }
+        
+        // 모든 입력 요소에 실시간 업데이트 리스너 추가
+        const inputs = document.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            if (input.type === 'checkbox' || input.type === 'radio') {
+                input.addEventListener('change', () => {
+                    if (isRealtime) applyRealtimeSettings();
+                });
+            } else if (!input.classList.contains('color-hex')) {
+                input.addEventListener('input', () => {
+                    if (isRealtime) applyRealtimeSettings();
+                });
+            }
+        });
+        
+        // 숫자 증감 버튼들
+        document.getElementById('fontSizeUp').addEventListener('click', () => {
+            const input = document.getElementById('fontSize');
+            input.value = Math.min(200, Number(input.value) + 1);
+            if (isRealtime) applyRealtimeSettings();
+        });
+        
+        document.getElementById('fontSizeDown').addEventListener('click', () => {
+            const input = document.getElementById('fontSize');
+            input.value = Math.max(10, Number(input.value) - 1);
+            if (isRealtime) applyRealtimeSettings();
+        });
+        
+        document.getElementById('outlineWidthUp').addEventListener('click', () => {
+            const input = document.getElementById('outlineWidth');
+            input.value = Math.min(10, Number(input.value) + 0.1).toFixed(1);
+            if (isRealtime) applyRealtimeSettings();
+        });
+        
+        document.getElementById('outlineWidthDown').addEventListener('click', () => {
+            const input = document.getElementById('outlineWidth');
+            input.value = Math.max(0, Number(input.value) - 0.1).toFixed(1);
+            if (isRealtime) applyRealtimeSettings();
+        });
+        
+        document.getElementById('shadowBlurUp').addEventListener('click', () => {
+            const input = document.getElementById('shadowBlur');
+            input.value = Math.min(20, Number(input.value) + 0.5).toFixed(1);
+            if (isRealtime) applyRealtimeSettings();
+        });
+        
+        document.getElementById('shadowBlurDown').addEventListener('click', () => {
+            const input = document.getElementById('shadowBlur');
+            input.value = Math.max(0, Number(input.value) - 0.5).toFixed(1);
+            if (isRealtime) applyRealtimeSettings();
+        });
+        
+        document.getElementById('shadowDistanceUp').addEventListener('click', () => {
+            const input = document.getElementById('shadowDistance');
+            input.value = Math.min(10, Number(input.value) + 0.5).toFixed(1);
+            if (isRealtime) applyRealtimeSettings();
+        });
+        
+        document.getElementById('shadowDistanceDown').addEventListener('click', () => {
+            const input = document.getElementById('shadowDistance');
+            input.value = Math.max(0, Number(input.value) - 0.5).toFixed(1);
+            if (isRealtime) applyRealtimeSettings();
+        });
+    </script>
+</body>
+</html>
