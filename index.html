@@ -700,9 +700,15 @@
             text-shadow: 0 0 15px var(--neon-blue);
         }
 
-        .enter-btn {
+        /* Enter buttons section */
+        .enter-buttons {
             flex: 0 0 40%;
-            padding: 1rem 2rem;
+            display: flex;
+            gap: 2px;
+        }
+
+        .enter-btn {
+            padding: 1rem 1.5rem;
             background: var(--accent-gradient);
             border: none;
             color: var(--black);
@@ -714,11 +720,41 @@
             position: relative;
             transition: all 0.3s ease;
             font-family: 'Poppins', sans-serif;
+            flex: 1;
+        }
+
+        #webEnterBtn {
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+        }
+
+        #nativeViewerBtn {
+            background: linear-gradient(135deg, #a259ff 0%, #7b3ff2 100%);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .enter-btn .btn-icon {
+            font-size: 1.1em;
         }
 
         .enter-btn:hover {
             transform: scale(1.05);
             box-shadow: 0 0 30px rgba(0, 240, 255, 0.5);
+        }
+
+        #nativeViewerBtn:hover {
+            box-shadow: 0 0 30px rgba(162, 89, 255, 0.5);
+        }
+
+        /* Show native viewer button only for GUEST */
+        .role-btn[data-role="guest"].active ~ .enter-buttons #nativeViewerBtn {
+            display: flex !important;
+        }
+
+        .role-btn[data-role="guest"].active ~ .enter-buttons #webEnterBtn {
+            flex: 0.55;
         }
 
         /* Admin Login Modal */
@@ -1385,6 +1421,15 @@
                 bottom: 20px;
                 right: 20px;
             }
+
+            .enter-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .enter-btn {
+                width: 100%;
+            }
         }
         
         @media (max-width: 768px) {
@@ -1441,8 +1486,12 @@
                 flex: 1;
             }
 
-            .enter-btn {
+            .enter-buttons {
                 width: 100%;
+                flex-direction: row;
+            }
+
+            .enter-btn {
                 border-left: none;
                 border-top: 1px solid rgba(0, 240, 255, 0.15);
             }
@@ -1505,7 +1554,7 @@
                     <li><a href="about.html">NUA STUDIO</a></li>
                     <li><a href="#work">PORTFOLIO</a></li>
                     <li><a href="contact.html">CONTACT</a></li>
-<li><a href="recruit.html">RECRUIT</a></li>
+                    <li><a href="recruit.html">RECRUIT</a></li>
                 </ul>
                 <div class="lang">
                     <div class="lang_current">
@@ -1522,7 +1571,7 @@
                 </div>
             </div>
             
-            <div class="hamburger">
+            <div class="hamburger" id="hamburger">
                 <span></span>
                 <span></span>
                 <span></span>
@@ -1590,7 +1639,13 @@
                                     <button type="button" class="role-btn" data-role="admin">ADMIN</button>
                                 </div>
                             </div>
-                            <button type="submit" class="enter-btn">ENTER →</button>
+                            <div class="enter-buttons" id="enterButtons">
+                                <button type="submit" class="enter-btn" id="webEnterBtn">WEB →</button>
+                                <button type="button" class="enter-btn" id="nativeViewerBtn">
+                                    <span class="btn-icon">🖥️</span>
+                                    <span>전용뷰어</span>
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -1773,8 +1828,36 @@
 
     <script src="config.js"></script>
     <script>
-        // API Base URL
-        const API_BASE_URL = window.CONFIG ? window.CONFIG.SOCKET_URL : 'http://localhost:3000';
+        // Configuration constants
+        const CONFIG = {
+            API_BASE_URL: window.CONFIG?.SOCKET_URL || 'http://localhost:3000',
+            CHANNEL_REGEX: /^[A-Z0-9]{6}$/,
+            VIEWER_DOWNLOAD_URL: window.location.hostname === 'localhost' 
+                ? '/download/viewer.html' 
+                : 'https://nua.studio/download/viewer.html',
+            DEEPLINK_TIMEOUT: 1400,
+            DEEPLINK_SCHEME: 'nuaviewer://',
+            SPECIAL_ADMIN_CODES: ['SYSTEM', 'MASTER', 'ADMIN']
+        };
+
+        // Safe DOM selector helper
+        function safeQuerySelector(selector, callback) {
+            const element = document.querySelector(selector);
+            if (element && callback) {
+                callback(element);
+            }
+            return element;
+        }
+
+        // Safe event binding helper
+        function safeAddEventListener(selector, event, handler) {
+            const element = safeQuerySelector(selector);
+            if (element) {
+                element.addEventListener(event, handler);
+                return true;
+            }
+            return false;
+        }
 
         // 1. Hero Matrix Typing Effect
         function startHeroTyping() {
@@ -1791,6 +1874,8 @@
             
             // Create all characters as random numbers first
             lines.forEach((line, lineIndex) => {
+                if (!line.element) return;
+                
                 for (let i = 0; i < line.text.length; i++) {
                     const char = document.createElement('span');
                     char.className = 'typing-char random-number';
@@ -1808,7 +1893,9 @@
             const cursor = document.createElement('span');
             cursor.className = 'typing-cursor';
             cursor.id = 'mainCursor';
-            lines[0].element.insertBefore(cursor, lines[0].element.firstChild);
+            if (lines[0].element) {
+                lines[0].element.insertBefore(cursor, lines[0].element.firstChild);
+            }
             
             // Random number animation
             const randomInterval = setInterval(() => {
@@ -1831,7 +1918,7 @@
                     if (globalCharIndex < allChars.length - 1) {
                         const nextChar = allChars[globalCharIndex + 1];
                         
-                        if (currentChar.lineIndex !== nextChar.lineIndex) {
+                        if (currentChar.lineIndex !== nextChar.lineIndex && lines[nextChar.lineIndex].element) {
                             lines[nextChar.lineIndex].element.insertBefore(cursor, lines[nextChar.lineIndex].element.firstChild);
                         } else {
                             currentChar.element.parentNode.insertBefore(cursor, currentChar.element.nextSibling);
@@ -1850,9 +1937,9 @@
                     }, 500);
                     
                     setTimeout(() => {
-                        subtitle.classList.add('visible');
+                        if (subtitle) subtitle.classList.add('visible');
                         setTimeout(() => {
-                            channelForm.classList.add('visible');
+                            if (channelForm) channelForm.classList.add('visible');
                         }, 500);
                     }, 800);
                 }
@@ -1862,6 +1949,8 @@
         // Mouse tracking spotlight effect
         function initMouseSpotlight() {
             const hero = document.querySelector('.hero');
+            if (!hero) return;
+            
             let mouseX = 50;
             let mouseY = 50;
             
@@ -1895,6 +1984,8 @@
             const header = document.getElementById('header');
             const sections = document.querySelectorAll('section[data-bg]');
             
+            if (!header) return;
+            
             let currentBg = 'dark';
             sections.forEach(section => {
                 const rect = section.getBoundingClientRect();
@@ -1911,73 +2002,161 @@
         window.addEventListener('load', updateHeaderColor);
 
         // Hamburger menu toggle
-        document.querySelector('.hamburger').addEventListener('click', function() {
-            document.querySelector('.header').classList.toggle('HmActive');
+        safeAddEventListener('#hamburger', 'click', function() {
+            safeQuerySelector('.header', (header) => {
+                header.classList.toggle('HmActive');
+            });
         });
 
         // Language dropdown toggle
-        document.querySelector('.lang_current').addEventListener('click', function() {
-            const langList = document.querySelector('.lang_list_wrap');
-            if (langList.style.display === 'block') {
-                langList.style.display = 'none';
-            } else {
-                langList.style.display = 'block';
-            }
+        safeAddEventListener('.lang_current', 'click', function() {
+            safeQuerySelector('.lang_list_wrap', (langList) => {
+                if (langList.style.display === 'block') {
+                    langList.style.display = 'none';
+                } else {
+                    langList.style.display = 'block';
+                }
+            });
         });
 
         // Close language dropdown when clicking outside
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.lang')) {
-                document.querySelector('.lang_list_wrap').style.display = 'none';
+                safeQuerySelector('.lang_list_wrap', (langList) => {
+                    langList.style.display = 'none';
+                });
             }
         });
 
-        // 3. Channel Form Functionality with Admin Login
+        // 3. Channel Form Functionality with Native Viewer Support
         const channelForm = document.getElementById('channelForm');
         const channelCodeInput = document.getElementById('channelCode');
         const channelPasswordInput = document.getElementById('channelPassword');
         const roleBtns = document.querySelectorAll('.role-btn');
+        const nativeViewerBtn = document.getElementById('nativeViewerBtn');
+        const webEnterBtn = document.getElementById('webEnterBtn');
         let selectedRole = 'guest';
 
-        // Role selection
+        // Role selection with button visibility
         roleBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 roleBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 selectedRole = btn.getAttribute('data-role');
+                
+                // Show/hide native viewer button based on role
+                if (nativeViewerBtn && webEnterBtn) {
+                    if (selectedRole === 'guest') {
+                        nativeViewerBtn.style.display = 'flex';
+                        webEnterBtn.textContent = 'WEB →';
+                    } else {
+                        nativeViewerBtn.style.display = 'none';
+                        webEnterBtn.textContent = 'ENTER →';
+                    }
+                }
             });
         });
 
         // Auto uppercase for channel code
-        channelCodeInput.addEventListener('input', (e) => {
-            e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-        });
+        if (channelCodeInput) {
+            channelCodeInput.addEventListener('input', (e) => {
+                e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            });
+        }
+
+        // Native Viewer Launch Function
+        function launchNativeViewer(channelCode) {
+            const deepLink = `${CONFIG.DEEPLINK_SCHEME}join?channel=${channelCode}`;
+            let viewerLaunched = false;
+            
+            // Create hidden iframe to trigger deep link
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = deepLink;
+            document.body.appendChild(iframe);
+            
+            // Set timeout for fallback to download page
+            const timeout = setTimeout(() => {
+                if (!viewerLaunched) {
+                    // Redirect to download page if viewer not installed
+                    console.log('Native viewer not installed, redirecting to download...');
+                    window.location.href = CONFIG.VIEWER_DOWNLOAD_URL;
+                }
+                document.body.removeChild(iframe);
+            }, CONFIG.DEEPLINK_TIMEOUT);
+            
+            // Detect if app launched by monitoring page blur
+            const handleBlur = () => {
+                viewerLaunched = true;
+                clearTimeout(timeout);
+                window.removeEventListener('blur', handleBlur);
+                if (document.body.contains(iframe)) {
+                    document.body.removeChild(iframe);
+                }
+            };
+            
+            window.addEventListener('blur', handleBlur);
+            
+            // Clean up after 2 seconds regardless
+            setTimeout(() => {
+                window.removeEventListener('blur', handleBlur);
+                if (document.body.contains(iframe)) {
+                    document.body.removeChild(iframe);
+                }
+            }, 2000);
+        }
+
+        // Native viewer button click handler
+        if (nativeViewerBtn) {
+            nativeViewerBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const channelCode = channelCodeInput?.value;
+                
+                if (!channelCode) {
+                    alert('채널 코드를 입력해주세요');
+                    return;
+                }
+                
+                if (!CONFIG.CHANNEL_REGEX.test(channelCode)) {
+                    alert('채널 코드는 6자리 영문/숫자여야 합니다');
+                    return;
+                }
+                
+                launchNativeViewer(channelCode);
+            });
+        }
 
         // Admin Login Functions
         function showAdminLogin() {
             const modal = document.getElementById('adminLoginModal');
-            modal.classList.add('show');
-            document.getElementById('adminUsername').focus();
+            if (modal) {
+                modal.classList.add('show');
+                safeQuerySelector('#adminUsername', (input) => input.focus());
+            }
         }
 
         function closeAdminLogin() {
             const modal = document.getElementById('adminLoginModal');
-            modal.classList.remove('show');
-            document.getElementById('adminLoginForm').reset();
-            document.getElementById('loginError').classList.remove('show');
+            if (modal) {
+                modal.classList.remove('show');
+                safeQuerySelector('#adminLoginForm', (form) => form.reset());
+                safeQuerySelector('#loginError', (error) => error.classList.remove('show'));
+            }
         }
 
         // Admin Login Form Handler
-        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+        safeAddEventListener('#adminLoginForm', 'submit', async (e) => {
             e.preventDefault();
             
-            const username = document.getElementById('adminUsername').value;
-            const password = document.getElementById('adminPassword').value;
+            const username = document.getElementById('adminUsername')?.value;
+            const password = document.getElementById('adminPassword')?.value;
             const errorElement = document.getElementById('loginError');
             
+            if (!username || !password) return;
+            
             try {
-                const response = await fetch(`${API_BASE_URL}/api/admin/login`, {
+                const response = await fetch(`${CONFIG.API_BASE_URL}/api/admin/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1993,42 +2172,53 @@
                     localStorage.setItem('adminRole', data.role);
                     window.location.href = 'channel-manager.html';
                 } else {
-                    errorElement.textContent = data.error || '로그인에 실패했습니다.';
-                    errorElement.classList.add('show');
+                    if (errorElement) {
+                        errorElement.textContent = data.error || '로그인에 실패했습니다.';
+                        errorElement.classList.add('show');
+                    }
                 }
             } catch (error) {
                 console.error('Login error:', error);
-                errorElement.textContent = '서버 연결에 실패했습니다.';
-                errorElement.classList.add('show');
+                if (errorElement) {
+                    errorElement.textContent = '서버 연결에 실패했습니다.';
+                    errorElement.classList.add('show');
+                }
             }
         });
 
-        // Channel Form submission with Admin check
-        channelForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const channelCode = channelCodeInput.value;
-            const password = channelPasswordInput.value;
-            
-            if (!channelCode) {
-                alert('채널 코드를 입력해주세요');
-                return;
-            }
-            
-            // Check for system admin access
-            if (selectedRole === 'admin') {
-                // Special channel codes for system admin
-                if (channelCode === 'SYSTEM' || channelCode === 'MASTER' || channelCode === 'ADMIN') {
-                    showAdminLogin();
-                } else {
-                    // Regular channel admin
-                    window.location.href = `admin.html?channel=${channelCode}&role=admin`;
+        // Channel Form submission (Web viewer)
+        if (channelForm) {
+            channelForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const channelCode = channelCodeInput?.value;
+                const password = channelPasswordInput?.value;
+                
+                if (!channelCode) {
+                    alert('채널 코드를 입력해주세요');
+                    return;
                 }
-            } else if (selectedRole === 'guest') {
-                window.location.href = `viewer.html?channel=${channelCode}`;
-            } else if (selectedRole === 'steno') {
-                window.location.href = `/editor.html?channel=${channelCode}`;
-            }
-        });
+                
+                if (!CONFIG.CHANNEL_REGEX.test(channelCode)) {
+                    alert('채널 코드는 6자리 영문/숫자여야 합니다');
+                    return;
+                }
+                
+                // Check for system admin access
+                if (selectedRole === 'admin') {
+                    // Special channel codes for system admin
+                    if (CONFIG.SPECIAL_ADMIN_CODES.includes(channelCode)) {
+                        showAdminLogin();
+                    } else {
+                        // Regular channel admin
+                        window.location.href = `admin.html?channel=${channelCode}&role=admin`;
+                    }
+                } else if (selectedRole === 'guest') {
+                    window.location.href = `viewer.html?channel=${channelCode}`;
+                } else if (selectedRole === 'steno') {
+                    window.location.href = `/editor.html?channel=${channelCode}`;
+                }
+            });
+        }
 
         // Keyboard shortcut for admin access (Ctrl + Shift + A)
         document.addEventListener('keydown', (e) => {
@@ -2041,6 +2231,8 @@
         // 4. About Text Split Animation
         function initAboutTextAnimation() {
             const textElement = document.getElementById('aboutText');
+            if (!textElement) return;
+            
             const text = "기술과 창의성을 결합하여 모든 사람이 참여할 수 있는 포용적인 디지털 경험을 만듭니다";
             
             textElement.innerHTML = '';
@@ -2092,6 +2284,8 @@
         // 6. Scroll Progress Bar
         function updateScrollProgress() {
             const scrollProgress = document.getElementById('scrollProgress');
+            if (!scrollProgress) return;
+            
             const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
             const scrolled = (window.scrollY / scrollHeight) * 100;
             scrollProgress.style.height = `${scrolled}%`;
@@ -2171,8 +2365,11 @@
         function initServiceExpander() {
             const serviceItems = document.querySelectorAll('.service-item');
             const expander = document.querySelector('.svc-expander');
-            const expanderTitle = expander.querySelector('.exp-title');
-            const expanderBody = expander.querySelector('.exp-body');
+            const expanderTitle = expander?.querySelector('.exp-title');
+            const expanderBody = expander?.querySelector('.exp-body');
+            
+            if (!expander || !expanderTitle || !expanderBody) return;
+            
             let currentService = null;
             let isMobile = window.innerWidth <= 768;
             let expanderTimeout = null;
@@ -2329,6 +2526,8 @@
             const scrollIndicator = document.getElementById('scrollIndicator');
             const heroSection = document.getElementById('hero');
             
+            if (!scrollIndicator || !heroSection) return;
+            
             window.addEventListener('scroll', () => {
                 const heroRect = heroSection.getBoundingClientRect();
                 const scrolled = window.scrollY;
@@ -2346,7 +2545,9 @@
             
             scrollIndicator.addEventListener('click', () => {
                 const aboutSection = document.getElementById('about');
-                aboutSection.scrollIntoView({ behavior: 'smooth' });
+                if (aboutSection) {
+                    aboutSection.scrollIntoView({ behavior: 'smooth' });
+                }
             });
         }
         
