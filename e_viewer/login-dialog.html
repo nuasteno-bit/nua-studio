@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+ <title>NUA STENO - Login</title>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+ <style>
+   * {
+     box-sizing: border-box;
+     margin: 0;
+     padding: 0;
+   }
+   
+   body {
+     background: #1a1a1a;
+     color: #f0f0f0;
+     font-family: 'Inter', sans-serif;
+     display: flex;
+     justify-content: center;
+     align-items: center;
+     height: 100vh;
+     overflow: hidden;
+     -webkit-user-select: none;
+     user-select: none;
+   }
+   
+   /* 메인 로그인 컨테이너 */
+   .login-container {
+     width: 720px;
+     height: 400px;
+     background: #0e0e0e;
+     border: 1px solid #333;
+     border-radius: 12px;
+     display: flex;
+     overflow: hidden;
+     box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+   }
+   
+   /* 좌측 로그인 폼 */
+   .login-form {
+     flex: 1;
+     padding: 60px 50px;
+     display: flex;
+     flex-direction: column;
+     justify-content: center;
+   }
+   
+   .logo {
+     font-size: 24px;
+     font-weight: 700;
+     margin-bottom: 40px;
+     text-align: center;
+     letter-spacing: 1px;
+   }
+   
+   .logo span {
+     color: #4a7c9e;
+   }
+   
+   .form-group {
+     margin-bottom: 20px;
+   }
+   
+   .form-label {
+     font-size: 12px;
+     color: #888;
+     margin-bottom: 8px;
+     display: block;
+     font-family: 'Courier New', monospace;
+     letter-spacing: 0.5px;
+     text-transform: uppercase;
+   }
+   
+   .input-wrapper {
+     position: relative;
+     display: flex;
+     align-items: center;
+   }
+   
+   input[type="text"] {
+     width: 100%;
+     padding: 12px 16px;
+     background: #1a1a1a;
+     border: 1px solid #333;
+     border-radius: 6px;
+     color: #f0f0f0;
+     font-size: 14px;
+     font-family: 'Courier New', monospace;
+     letter-spacing: 0.1em;
+     transition: all 0.2s ease;
+   }
+   
+   input[type="text"]:focus {
+     outline: none;
+     border-color: #4a7c9e;
+     background: #1e1e1e;
+   }
+   
+   input[type="text"]::placeholder {
+     color: #666;
+   }
+   
+
+   .connect-button {
+     width: 100%;
+     padding: 12px;
+     background: #2a2a2a;
+     border: 1px solid #404040;
+     border-radius: 6px;
+     color: #e0e0e0;
+     font-size: 14px;
+     font-weight: 600;
+     font-family: 'Courier New', monospace;
+     letter-spacing: 0.5px;
+     cursor: pointer;
+     transition: all 0.3s ease;
+     margin-top: 30px;
+   }
+   
+   .connect-button:hover {
+     background: linear-gradient(135deg, #3a4a5a 0%, #4a7c9e 100%);
+     color: #fff;
+     border-color: #4a7c9e;
+     transform: translateY(-1px);
+     box-shadow: 0 4px 12px rgba(74, 124, 158, 0.4);
+   }
+   
+   .connect-button:active {
+     transform: translateY(0);
+   }
+   
+   /* 우측 비디오 영역 */
+   .video-section {
+     flex: 1;
+     background: #0a0a0a;
+     border-left: 1px solid #333;
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     justify-content: center;
+     position: relative;
+   }
+   
+   .video-placeholder {
+     width: 90%;
+     height: 200px;
+     background: #1a1a1a;
+     border: 1px solid #333;
+     border-radius: 8px;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     position: relative;
+     overflow: hidden;
+   }
+   
+   .video-placeholder::before {
+     content: '🎬';
+     font-size: 48px;
+     opacity: 0.3;
+   }
+   
+   .video-title {
+     position: absolute;
+     bottom: 20px;
+     font-size: 12px;
+     color: #666;
+     text-align: center;
+   }
+   
+   .play-button {
+     position: absolute;
+     width: 60px;
+     height: 60px;
+     background: rgba(74, 124, 158, 0.8);
+     border-radius: 50%;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     cursor: pointer;
+     transition: all 0.3s ease;
+   }
+   
+   .play-button:hover {
+     background: rgba(74, 124, 158, 1);
+     transform: scale(1.1);
+   }
+   
+   .play-button::after {
+     content: '▶';
+     color: white;
+     font-size: 20px;
+     margin-left: 4px;
+   }
+   
+   /* 창 닫기 버튼 */
+   .close-button {
+     position: absolute;
+     top: 16px;
+     right: 16px;
+     width: 32px;
+     height: 32px;
+     background: transparent;
+     border: none;
+     color: #666;
+     font-size: 18px;
+     cursor: pointer;
+     border-radius: 6px;
+     transition: all 0.2s ease;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+   }
+   
+   .close-button:hover {
+     background: rgba(255,255,255,0.1);
+     color: #fff;
+   }
+   
+   /* 하단 정보 */
+   .footer-info {
+     position: absolute;
+     bottom: 20px;
+     left: 50px;
+     font-size: 11px;
+     color: #555;
+   }
+   
+   /* 에러 메시지 */
+   .error-message {
+     color: #e06c75;
+     font-size: 12px;
+     margin-top: 8px;
+     display: none;
+   }
+   
+   .error-message.show {
+     display: block;
+   }
+   
+   /* 로딩 상태 */
+   .loading {
+     display: none;
+     width: 20px;
+     height: 20px;
+     border: 2px solid #333;
+     border-top-color: #4a7c9e;
+     border-radius: 50%;
+     animation: spin 0.8s linear infinite;
+     margin: 0 auto;
+   }
+   
+   @keyframes spin {
+     to { transform: rotate(360deg); }
+   }
+   
+   /* 반응형 - 더 작은 화면에서만 적용 */
+   @media (max-width: 480px) {
+     .login-container {
+       width: 90%;
+       max-width: 400px;
+       height: auto;
+       flex-direction: column;
+     }
+     
+     .video-section {
+       display: none;
+     }
+     
+     .login-form {
+       padding: 40px 30px;
+     }
+   }
+   
+   /* 중간 크기 화면에서도 양쪽 레이아웃 유지 */
+   @media (min-width: 481px) and (max-width: 768px) {
+     .login-container {
+       width: 90%;
+       max-width: 720px;
+       height: 350px;
+     }
+     
+     .login-form {
+       padding: 40px 30px;
+     }
+     
+     .video-placeholder {
+       height: 150px;
+     }
+   }
+ </style>
+</head>
+<body>
+ <div class="login-container">
+   <!-- 좌측 로그인 폼 -->
+   <div class="login-form">
+     <div class="logo">
+       <span>[NUA]</span> LIVESTENO
+     </div>
+     
+     <div class="form-group">
+       <label class="form-label">Channel Code</label>
+       <div class="input-wrapper">
+         <input type="text" id="channelCode" placeholder="ABCD12" maxlength="6" autocomplete="off" />
+       </div>
+     </div>
+     
+     <div class="form-group">
+       <label class="form-label">Passkey</label>
+       <div class="input-wrapper">
+         <input type="text" id="passkey" placeholder="1234" maxlength="4" pattern="[0-9]{4}" autocomplete="off" />
+       </div>
+       <div class="error-message" id="errorMessage"></div>
+     </div>
+     
+     <button class="connect-button" onclick="connect()">
+       <span id="buttonText">연결하기</span>
+       <div class="loading" id="loading"></div>
+     </button>
+     
+     <div class="footer-info">
+       v1.0.0 · © 2025 NUA STENO
+     </div>
+   </div>
+   
+   <!-- 우측 비디오 영역 -->
+   <div class="video-section">
+     <button class="close-button" onclick="closeWindow()">✕</button>
+     <div class="video-placeholder">
+       <div class="play-button" onclick="playVideo()"></div>
+     </div>
+     <div class="video-title">사용법 안내 (1분 30초)</div>
+   </div>
+ </div>
+
+ <script>
+   // 페이지 로드 시 채널 코드 입력란에 포커스
+   window.onload = function() {
+     document.getElementById('channelCode').focus();
+   };
+   
+   // 채널 코드 자동 대문자 변환
+   document.getElementById('channelCode').addEventListener('input', function(e) {
+     e.target.value = e.target.value.toUpperCase();
+   });
+   
+   // 패스키 숫자만 입력
+   document.getElementById('passkey').addEventListener('input', function(e) {
+     e.target.value = e.target.value.replace(/[^0-9]/g, '');
+   });
+   
+   // 엔터키로 연결
+   document.addEventListener('keypress', function(e) {
+     if (e.key === 'Enter') {
+       connect();
+     }
+   });
+
+   
+   // 연결 함수
+   async function connect() {
+     const channelCode = document.getElementById('channelCode').value.trim();
+     const passkey = document.getElementById('passkey').value.trim();
+     const errorMsg = document.getElementById('errorMessage');
+     const button = document.querySelector('.connect-button');
+     const buttonText = document.getElementById('buttonText');
+     const loading = document.getElementById('loading');
+     
+     // 에러 메시지 초기화
+     errorMsg.classList.remove('show');
+     
+     // 유효성 검사
+     if (!channelCode) {
+       showError('채널 코드를 입력해주세요');
+       return;
+     }
+     
+     if (channelCode.length !== 6) {
+       showError('채널 코드는 6자리여야 합니다');
+       return;
+     }
+     
+     // 로딩 상태
+     button.disabled = true;
+     buttonText.style.display = 'none';
+     loading.style.display = 'block';
+     
+     try {
+       // Electron API 사용
+       if (window.electronAPI) {
+         const result = await window.electronAPI.connectChannel({ 
+           channel: channelCode, 
+           passkey: passkey 
+         });
+         
+         if (result.success) {
+  // 성공 - main.js에서 창 전환 처리
+  console.log('연결 성공');
+} else {
+  showError(result.error || '채널을 찾을 수 없습니다');
+}
+       } else {
+         // 웹 브라우저에서 실행 중
+         window.location.href = `framed-viewer.html?channel=${channelCode}`;
+       }
+     } catch (error) {
+       showError('연결에 실패했습니다. 다시 시도해주세요.');
+     } finally {
+       button.disabled = false;
+       buttonText.style.display = 'block';
+       loading.style.display = 'none';
+     }
+   }
+   
+   // 에러 메시지 표시
+   function showError(message) {
+     const errorMsg = document.getElementById('errorMessage');
+     errorMsg.textContent = message;
+     errorMsg.classList.add('show');
+     
+     // 3초 후 자동 숨김
+     setTimeout(() => {
+       errorMsg.classList.remove('show');
+     }, 3000);
+   }
+   
+   // 비디오 재생 (실제 구현 시)
+   function playVideo() {
+     console.log('Play tutorial video');
+     // 실제로는 비디오 플레이어 표시 또는 YouTube 임베드
+   }
+   
+   // 창 닫기
+   function closeWindow() {
+     if (window.electronAPI) {
+       // Electron 환경
+       window.electronAPI.closeWindow();
+     } else {
+       // 웹 환경
+       window.close();
+     }
+   }
+ </script>
+</body>
+</html>
