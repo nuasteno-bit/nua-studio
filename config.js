@@ -20,7 +20,7 @@
             console.log('[Config] Using custom server:', customServer);
         } else {
             // Default to production server
-            SOCKET_URL = 'https://nua-studio.onrender.com';  // UPDATE THIS after deployment
+            SOCKET_URL = 'https://nuastudio.kr';  // UPDATE THIS after deployment
             console.log('[Config] Using production server');
         }
         
@@ -73,4 +73,5 @@
     console.log('Socket URL:', SOCKET_URL);
     console.log('Environment:', window.CONFIG.environment);
     console.log('========================');
+
 })();
