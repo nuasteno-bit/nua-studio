@@ -2,18 +2,101 @@ const { app, BrowserWindow, ipcMain, net, Menu } = require('electron');
 const path = require('path');
 
 // 앱 이름 강제 설정
-app.setName('SubtitleViewer');
-app.setAppUserModelId('com.subtitle.viewer');
+app.setName('NUA Subtitle Viewer');
+app.setAppUserModelId('com.nua.subtitle.viewer');
 if (process.platform === 'win32') {
-  process.title = 'SubtitleViewer';
+  process.title = 'NUA Subtitle Viewer';
 }
 
-let mainWindow;
-let viewerWindow;
-let optionWindow = null;
+// Single instance lock
+const gotTheLock = app.requestSingleInstanceLock();
 
-function createWindow() {
-  // 로그인 창 생성
+let mainWindow = null;
+let viewerWindow = null;
+let optionWindow = null;
+let pendingDeepLink = null;
+
+// 딥링크 처리 함수
+function handleDeepLink(url) {
+  console.log('[DeepLink] Received:', url);
+  
+  if (!url || !url.startsWith('nuaviewer://')) {
+    console.log('[DeepLink] Invalid URL format');
+    return;
+  }
+  
+  try {
+    const urlObj = new URL(url);
+    const action = urlObj.hostname; // join, open 등
+    const params = new URLSearchParams(urlObj.search);
+    const channel = params.get('channel');
+    const token = params.get('token'); // 옵셔널
+    
+    console.log('[DeepLink] Parsed - Action:', action, 'Channel:', channel);
+    
+    // 채널 코드 검증 (6자리 대문자/숫자)
+    if (channel && /^[A-Z0-9]{6}$/.test(channel)) {
+      if (viewerWindow && !viewerWindow.isDestroyed()) {
+        // 이미 viewer가 열려있으면 채널 전환
+        viewerWindow.show();
+        viewerWindow.focus();
+        viewerWindow.webContents.send('deep-link-join', { channel, token });
+      } else if (!app.isReady()) {
+        // 앱 시작 중이면 pending으로 저장
+        pendingDeepLink = { channel, token };
+      } else {
+        // viewer 창 새로 생성
+        createViewerWindow(channel, token);
+      }
+    } else {
+      console.log('[DeepLink] Invalid channel code format');
+    }
+  } catch (error) {
+    console.error('[DeepLink] Parse error:', error);
+  }
+}
+
+// 프로토콜 등록
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient('nuaviewer', process.execPath, [path.resolve(process.argv[1])]);
+  }
+} else {
+  app.setAsDefaultProtocolClient('nuaviewer');
+}
+
+// Single instance 처리
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    console.log('[SecondInstance] Command line:', commandLine);
+    
+    // Windows에서 딥링크 추출
+    const deepLinkUrl = commandLine.find(arg => arg.startsWith('nuaviewer://'));
+    if (deepLinkUrl) {
+      handleDeepLink(deepLinkUrl);
+    }
+    
+    // 기존 창 포커스
+    if (viewerWindow && !viewerWindow.isDestroyed()) {
+      if (viewerWindow.isMinimized()) viewerWindow.restore();
+      viewerWindow.focus();
+    } else if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+  
+  // macOS 딥링크 처리
+  app.on('open-url', (event, url) => {
+    event.preventDefault();
+    handleDeepLink(url);
+  });
+}
+
+// 로그인 창 생성
+function createLoginWindow() {
   mainWindow = new BrowserWindow({
     width: 720,
     height: 400,
@@ -29,10 +112,24 @@ function createWindow() {
   });
 
   mainWindow.loadFile('login-dialog.html');
+  
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+    // 로그인 창이 닫히고 viewer가 없으면 앱 종료
+    if (!viewerWindow || viewerWindow.isDestroyed()) {
+      app.quit();
+    }
+  });
 }
 
 // 뷰어 창 생성 함수
-function createViewerWindow(channel) {
+function createViewerWindow(channel, token = null) {
+  // 로그인 창이 있으면 닫기
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.close();
+    mainWindow = null;
+  }
+  
   // 프레임 없는 창으로 생성
   viewerWindow = new BrowserWindow({
     width: 800,
@@ -41,7 +138,7 @@ function createViewerWindow(channel) {
     transparent: true,
     backgroundColor: '#01000000',
     hasShadow: false,
-    skipTaskbar: true,
+    skipTaskbar: false,
     alwaysOnTop: false,
     resizable: true,
     minWidth: 200,
@@ -50,31 +147,29 @@ function createViewerWindow(channel) {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-     webSecurity: true,  
-        allowRunningInsecureContent: false 
+      webSecurity: true,
+      allowRunningInsecureContent: false
     }
   });
 
   // 채널 코드 저장
   viewerWindow.channelCode = channel;
+  viewerWindow.channelToken = token;
 
   // electron-viewer.html 로드
   viewerWindow.loadFile('electron-viewer.html');
   
   // 로드 완료 후 표시
   viewerWindow.once('ready-to-show', () => {
-    viewerWindow.setTitle('');
+    viewerWindow.setTitle('NUA Subtitle Viewer');
     
     // Windows 11 투명 창 버그 대응
     if (process.platform === 'win32') {
-      // 창을 먼저 불투명하게 만들고
       viewerWindow.setBackgroundColor('#FF000000');
       viewerWindow.show();
       
-      // 100ms 후에 투명하게 변경
       setTimeout(() => {
         viewerWindow.setBackgroundColor('#00000000');
-        // 중요: 마우스 이벤트 명시적 활성화
         viewerWindow.setIgnoreMouseEvents(false);
       }, 100);
     } else {
@@ -82,7 +177,7 @@ function createViewerWindow(channel) {
       viewerWindow.show();
     }
     
-    // Windows 11 버그 대응 - 지연 후 한번 더
+    // 안정성을 위한 추가 처리
     setTimeout(() => {
       viewerWindow.setTitle('');
       viewerWindow.setIgnoreMouseEvents(false);
@@ -94,9 +189,12 @@ function createViewerWindow(channel) {
     }, 100);
   });
   
-  // 로드 완료 후 채널 코드 전송
+  // 로드 완료 후 채널 정보 전송
   viewerWindow.webContents.on('did-finish-load', () => {
-    viewerWindow.webContents.send('channel-code', channel);
+    // 딥링크로 실행된 경우 자동 접속
+    if (channel) {
+      viewerWindow.webContents.send('deep-link-join', { channel, token });
+    }
   });
   
   // 포커스 잃을 때마다 처리
@@ -117,20 +215,16 @@ function createViewerWindow(channel) {
   return viewerWindow;
 }
 
-// 투명 모드 토글 처리 (renderer에서 요청)
+// 투명 모드 토글 처리
 ipcMain.on('toggle-transparent-main', (event, isTransparent) => {
   if (!viewerWindow) return;
   
   if (isTransparent) {
-    // 먼저 불투명하게
     viewerWindow.setBackgroundColor('#FF000000');
     
-    // 50ms 후 투명하게 + 마우스 이벤트 강제 활성화
     setTimeout(() => {
       viewerWindow.setBackgroundColor('#01000000');
       viewerWindow.setIgnoreMouseEvents(false);
-      
-      // 창 포커스 재설정
       viewerWindow.focus();
       viewerWindow.blur();
       viewerWindow.focus();
@@ -140,7 +234,6 @@ ipcMain.on('toggle-transparent-main', (event, isTransparent) => {
     viewerWindow.setIgnoreMouseEvents(false);
   }
   
-  // 미세 리사이즈로 Windows 11 버그 대응
   const [width, height] = viewerWindow.getSize();
   viewerWindow.setSize(width + 1, height + 1);
   setTimeout(() => {
@@ -208,17 +301,18 @@ ipcMain.on('show-context-menu', (event, { isTransparent, isScrollbarHidden, x, y
   });
 });
 
-// IPC 통신 처리 - ngrok URL로 수정됨
+// 로그인 창에서 채널 연결 요청 처리
 ipcMain.handle('connect-channel', async (event, { channel, passkey }) => {
   try {
-    const serverUrl = 'https://8bc0d7a4da66.ngrok-free.app/';
+    // 서버 URL (ngrok URL 사용)
+    const serverUrl = 'https://81b5c4d8eea5.ngrok-free.app';
     const apiUrl = `${serverUrl}/api/channel/${channel}/verify`;
     
-    console.log('채널 확인:', apiUrl);
+    console.log('[Channel] Verifying:', channel);
     
     const request = net.request(apiUrl);
     request.setHeader('ngrok-skip-browser-warning', 'true');
-    request.setHeader('User-Agent', 'SubtitleViewer/1.0');
+    request.setHeader('User-Agent', 'NUA-Subtitle-Viewer/1.0');
     
     return new Promise((resolve) => {
       let responseData = '';
@@ -230,38 +324,37 @@ ipcMain.handle('connect-channel', async (event, { channel, passkey }) => {
         
         response.on('end', () => {
           try {
-            // JSON 파싱
             const data = JSON.parse(responseData);
-            console.log('응답 데이터:', data);
+            console.log('[Channel] Verification response:', data);
             
-            // exists: true 확인
             if (response.statusCode === 200 && data.exists === true) {
-              createViewerWindow(channel);
-              mainWindow.close();
+              // 채널 존재 확인됨 - viewer 창 생성
+              createViewerWindow(channel, passkey);
               resolve({ success: true });
             } else {
               resolve({ success: false, error: '채널을 찾을 수 없습니다' });
             }
           } catch (parseError) {
-            console.error('JSON 파싱 오류:', parseError);
+            console.error('[Channel] Parse error:', parseError);
             resolve({ success: false, error: 'API 응답 처리 오류' });
           }
         });
       });
       
       request.on('error', (error) => {
-        console.error('서버 연결 오류:', error);
+        console.error('[Channel] Connection error:', error);
         resolve({ success: false, error: '서버 연결 실패' });
       });
       
       request.end();
     });
   } catch (error) {
+    console.error('[Channel] Error:', error);
     return { success: false, error: '연결 오류' };
   }
 });
 
-// 항상 위 토글 (단축키)
+// 항상 위 토글
 ipcMain.on('toggle-always-on-top', (event) => {
   if (!viewerWindow) return;
   
@@ -299,7 +392,6 @@ ipcMain.on('open-options', (event, currentSettings) => {
   
   optionWindow.loadFile('electron-options.html');
   
-  // 현재 설정 전달
   optionWindow.webContents.once('did-finish-load', () => {
     optionWindow.webContents.send('load-settings', currentSettings);
   });
@@ -311,13 +403,8 @@ ipcMain.on('open-options', (event, currentSettings) => {
 
 // 설정 변경 받기
 ipcMain.on('apply-settings', (event, settings) => {
-  viewerWindow.webContents.send('update-settings', settings);
-});
-
-// 옵션 창 최소화
-ipcMain.on('minimize-option-window', () => {
-  if (optionWindow) {
-    optionWindow.minimize();
+  if (viewerWindow && !viewerWindow.isDestroyed()) {
+    viewerWindow.webContents.send('update-settings', settings);
   }
 });
 
@@ -328,12 +415,42 @@ ipcMain.handle('close-window', () => {
   }
 });
 
+// 앱 준비 완료
 app.whenReady().then(() => {
-  createWindow();
+  console.log('[App] Ready. Pending deep link:', pendingDeepLink);
+  
+  // 초기 실행 시 argv 체크 (Windows)
+  if (process.platform === 'win32' && process.argv.length > 1) {
+    const deepLinkUrl = process.argv.find(arg => arg.startsWith('nuaviewer://'));
+    if (deepLinkUrl) {
+      handleDeepLink(deepLinkUrl);
+      return;
+    }
+  }
+  
+  // pendingDeepLink가 있으면 viewer 창으로 바로 실행
+  if (pendingDeepLink) {
+    createViewerWindow(pendingDeepLink.channel, pendingDeepLink.token);
+  } else {
+    // 딥링크가 없으면 로그인 창 표시
+    createLoginWindow();
+  }
 });
 
+// macOS에서 모든 창이 닫혔을 때
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
+  }
+});
+
+// macOS에서 독 아이콘 클릭 시
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    if (pendingDeepLink) {
+      createViewerWindow(pendingDeepLink.channel, pendingDeepLink.token);
+    } else {
+      createLoginWindow();
+    }
   }
 });
