@@ -1,0 +1,52 @@
+{
+  "name": "nua-subtitle-viewer",
+  "version": "1.0.0",
+  "description": "NUA Subtitle Viewer - Electron App",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist-win": "electron-builder --win",
+    "dist-mac": "electron-builder --mac",
+    "dist-linux": "electron-builder --linux"
+  },
+  "author": "NUA Studio",
+  "license": "MIT",
+  "dependencies": {
+    "electron": "^27.0.0"
+  },
+  "devDependencies": {
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.nua.subtitle.viewer",
+    "productName": "NUA Subtitle Viewer",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!dist/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "final_logo.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "final_logo.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "final_logo.png"
+    },
+    "protocols": {
+      "name": "NUA Viewer Protocol",
+      "schemes": ["nuaviewer"]
+    }
+  }
+}
