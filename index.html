@@ -2065,47 +2065,28 @@
             });
         }
 
-        // Native Viewer Launch Function
-        function launchNativeViewer(channelCode) {
-            const deepLink = `${CONFIG.DEEPLINK_SCHEME}join?channel=${channelCode}`;
-            let viewerLaunched = false;
+// Native Viewer Launch Function
+function launchNativeViewer(channelCode) {
+    const deepLink = `${CONFIG.DEEPLINK_SCHEME}join?channel=${channelCode}`;
+    
+    // 브라우저 기본 딥링크 팝업 사용 (Zoom 방식)
+    window.location.href = deepLink;
+    
+    // 3초 후 앱이 실행되지 않았을 경우 안내
+    setTimeout(() => {
+        // 사용자가 아직 같은 페이지에 있다면 (앱이 안 열림)
+        if (document.visibilityState === 'visible') {
+            const userConfirm = confirm(
+                '전용 뷰어가 실행되지 않았나요?\n' +
+                '다운로드 페이지로 이동하시겠습니까?'
+            );
             
-            // Create hidden iframe to trigger deep link
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.src = deepLink;
-            document.body.appendChild(iframe);
-            
-            // Set timeout for fallback to download page
-            const timeout = setTimeout(() => {
-                if (!viewerLaunched) {
-                    // Redirect to download page if viewer not installed
-                    console.log('Native viewer not installed, redirecting to download...');
-                    window.location.href = CONFIG.VIEWER_DOWNLOAD_URL;
-                }
-                document.body.removeChild(iframe);
-            }, CONFIG.DEEPLINK_TIMEOUT);
-            
-            // Detect if app launched by monitoring page blur
-            const handleBlur = () => {
-                viewerLaunched = true;
-                clearTimeout(timeout);
-                window.removeEventListener('blur', handleBlur);
-                if (document.body.contains(iframe)) {
-                    document.body.removeChild(iframe);
-                }
-            };
-            
-            window.addEventListener('blur', handleBlur);
-            
-            // Clean up after 2 seconds regardless
-            setTimeout(() => {
-                window.removeEventListener('blur', handleBlur);
-                if (document.body.contains(iframe)) {
-                    document.body.removeChild(iframe);
-                }
-            }, 2000);
+            if (userConfirm) {
+                window.location.href = CONFIG.VIEWER_DOWNLOAD_URL;
+            }
         }
+    }, 3000);
+}
 
         // Native viewer button click handler
         if (nativeViewerBtn) {
