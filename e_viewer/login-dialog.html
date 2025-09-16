@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NUA STENO - Viewer Login</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <title>NUA Viewer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
     <style>
         * {
             box-sizing: border-box;
@@ -13,8 +13,8 @@
         }
         
         body {
-            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
-            color: #f0f0f0;
+            background: #0a0a0a;
+            color: #ffffff;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             height: 100vh;
             overflow: hidden;
@@ -24,253 +24,158 @@
             flex-direction: column;
         }
         
-        /* 드래그 가능한 헤더 */
-        .window-header {
-            height: 36px;
-            background: rgba(0, 0, 0, 0.5);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 12px;
+        /* 전체 창을 드래그 가능하게 (버튼 제외) */
+        .drag-area {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             -webkit-app-region: drag;
-            position: relative;
-            z-index: 100;
         }
         
-        .window-title {
-            font-size: 12px;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.8);
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .window-title::before {
-            content: '';
-            width: 12px;
-            height: 12px;
-            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
-            border-radius: 50%;
-            display: inline-block;
-        }
-        
-        .window-controls {
-            display: flex;
-            gap: 8px;
+        /* 드래그 불가 영역 */
+        .no-drag {
             -webkit-app-region: no-drag;
         }
         
-        .window-btn {
-            width: 32px;
-            height: 24px;
-            border: none;
-            background: rgba(255, 255, 255, 0.05);
-            color: rgba(255, 255, 255, 0.6);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px;
-        }
-        
-        .window-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-        }
-        
-        .window-btn.close:hover {
-            background: #e74c3c;
-            color: #fff;
-        }
-        
         /* 메인 컨테이너 */
-        .main-container {
-            flex: 1;
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+        
+        /* 창 닫기 버튼 */
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            color: #666;
+            cursor: pointer;
+            font-size: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
-            position: relative;
+            border-radius: 6px;
+            transition: all 0.2s;
+            z-index: 10;
         }
         
-        .login-box {
-            width: 100%;
-            max-width: 420px;
-            background: rgba(20, 20, 20, 0.95);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 48px 40px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            position: relative;
-            overflow: hidden;
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
         }
         
-        /* 배경 장식 */
-        .login-box::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
-            animation: rotate 30s linear infinite;
-            pointer-events: none;
-        }
-        
-        @keyframes rotate {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .login-content {
-            position: relative;
-            z-index: 1;
-        }
-        
-        /* 로고 영역 */
-        .logo-section {
+        /* 로고 */
+        .logo {
+            margin-bottom: 48px;
             text-align: center;
-            margin-bottom: 40px;
         }
         
         .logo-icon {
-            width: 64px;
-            height: 64px;
-            margin: 0 auto 16px;
-            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
-            border-radius: 16px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #0099ff, #00d4ff);
+            border-radius: 12px;
+            margin: 0 auto 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
-            font-weight: bold;
+            font-weight: 600;
+            font-size: 20px;
             color: #000;
-            box-shadow: 0 8px 24px rgba(0, 212, 255, 0.3);
         }
         
         .logo-text {
-            font-size: 24px;
-            font-weight: 700;
+            font-size: 18px;
+            font-weight: 600;
             color: #fff;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
+            margin-bottom: 4px;
         }
         
         .logo-subtitle {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.5);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        
-        /* 입력 폼 */
-        .form-group {
-            margin-bottom: 24px;
-        }
-        
-        .form-label {
-            display: block;
             font-size: 11px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 8px;
-            text-transform: uppercase;
+            color: #666;
             letter-spacing: 1px;
         }
         
-        .input-wrapper {
-            position: relative;
-        }
-        
-        .input-icon {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: rgba(255, 255, 255, 0.3);
-            font-size: 16px;
-            pointer-events: none;
-        }
-        
-        .form-input {
+        /* 폼 영역 */
+        .form-container {
             width: 100%;
-            padding: 14px 16px 14px 44px;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 320px;
+        }
+        
+        /* 입력 필드 */
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 500;
+            color: #888;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 8px;
             color: #fff;
             font-size: 15px;
-            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
             letter-spacing: 2px;
-            transition: all 0.3s ease;
+            transition: all 0.2s;
             text-align: center;
+            font-family: 'Inter', sans-serif;
         }
         
-        .form-input:focus {
+        .input-field:focus {
             outline: none;
-            border-color: #00d4ff;
-            background: rgba(0, 0, 0, 0.6);
-            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+            border-color: rgba(0, 153, 255, 0.5);
+            background: rgba(255, 255, 255, 0.05);
         }
         
-        .form-input::placeholder {
-            color: rgba(255, 255, 255, 0.3);
+        .input-field::placeholder {
+            color: #444;
             letter-spacing: 1px;
-        }
-        
-        /* 패스키 입력 (선택사항) */
-        .optional-label {
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.4);
-            margin-left: 4px;
-            font-weight: 400;
         }
         
         /* 연결 버튼 */
         .connect-btn {
             width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            padding: 12px;
+            background: #0099ff;
             border: none;
             border-radius: 8px;
-            color: #000;
-            font-size: 14px;
+            color: #fff;
+            font-size: 13px;
             font-weight: 600;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            position: relative;
-            overflow: hidden;
+            transition: all 0.2s;
             margin-top: 32px;
-        }
-        
-        .connect-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-            transition: left 0.5s ease;
-        }
-        
-        .connect-btn:hover::before {
-            left: 100%;
+            position: relative;
         }
         
         .connect-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 212, 255, 0.4);
+            background: #0088ee;
+            transform: translateY(-1px);
         }
         
         .connect-btn:active {
@@ -278,29 +183,29 @@
         }
         
         .connect-btn:disabled {
-            opacity: 0.5;
+            opacity: 0.4;
             cursor: not-allowed;
             transform: none;
         }
         
-        /* 로딩 상태 */
-        .loading-spinner {
-            display: none;
+        /* 로딩 */
+        .connect-btn.loading {
+            color: transparent;
+        }
+        
+        .connect-btn.loading::after {
+            content: '';
+            position: absolute;
             width: 16px;
             height: 16px;
-            border: 2px solid rgba(0, 0, 0, 0.3);
-            border-top-color: #000;
+            top: 50%;
+            left: 50%;
+            margin-left: -8px;
+            margin-top: -8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
             border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto;
-        }
-        
-        .connect-btn.loading .btn-text {
-            display: none;
-        }
-        
-        .connect-btn.loading .loading-spinner {
-            display: block;
+            animation: spin 0.6s linear infinite;
         }
         
         @keyframes spin {
@@ -308,171 +213,140 @@
         }
         
         /* 에러 메시지 */
-        .error-message {
+        .error-msg {
             display: none;
-            background: rgba(231, 76, 60, 0.1);
-            border: 1px solid rgba(231, 76, 60, 0.3);
-            border-radius: 6px;
-            padding: 10px 12px;
             margin-top: 12px;
+            padding: 10px;
+            background: rgba(255, 59, 48, 0.1);
+            border: 1px solid rgba(255, 59, 48, 0.2);
+            border-radius: 6px;
+            color: #ff6b6b;
             font-size: 12px;
-            color: #e74c3c;
             text-align: center;
         }
         
-        .error-message.show {
+        .error-msg.show {
             display: block;
-            animation: slideDown 0.3s ease;
         }
         
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        /* Optional 표시 */
+        .optional {
+            font-size: 10px;
+            color: #555;
+            font-weight: 400;
         }
         
-        /* 하단 링크 */
-        .footer-links {
-            margin-top: 32px;
-            padding-top: 24px;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        /* 하단 정보 */
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 10px;
+            color: #444;
+        }
+        
+        /* 웹 링크 */
+        .web-link {
+            margin-top: 24px;
             text-align: center;
         }
         
-        .footer-link {
-            color: rgba(255, 255, 255, 0.5);
+        .web-link a {
+            color: #666;
             text-decoration: none;
             font-size: 12px;
-            transition: color 0.2s ease;
-            margin: 0 12px;
+            transition: color 0.2s;
         }
         
-        .footer-link:hover {
-            color: #00d4ff;
-        }
-        
-        /* 버전 정보 */
-        .version-info {
-            position: absolute;
-            bottom: 12px;
-            left: 12px;
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.3);
-            font-family: 'JetBrains Mono', monospace;
-        }
-        
-        /* 애니메이션 */
-        .fade-in {
-            animation: fadeIn 0.5s ease;
-        }
-        
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .web-link a:hover {
+            color: #0099ff;
         }
     </style>
 </head>
 <body>
-    <!-- 드래그 가능한 윈도우 헤더 -->
-    <div class="window-header">
-        <div class="window-title">NUA Subtitle Viewer</div>
-        <div class="window-controls">
-            <button class="window-btn minimize" onclick="minimizeWindow()">－</button>
-            <button class="window-btn close" onclick="closeWindow()">✕</button>
-        </div>
-    </div>
+    <!-- 드래그 영역 -->
+    <div class="drag-area"></div>
     
-    <!-- 메인 컨테이너 -->
-    <div class="main-container">
-        <div class="login-box fade-in">
-            <div class="login-content">
-                <!-- 로고 섹션 -->
-                <div class="logo-section">
-                    <div class="logo-icon">NUA</div>
-                    <div class="logo-text">LIVESTENO</div>
-                    <div class="logo-subtitle">Real-time Subtitle Viewer</div>
+    <!-- 컨테이너 -->
+    <div class="container">
+        <!-- 닫기 버튼 -->
+        <button class="close-btn no-drag" onclick="closeWindow()">×</button>
+        
+        <!-- 로고 -->
+        <div class="logo">
+            <div class="logo-icon">NUA</div>
+            <div class="logo-text">Subtitle Viewer</div>
+            <div class="logo-subtitle">REAL-TIME STREAMING</div>
+        </div>
+        
+        <!-- 폼 -->
+        <div class="form-container">
+            <form id="loginForm" onsubmit="handleSubmit(event)">
+                <!-- 채널 코드 -->
+                <div class="input-group no-drag">
+                    <label class="input-label">Channel Code</label>
+                    <input 
+                        type="text" 
+                        id="channelCode" 
+                        class="input-field" 
+                        placeholder="ABC123" 
+                        maxlength="6" 
+                        pattern="[A-Z0-9]{6}"
+                        autocomplete="off"
+                        required
+                    />
                 </div>
                 
-                <!-- 입력 폼 -->
-                <form id="loginForm" onsubmit="handleSubmit(event)">
-                    <div class="form-group">
-                        <label class="form-label">Channel Code</label>
-                        <div class="input-wrapper">
-                            <span class="input-icon">#</span>
-                            <input 
-                                type="text" 
-                                id="channelCode" 
-                                class="form-input" 
-                                placeholder="ABCD12" 
-                                maxlength="6" 
-                                pattern="[A-Z0-9]{6}"
-                                autocomplete="off"
-                                required
-                            />
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">
-                            Passkey
-                            <span class="optional-label">(Optional)</span>
-                        </label>
-                        <div class="input-wrapper">
-                            <span class="input-icon">🔑</span>
-                            <input 
-                                type="password" 
-                                id="passkey" 
-                                class="form-input" 
-                                placeholder="••••" 
-                                maxlength="20"
-                                autocomplete="off"
-                            />
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="connect-btn" id="connectBtn">
-                        <span class="btn-text">CONNECT</span>
-                        <div class="loading-spinner"></div>
-                    </button>
-                    
-                    <div class="error-message" id="errorMessage"></div>
-                </form>
-                
-                <!-- 하단 링크 -->
-                <div class="footer-links">
-                    <a href="#" class="footer-link" onclick="openHelp()">사용 가이드</a>
-                    <a href="#" class="footer-link" onclick="openWebViewer()">웹 뷰어로 이동</a>
+                <!-- 패스키 -->
+                <div class="input-group no-drag">
+                    <label class="input-label">
+                        Passkey <span class="optional">(Optional)</span>
+                    </label>
+                    <input 
+                        type="password" 
+                        id="passkey" 
+                        class="input-field" 
+                        placeholder="••••••" 
+                        maxlength="20"
+                        autocomplete="off"
+                    />
                 </div>
+                
+                <!-- 연결 버튼 -->
+                <button type="submit" class="connect-btn no-drag" id="connectBtn">
+                    CONNECT
+                </button>
+                
+                <!-- 에러 메시지 -->
+                <div class="error-msg" id="errorMessage"></div>
+            </form>
+            
+            <!-- 웹 뷰어 링크 -->
+            <div class="web-link no-drag">
+                <a href="#" onclick="openWebViewer()">웹 뷰어 사용하기 →</a>
             </div>
         </div>
+        
+        <!-- 하단 정보 -->
+        <div class="footer">
+            NUA Studio © 2024 · v1.0.0
+        </div>
     </div>
     
-    <!-- 버전 정보 -->
-    <div class="version-info">v1.0.0</div>
-    
     <script>
-        // 페이지 로드 시 포커스
-        window.onload = function() {
+        // 초기 포커스
+        window.onload = () => {
             document.getElementById('channelCode').focus();
         };
         
-        // 채널 코드 자동 대문자 변환
-        document.getElementById('channelCode').addEventListener('input', function(e) {
+        // 채널 코드 자동 대문자
+        document.getElementById('channelCode').addEventListener('input', (e) => {
             e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
         });
         
-        // 폼 제출 처리
+        // 폼 제출
         async function handleSubmit(event) {
             event.preventDefault();
             
@@ -481,72 +355,46 @@
             const connectBtn = document.getElementById('connectBtn');
             const errorMsg = document.getElementById('errorMessage');
             
-            // 에러 메시지 초기화
             errorMsg.classList.remove('show');
-            errorMsg.textContent = '';
             
-            // 유효성 검사
-            if (!channelCode) {
-                showError('채널 코드를 입력해주세요');
+            if (!channelCode || !/^[A-Z0-9]{6}$/.test(channelCode)) {
+                showError('올바른 채널 코드를 입력하세요');
                 return;
             }
             
-            if (!/^[A-Z0-9]{6}$/.test(channelCode)) {
-                showError('채널 코드는 6자리 영문/숫자여야 합니다');
-                return;
-            }
-            
-            // 로딩 상태
             connectBtn.disabled = true;
             connectBtn.classList.add('loading');
             
             try {
-                // ElectronAPI 사용
                 if (window.electronAPI) {
                     const result = await window.electronAPI.connectChannel({ 
                         channel: channelCode, 
                         passkey: passkey 
                     });
                     
-                    if (result.success) {
-                        // 성공 - main.js에서 창 전환 처리
-                        console.log('연결 성공');
-                    } else {
+                    if (!result.success) {
                         showError(result.error || '채널을 찾을 수 없습니다');
                     }
                 } else {
-                    // 웹 브라우저에서 실행 중 (개발 모드)
-                    console.error('Electron API not available');
                     showError('Electron 환경이 아닙니다');
                 }
             } catch (error) {
-                console.error('연결 오류:', error);
-                showError('연결에 실패했습니다. 다시 시도해주세요.');
+                showError('연결 실패. 다시 시도해주세요.');
             } finally {
                 connectBtn.disabled = false;
                 connectBtn.classList.remove('loading');
             }
         }
         
-        // 에러 메시지 표시
+        // 에러 표시
         function showError(message) {
             const errorMsg = document.getElementById('errorMessage');
             errorMsg.textContent = message;
             errorMsg.classList.add('show');
-            
-            // 5초 후 자동 숨김
-            setTimeout(() => {
-                errorMsg.classList.remove('show');
-            }, 5000);
+            setTimeout(() => errorMsg.classList.remove('show'), 5000);
         }
         
-        // 창 컨트롤
-        function minimizeWindow() {
-            if (window.electronAPI) {
-                window.electronAPI.minimize();
-            }
-        }
-        
+        // 창 닫기
         function closeWindow() {
             if (window.electronAPI) {
                 window.electronAPI.closeWindow();
@@ -555,37 +403,18 @@
             }
         }
         
-        // 도움말 열기
-        function openHelp() {
-            if (window.electronAPI) {
-                // Electron에서는 외부 브라우저로 열기
-                require('electron').shell.openExternal('https://nua.studio/help');
-            } else {
-                window.open('https://nua.studio/help', '_blank');
-            }
-        }
-        
-        // 웹 뷰어로 이동
+        // 웹 뷰어 열기
         function openWebViewer() {
             if (window.electronAPI) {
-                require('electron').shell.openExternal('https://nua.studio/viewer');
+                require('electron').shell.openExternal('https://nua-studio.onrender.com');
             } else {
-                window.open('https://nua.studio/viewer', '_blank');
+                window.open('https://nua-studio.onrender.com', '_blank');
             }
         }
         
-        // 엔터키로 제출
-        document.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !document.getElementById('connectBtn').disabled) {
-                document.getElementById('loginForm').dispatchEvent(new Event('submit'));
-            }
-        });
-        
-        // ESC키로 창 닫기
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeWindow();
-            }
+        // ESC 닫기
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeWindow();
         });
     </script>
 </body>
