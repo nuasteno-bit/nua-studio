@@ -21,7 +21,8 @@
       }
       
       // 추가 보안: 토큰 유효성 검증 (서버 통신)
-      // config.js 로드 후 실행되도록 처리
+      // 주석 처리: 서버에 /api/admin/verify API가 구현될 때까지 비활성화
+      /*
       window.addEventListener('DOMContentLoaded', function() {
         const API_BASE_URL = window.CONFIG ? window.CONFIG.SOCKET_URL : 'http://localhost:3000';
         
@@ -46,6 +47,7 @@
           // 네트워크 오류 시에도 일단 허용 (오프라인 작업 가능)
         });
       });
+      */
     })();
   </script>
   
@@ -1189,10 +1191,13 @@
       }, 30000);
       
       // 세션 타임아웃 체크 (30분)
+      // 주석 처리: 테스트 시 불편하므로 비활성화
+      /*
       setTimeout(() => {
         alert('세션이 만료되었습니다. 다시 로그인해주세요.');
         logout();
       }, 30 * 60 * 1000);
+      */
     });
     
     // 페이지 가시성 변경 감지 (탭 전환 시 보안 체크)
