@@ -890,14 +890,6 @@
   </style>
 </head>
 <body>
-  <!-- 인증 체크 로딩 오버레이 -->
-  <div id="authCheckOverlay">
-    <div class="auth-loading">
-      <div class="auth-loading-spinner"></div>
-      <p style="color: #888;">인증 확인 중...</p>
-    </div>
-  </div>
-  
   <!-- Header - index.html과 동일한 스타일 -->
   <header class="header" id="header">
     <div class="wrap">
@@ -1175,17 +1167,8 @@
     window.addEventListener('DOMContentLoaded', () => {
       const token = localStorage.getItem('adminToken');
       
-      // 로딩 오버레이 즉시 숨기기 (토큰이 있으면)
-      if (token) {
-        const overlay = document.getElementById('authCheckOverlay');
-        if (overlay) {
-          overlay.classList.add('hide');
-          setTimeout(() => {
-            overlay.style.display = 'none';
-          }, 300);
-        }
-      } else {
-        // 토큰이 없는 경우만 리다이렉트
+      // 토큰이 없는 경우만 리다이렉트
+      if (!token) {
         alert('관리자 권한이 필요합니다.');
         window.location.replace('index.html');
         return;
