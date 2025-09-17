@@ -1158,8 +1158,8 @@
       }
     })();
     
-    // API Base URL
-    const API_BASE_URL = window.CONFIG ? window.CONFIG.SOCKET_URL : 'http://localhost:3000';
+    // API Base URL - config 소문자로 수정
+    const API_BASE_URL = window.config ? window.config.SOCKET_URL : 'http://localhost:3000';
     let currentModalChannel = null;
     let channels = [];
     
