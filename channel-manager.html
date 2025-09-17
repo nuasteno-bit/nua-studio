@@ -4,6 +4,51 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Channel Manager - NUA STUDIO</title>
+  
+  <!-- 보안: 인증 체크 - 페이지 로드 전 실행 -->
+  <script>
+    (function() {
+      // 즉시 실행 함수로 토큰 검증
+      const token = localStorage.getItem('adminToken');
+      const role = localStorage.getItem('adminRole');
+      
+      // 토큰이 없거나 권한이 없는 경우 즉시 리다이렉트
+      if (!token || role !== 'system_admin') {
+        // 경고 메시지 없이 바로 리다이렉트 (보안상 이유)
+        window.location.replace('index.html');
+        // replace 사용으로 뒤로가기 방지
+        return;
+      }
+      
+      // 추가 보안: 토큰 유효성 검증 (서버 통신)
+      // config.js 로드 후 실행되도록 처리
+      window.addEventListener('DOMContentLoaded', function() {
+        const API_BASE_URL = window.CONFIG ? window.CONFIG.SOCKET_URL : 'http://localhost:3000';
+        
+        // 토큰 유효성 서버 검증 (비동기)
+        fetch(`${API_BASE_URL}/api/admin/verify`, {
+          method: 'POST',
+          headers: {
+            'Authorization': token,
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true'
+          }
+        }).then(response => {
+          if (!response.ok) {
+            // 토큰이 서버에서 유효하지 않은 경우
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminRole');
+            alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+            window.location.replace('index.html');
+          }
+        }).catch(error => {
+          console.error('Token verification failed:', error);
+          // 네트워크 오류 시에도 일단 허용 (오프라인 작업 가능)
+        });
+      });
+    })();
+  </script>
+  
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=Ubuntu:wght@300;400;500;700&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xeicon@2.3.3/xeicon.min.css">
@@ -33,6 +78,44 @@
       margin: 0;
       padding: 0;
       min-height: 100vh;
+    }
+    
+    /* 로딩 오버레이 - 인증 체크 중 표시 */
+    #authCheckOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #0e0e0e;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.3s ease;
+    }
+    
+    #authCheckOverlay.hide {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    .auth-loading {
+      text-align: center;
+    }
+    
+    .auth-loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid #333;
+      border-radius: 50%;
+      border-top-color: var(--neon-blue);
+      animation: spin 1s ease-in-out infinite;
+      margin: 0 auto 1rem;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
     
     /* Header - index.html과 동일한 스타일 */
@@ -667,6 +750,32 @@
       justify-content: flex-end;
     }
     
+    /* Session Info Display */
+    .session-info {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      background: rgba(26, 26, 26, 0.95);
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 0.8rem 1.2rem;
+      font-size: 0.85rem;
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .session-user {
+      color: var(--neon-blue);
+      font-weight: 500;
+    }
+    
+    .session-role {
+      color: #888;
+      font-size: 0.8rem;
+    }
+    
     /* Footer */
     footer {
       background: #0e0e0e;
@@ -688,10 +797,6 @@
       border-radius: 50%;
       border-top-color: var(--neon-blue);
       animation: spin 1s ease-in-out infinite;
-    }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
     }
     
     /* Toast Notification */
@@ -760,10 +865,24 @@
       .stats-dashboard {
         grid-template-columns: 1fr;
       }
+      
+      .session-info {
+        top: auto;
+        bottom: 20px;
+        right: 20px;
+      }
     }
   </style>
 </head>
 <body>
+  <!-- 인증 체크 로딩 오버레이 -->
+  <div id="authCheckOverlay">
+    <div class="auth-loading">
+      <div class="auth-loading-spinner"></div>
+      <p style="color: #888;">인증 확인 중...</p>
+    </div>
+  </div>
+  
   <!-- Header - index.html과 동일한 스타일 -->
   <header class="header" id="header">
     <div class="wrap">
@@ -785,6 +904,12 @@
       </div>
     </div>
   </header>
+  
+  <!-- 세션 정보 표시 -->
+  <div class="session-info" id="sessionInfo" style="display: none;">
+    <span>👤 <span class="session-user" id="sessionUser">admin</span></span>
+    <span class="session-role">system_admin</span>
+  </div>
 
   <div class="container">
     <!-- Statistics Dashboard -->
@@ -1008,6 +1133,24 @@
 
   <script src="config.js"></script>
   <script>
+    // 보안: 페이지 로드 시 추가 인증 체크
+    (function() {
+      const token = localStorage.getItem('adminToken');
+      const role = localStorage.getItem('adminRole');
+      
+      // 토큰이나 권한이 없으면 즉시 리다이렉트
+      if (!token || role !== 'system_admin') {
+        window.location.replace('index.html');
+        return;
+      }
+      
+      // 세션 정보 표시
+      const sessionInfo = document.getElementById('sessionInfo');
+      if (sessionInfo) {
+        sessionInfo.style.display = 'flex';
+      }
+    })();
+    
     // API Base URL
     const API_BASE_URL = window.CONFIG ? window.CONFIG.SOCKET_URL : 'http://localhost:3000';
     let currentModalChannel = null;
@@ -1017,11 +1160,23 @@
     window.addEventListener('DOMContentLoaded', () => {
       const token = localStorage.getItem('adminToken');
       
+      // 최종 보안 체크
       if (!token) {
         alert('관리자 권한이 필요합니다.');
-        window.location.href = 'index.html';
+        window.location.replace('index.html');
         return;
       }
+      
+      // 로딩 오버레이 숨기기
+      setTimeout(() => {
+        const overlay = document.getElementById('authCheckOverlay');
+        if (overlay) {
+          overlay.classList.add('hide');
+          setTimeout(() => {
+            overlay.style.display = 'none';
+          }, 300);
+        }
+      }, 500);
       
       // Load initial data
       loadChannelList();
@@ -1032,6 +1187,24 @@
         loadChannelList();
         updateStats();
       }, 30000);
+      
+      // 세션 타임아웃 체크 (30분)
+      setTimeout(() => {
+        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+        logout();
+      }, 30 * 60 * 1000);
+    });
+    
+    // 페이지 가시성 변경 감지 (탭 전환 시 보안 체크)
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        const token = localStorage.getItem('adminToken');
+        const role = localStorage.getItem('adminRole');
+        
+        if (!token || role !== 'system_admin') {
+          window.location.replace('index.html');
+        }
+      }
     });
     
     // Logout
@@ -1048,7 +1221,7 @@
       }
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminRole');
-      window.location.href = 'index.html';
+      window.location.replace('index.html');
     }
     
     // Show stats (placeholder)
@@ -1588,6 +1761,3 @@
     
     // Initialize
     generatePasskey();
-  </script>
-</body>
-</html>
