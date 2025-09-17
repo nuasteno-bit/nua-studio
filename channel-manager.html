@@ -4,6 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Channel Manager - NUA STUDIO</title>
+  
+  <!-- 보안: 즉시 토큰 검증 -->
+  <script>
+    (function() {
+      const token = localStorage.getItem('adminToken');
+      const role = localStorage.getItem('adminRole');
+      
+      // 토큰이 없거나 system_admin 역할이 아니면 즉시 리다이렉트
+      if (!token || role !== 'system_admin') {
+        window.location.replace('index.html');
+        return;
+      }
+    })();
+  </script>
+  
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=Ubuntu:wght@300;400;500;700&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xeicon@2.3.3/xeicon.min.css">
@@ -1013,11 +1028,13 @@
     let currentModalChannel = null;
     let channels = [];
     
-    // Auth check
+    // Auth check - 보안 강화: 토큰과 역할 재확인
     window.addEventListener('DOMContentLoaded', () => {
       const token = localStorage.getItem('adminToken');
+      const role = localStorage.getItem('adminRole');
       
-      if (!token) {
+      // 토큰이 없거나 system_admin이 아니면 리다이렉트
+      if (!token || role !== 'system_admin') {
         alert('관리자 권한이 필요합니다.');
         window.location.href = 'index.html';
         return;
