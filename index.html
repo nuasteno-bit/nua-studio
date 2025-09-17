@@ -1858,6 +1858,62 @@
             return false;
         }
 
+        // Channel validation function - 서버의 실제 엔드포인트 사용
+        async function validateChannel(channelCode) {
+            try {
+                const response = await fetch(`${CONFIG.API_BASE_URL}/api/channel/${channelCode}/verify`, {
+                    method: 'GET',
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+                
+                const data = await response.json();
+                return data.exists === true;
+            } catch (error) {
+                console.error('Channel validation error:', error);
+                return false;
+            }
+        }
+
+        // Show loading state
+        function setFormLoading(isLoading) {
+            const submitBtn = document.getElementById('webEnterBtn');
+            const nativeBtn = document.getElementById('nativeViewerBtn');
+            const roleButtons = document.querySelectorAll('.role-btn');
+            const channelCodeInput = document.getElementById('channelCode');
+            const channelPasswordInput = document.getElementById('channelPassword');
+            
+            if (isLoading) {
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.style.opacity = '0.6';
+                    submitBtn.innerHTML = '검증 중...';
+                }
+                if (nativeBtn) {
+                    nativeBtn.disabled = true;
+                    nativeBtn.style.opacity = '0.6';
+                }
+                roleButtons.forEach(btn => btn.disabled = true);
+                if (channelCodeInput) channelCodeInput.disabled = true;
+                if (channelPasswordInput) channelPasswordInput.disabled = true;
+            } else {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.style.opacity = '1';
+                    const selectedRole = document.querySelector('.role-btn.active')?.getAttribute('data-role');
+                    submitBtn.innerHTML = selectedRole === 'guest' ? 'WEB →' : 'ENTER →';
+                }
+                if (nativeBtn) {
+                    nativeBtn.disabled = false;
+                    nativeBtn.style.opacity = '1';
+                }
+                roleButtons.forEach(btn => btn.disabled = false);
+                if (channelCodeInput) channelCodeInput.disabled = false;
+                if (channelPasswordInput) channelPasswordInput.disabled = false;
+            }
+        }
+
         // 1. Hero Matrix Typing Effect
         function startHeroTyping() {
             const lines = [
@@ -2064,32 +2120,32 @@
             });
         }
 
-// Native Viewer Launch Function
-function launchNativeViewer(channelCode) {
-    const deepLink = `${CONFIG.DEEPLINK_SCHEME}join?channel=${channelCode}`;
-    
-    // 브라우저 기본 딥링크 팝업 사용 (Zoom 방식)
-    window.location.href = deepLink;
-    
-    // 3초 후 앱이 실행되지 않았을 경우 안내
-    setTimeout(() => {
-        // 사용자가 아직 같은 페이지에 있다면 (앱이 안 열림)
-        if (document.visibilityState === 'visible') {
-            const userConfirm = confirm(
-                '전용 뷰어가 실행되지 않았나요?\n' +
-                '다운로드 페이지로 이동하시겠습니까?'
-            );
+        // Native Viewer Launch Function
+        function launchNativeViewer(channelCode) {
+            const deepLink = `${CONFIG.DEEPLINK_SCHEME}join?channel=${channelCode}`;
             
-            if (userConfirm) {
-                window.location.href = CONFIG.VIEWER_DOWNLOAD_URL;
-            }
+            // 브라우저 기본 딥링크 팝업 사용 (Zoom 방식)
+            window.location.href = deepLink;
+            
+            // 3초 후 앱이 실행되지 않았을 경우 안내
+            setTimeout(() => {
+                // 사용자가 아직 같은 페이지에 있다면 (앱이 안 열림)
+                if (document.visibilityState === 'visible') {
+                    const userConfirm = confirm(
+                        '전용 뷰어가 실행되지 않았나요?\n' +
+                        '다운로드 페이지로 이동하시겠습니까?'
+                    );
+                    
+                    if (userConfirm) {
+                        window.location.href = CONFIG.VIEWER_DOWNLOAD_URL;
+                    }
+                }
+            }, 3000);
         }
-    }, 3000);
-}
 
-        // Native viewer button click handler
+        // Native viewer button click handler - 채널 검증 추가
         if (nativeViewerBtn) {
-            nativeViewerBtn.addEventListener('click', (e) => {
+            nativeViewerBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 const channelCode = channelCodeInput?.value;
                 
@@ -2100,6 +2156,16 @@ function launchNativeViewer(channelCode) {
                 
                 if (!CONFIG.CHANNEL_REGEX.test(channelCode)) {
                     alert('채널 코드는 6자리 영문/숫자여야 합니다');
+                    return;
+                }
+                
+                // Validate channel exists before launching native viewer
+                setFormLoading(true);
+                const isValid = await validateChannel(channelCode);
+                setFormLoading(false);
+                
+                if (!isValid) {
+                    alert('존재하지 않는 채널입니다.\n채널 코드를 다시 확인해주세요.');
                     return;
                 }
                 
@@ -2166,9 +2232,9 @@ function launchNativeViewer(channelCode) {
             }
         });
 
-        // Channel Form submission (Web viewer)
+        // Channel Form submission (Web viewer) - 채널 검증 추가
         if (channelForm) {
-            channelForm.addEventListener('submit', (e) => {
+            channelForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const channelCode = channelCodeInput?.value;
                 const password = channelPasswordInput?.value;
@@ -2189,13 +2255,33 @@ function launchNativeViewer(channelCode) {
                     if (CONFIG.SPECIAL_ADMIN_CODES.includes(channelCode)) {
                         showAdminLogin();
                     } else {
-                        // Regular channel admin
+                        // Regular channel admin - still needs validation
+                        setFormLoading(true);
+                        const isValid = await validateChannel(channelCode);
+                        setFormLoading(false);
+                        
+                        if (!isValid) {
+                            alert('존재하지 않는 채널입니다.\n채널 코드를 다시 확인해주세요.');
+                            return;
+                        }
                         window.location.href = `admin.html?channel=${channelCode}&role=admin`;
                     }
-                } else if (selectedRole === 'guest') {
-                    window.location.href = `viewer.html?channel=${channelCode}`;
-                } else if (selectedRole === 'steno') {
-                    window.location.href = `/editor.html?channel=${channelCode}`;
+                } else {
+                    // For guest and steno, validate channel exists
+                    setFormLoading(true);
+                    const isValid = await validateChannel(channelCode);
+                    setFormLoading(false);
+                    
+                    if (!isValid) {
+                        alert('존재하지 않는 채널입니다.\n채널 코드를 다시 확인해주세요.');
+                        return;
+                    }
+                    
+                    if (selectedRole === 'guest') {
+                        window.location.href = `viewer.html?channel=${channelCode}`;
+                    } else if (selectedRole === 'steno') {
+                        window.location.href = `/editor.html?channel=${channelCode}`;
+                    }
                 }
             });
         }
