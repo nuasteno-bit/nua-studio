@@ -12,11 +12,24 @@
       const token = localStorage.getItem('adminToken');
       const role = localStorage.getItem('adminRole');
       
-      // 토큰이 없거나 권한이 없는 경우 즉시 리다이렉트
+      // 토큰이 없거나 권한이 없는 경우
       if (!token || role !== 'system_admin') {
-        // 경고 메시지 없이 바로 리다이렉트 (보안상 이유)
-        window.location.replace('index.html');
-        // replace 사용으로 뒤로가기 방지
+        // index.html이 없을 수 있으므로 에러 메시지만 표시
+        document.addEventListener('DOMContentLoaded', function() {
+          document.body.innerHTML = `
+            <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #0e0e0e;">
+              <div style="text-align: center; color: #fff;">
+                <h1 style="color: #e06c75;">접근 권한이 없습니다</h1>
+                <p style="color: #888;">관리자로 로그인해주세요</p>
+                <button onclick="window.history.back()" style="margin-top: 20px; padding: 10px 20px; background: #2a2a2a; color: #fff; border: 1px solid #404040; border-radius: 6px; cursor: pointer;">
+                  돌아가기
+                </button>
+              </div>
+            </div>
+          `;
+        });
+        return;
+      } replace 사용으로 뒤로가기 방지
         return;
       }
       
@@ -1162,15 +1175,8 @@
     window.addEventListener('DOMContentLoaded', () => {
       const token = localStorage.getItem('adminToken');
       
-      // 최종 보안 체크
-      if (!token) {
-        alert('관리자 권한이 필요합니다.');
-        window.location.replace('index.html');
-        return;
-      }
-      
-      // 로딩 오버레이 숨기기
-      setTimeout(() => {
+      // 로딩 오버레이 즉시 숨기기 (토큰이 있으면)
+      if (token) {
         const overlay = document.getElementById('authCheckOverlay');
         if (overlay) {
           overlay.classList.add('hide');
@@ -1178,7 +1184,12 @@
             overlay.style.display = 'none';
           }, 300);
         }
-      }, 500);
+      } else {
+        // 토큰이 없는 경우만 리다이렉트
+        alert('관리자 권한이 필요합니다.');
+        window.location.replace('index.html');
+        return;
+      }
       
       // Load initial data
       loadChannelList();
