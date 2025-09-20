@@ -317,7 +317,7 @@ io.on('connection', (socket) => {
     console.log(`[${channel}] Input from ${role}: "${text}"`);
     
     // Broadcast to all clients
-    io.to(channel).emit('steno_input', { role, text });
+    isocket.broadcast.to(channel).emit('steno_input', { role, text });
   });
   
   // Role switch handler
