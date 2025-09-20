@@ -63,6 +63,7 @@ function initializeDOMReferences() {
     myColNum = 2;
     otherColNum = 1;
   }
+  console.log('[DOM 참조] 초기화 완료 - myRole:', myRole, 'myColNum:', myColNum);
 }
 
 // 컴포넌트 초기화 함수
@@ -1363,7 +1364,9 @@ function downloadFullText() {
 // Socket.io 초기화
 const params = new URLSearchParams(window.location.search);
 const channel = params.get('channel') || 'default';
-let myRole = params.get('role') || '1';
+let myRole = null;  // 서버가 할당할 때까지 대기
+let isInitialized = false;
+
 const channelInfo = document.getElementById('channelInfo');
 const roleInfo = document.getElementById('roleInfo');
 const statusInfo = document.getElementById('statusInfo');
@@ -1382,11 +1385,11 @@ try {
 }
 
 channelInfo.textContent = channel;
-roleInfo.textContent = `속기사${myRole}`;
+roleInfo.textContent = isHtmlMode ? '속기사1' : '역할 대기중...';
 statusInfo.textContent = isHtmlMode ? 'HTML 모드' : '접속 중';
 
 let stenoList = [];
-let activeStenographer = '1';
+let activeStenographer = null;
 let isConnected = false;
 let myColId = 'editor1';
 let otherColId = 'editor2';
@@ -1415,22 +1418,47 @@ matchWordSelect.onchange = function() {
 if (!isHtmlMode && socket) {
   socket.emit('join_channel', { 
     channel, 
-    role: 'steno',
+    role: 'steno',  // 항상 'steno'로 보냄
     requestSync: true
   });
 
+  // 역할 할당 수신
   socket.on('role_assigned', ({ role }) => {
-    myRole = role === 'steno1' ? '1' : '2';
+    console.log('[역할 할당] 서버로부터 역할 받음:', role);
+    
+    const newRole = role === 'steno1' ? '1' : '2';
+    
+    // 역할 변경 감지
+    if (myRole && myRole !== newRole) {
+      console.warn('[역할 변경] 기존:', myRole, '→ 새로운:', newRole);
+      isInitialized = false;
+    }
+    
+    myRole = newRole;
     roleInfo.textContent = `속기사${myRole}`;
     
-    activeStenographer = '1';
-    
-    initializeDOMReferences();
-    initializeComponents();
+    // 첫 번째 초기화
+    if (!isInitialized) {
+      activeStenographer = '1';  // 기본값
+      initializeDOMReferences();
+      initializeComponents();
+      isInitialized = true;
+      updateStatus();
+      console.log('[초기화 완료] 역할:', myRole, '활성:', activeStenographer);
+    }
+  });
+
+  // 활성 역할 업데이트 (서버에서 보내는 이벤트)
+  socket.on('active_role', ({ active }) => {
+    const newActive = active === 'steno1' ? '1' : '2';
+    console.log('[활성 역할] 서버 업데이트:', active, '→', newActive);
+    activeStenographer = newActive;
     updateStatus();
   });
 
   socket.on('steno_list', ({ stenos }) => {
+    console.log('[속기사 목록] 업데이트:', stenos);
+    
     const wasCollaboration = isCollaborationMode();
     const wasSolo = isSoloMode();
     
@@ -1439,25 +1467,28 @@ if (!isHtmlMode && socket) {
     const nowCollaboration = isCollaborationMode();
     const nowSolo = isSoloMode();
     
-    if (wasSolo && nowCollaboration) {
-      console.log('[모드 전환] 1인 → 2인 협업 모드 전환');
-      activeStenographer = '1';
-    } else if (wasCollaboration && nowSolo) {
-      console.log('[모드 전환] 2인 → 1인 모드 전환');
-      activeStenographer = myRole;
-    } else if (nowCollaboration) {
-      activeStenographer = '1';
-    }
+    console.log('[모드 상태]', {
+      이전: wasCollaboration ? '2인' : '1인',
+      현재: nowCollaboration ? '2인' : '1인',
+      내역할: myRole,
+      활성자: activeStenographer,
+      목록: stenos
+    });
     
     updateMode();
-    updateStatus();
     
-    if (!stenos.includes('steno1') || !stenos.includes('steno2')) {
-      if (otherEditor) otherEditor.value = '';
-      updateViewerContent();
+    // 역할이 할당된 경우에만 상태 업데이트
+    if (myRole) {
+      updateStatus();
+      updateUtilityStatus();
     }
     
-    updateUtilityStatus();
+    // 상대방이 나갔을 때 입력창 초기화
+    if (stenoList.length < 2 && otherEditor) {
+      otherEditor.value = '';
+      console.log('[상대방 퇴장] 입력창 초기화');
+      updateViewerContent();
+    }
   });
 
   socket.on('sync_accumulated', ({ accumulatedText: serverAccum }) => {
@@ -1465,30 +1496,72 @@ if (!isHtmlMode && socket) {
     fullTextStorage = accumulatedText;
     updateMonitoringFromText(accumulatedText);
     updateViewerContent();
+    console.log('[누적 텍스트 동기화]', accumulatedText.length, '자');
   });
 
+  // 활성 속기사의 입력 수신 (뷰어에 표시)
   socket.on('steno_input', ({ role, text }) => {
     const senderRole = role.replace('steno', '');
     
-    if (senderRole === myRole) return;
+    console.log('[steno_input 수신]', {
+      발신자역할: senderRole,
+      내역할: myRole,
+      텍스트길이: text.length,
+      활성자: activeStenographer
+    });
+    
+    // 자기 자신의 입력은 무시
+    if (senderRole === myRole) {
+      console.log('[입력 무시] 자기 자신의 입력');
+      return;
+    }
     
     if (isViewerEditing && myRole !== activeStenographer) {
       console.log('[입력 보호] 뷰어 편집 중 - 상대방 입력 무시');
       return;
     }
     
-    if (isCollaborationMode()) {
+    // 2인 모드에서 상대방 입력창 업데이트
+    if (isCollaborationMode() && otherEditor) {
       otherEditor.value = text;
       trimEditorText(otherEditor);
       otherEditor.scrollTop = otherEditor.scrollHeight;
     }
     
-    if (isCollaborationMode() && senderRole === activeStenographer) {
+    // 활성 속기사의 입력이면 뷰어 업데이트
+    if (senderRole === activeStenographer) {
       updateViewerWithOtherInput(text);
     }
     
+    // 단어 매칭 체크
     if (isCollaborationMode() && myRole === activeStenographer) {
       checkWordMatchingAsActive();
+    }
+  });
+
+  // 파트너 입력 수신 (대기 중인 속기사의 입력)
+  socket.on('partner_input', ({ role, text }) => {
+    const senderRole = role.replace('steno', '');
+    
+    console.log('[partner_input 수신]', {
+      발신자역할: senderRole,
+      내역할: myRole,
+      텍스트길이: text.length
+    });
+    
+    // 자기 자신의 입력은 무시
+    if (senderRole === myRole) return;
+    
+    // 상대방 입력창 업데이트
+    if (otherEditor) {
+      otherEditor.value = text;
+      trimEditorText(otherEditor);
+      otherEditor.scrollTop = otherEditor.scrollHeight;
+    }
+    
+    // 대기자로서 단어 매칭 체크
+    if (isCollaborationMode() && myRole !== activeStenographer) {
+      checkWordMatchingAsWaiting();
     }
   });
 
@@ -1497,6 +1570,14 @@ if (!isHtmlMode && socket) {
       const wasIActive = (activeStenographer === myRole);
       activeStenographer = newActive === 'steno1' ? '1' : '2';
       const amINowActive = (activeStenographer === myRole);
+      
+      console.log('[권한 전환]', {
+        이전활성자: previousActive,
+        새활성자: newActive,
+        내역할: myRole,
+        내가활성자였음: wasIActive,
+        내가활성자됨: amINowActive
+      });
       
       if (isViewerEditing && (wasIActive !== amINowActive)) {
         console.log('[권한 전환] 뷰어 편집 모드 자동 해제');
@@ -1725,12 +1806,14 @@ if (!isHtmlMode && socket) {
   socket.on('connect', () => {
     isConnected = true;
     statusInfo.textContent = '접속 중';
+    console.log('[소켓 연결] 성공, Socket ID:', socket.id);
     updateUtilityStatus();
   });
 
   socket.on('disconnect', () => {
     isConnected = false;
     statusInfo.textContent = '연결 끊김';
+    console.log('[소켓 연결] 끊김');
     
     if (isViewerEditing) {
       console.log('[연결 끊김] 뷰어 편집 모드 자동 해제');
@@ -1747,6 +1830,11 @@ if (!isHtmlMode && socket) {
   });
 
   socket.on('reconnect', () => {
+    console.log('[재연결] 채널 재가입 시도');
+    myRole = null;
+    isInitialized = false;
+    roleInfo.textContent = '역할 대기중...';
+    
     socket.emit('join_channel', { 
       channel, 
       role: 'steno',
@@ -1777,7 +1865,21 @@ function enterEditMode() {
 document.addEventListener('DOMContentLoaded', () => {
   loadUserSettings();
   
-  // 텍스트 설정 UI 초기화
+  // HTML 모드일 때만 즉시 초기화
+  if (isHtmlMode) {
+    myRole = '1';
+    roleInfo.textContent = `속기사${myRole}`;
+    stenoList = ['steno1'];
+    activeStenographer = '1';
+    
+    initializeDOMReferences();
+    initializeComponents();
+    updateMode();
+    updateStatus();
+  }
+  // Socket 모드에서는 role_assigned 이벤트 대기
+  
+  // 텍스트 설정 UI는 역할과 무관하게 초기화
   setTimeout(() => {
     if (textSettings) {
       const fontSizeRange = document.getElementById('fontSizeRange');
@@ -1792,18 +1894,6 @@ document.addEventListener('DOMContentLoaded', () => {
       updateTextSettings();
     }
   }, 500);
-  
-  // DOM 초기화
-  initializeDOMReferences();
-  initializeComponents();
-  
-  // 초기 모드 설정
-  if (isHtmlMode) {
-    stenoList = ['steno1'];
-    activeStenographer = '1';
-  }
-  updateMode();
-  updateStatus();
 });
 
 // 자동 저장 기능
@@ -1896,8 +1986,8 @@ function checkAutoSave() {
       
       console.log('[자동저장] 복구 완료!');
       
-      if (!isHtmlMode && socket && socket.connected) {
-        if (myEditor && myEditor.value) {
+      if (!isHtmlMode && socket && socket.connected && myEditor && myRole) {
+        if (myEditor.value) {
           socket.emit('steno_input', { 
             channel: channel, 
             role: `steno${myRole}`, 
