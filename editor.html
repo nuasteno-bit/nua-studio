@@ -10,12 +10,12 @@
    
    <!-- Socket.io 라이브러리 -->
    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-<script src="config.js"></script>
+   <script src="config.js"></script>
 </head>
 <body>
    <header>
        <strong>LiveSteno</strong>
-       <!-- 중앙에 권한매칭 단어 수 설정 UI (드롭다운) -->
+       <!-- 중앙에 권한매칭 단어 수 설정 UI -->
        <span id="matchControl" style="position:absolute; left:50%; transform:translateX(-50%); text-align:center;">
            <span style="font-size:13px; color:#a2c1ff;">권한매칭 단어 수:</span>
            <select id="matchWordSelect" style="font-size:13px; padding:2px 8px; border-radius:4px; border:1px solid #444; background:#232323; color:#a2c1ff;">
@@ -29,22 +29,216 @@
        <span style="float:right; color:#a2c1ff; font-size:13px;">채널: <span id="channelInfo">default</span> | 내 역할: <span id="roleInfo">속기사1</span> | 상태: <span id="statusInfo">HTML 모드</span></span>
    </header>
    
-   <div class="main">
-       <div class="layout-container" id="layoutContainer">
-           <!-- 동적으로 생성될 레이아웃 -->
+   <div class="main-container" id="mainContainer">
+       <!-- 상단 영역: 속기사1, 속기사2 -->
+       <div class="top-row">
+           <div class="column" id="col1">
+               <div class="title-bar">
+                   <span id="title1">Stenographer 1</span>
+                   <span class="role-badge" id="badge1">대기</span>
+               </div>
+               <div class="font-controls" id="font-controls-1">
+                   <div class="performance-info" id="performanceInfo1">
+                       <span id="perfChars1">0자</span>
+                       <span id="perfStatus1">최적화됨</span>
+                       <span id="perfMonitor1">0/30줄</span>
+                   </div>
+                   <div class="font-controls-right">
+                       <button class="font-btn" onclick="adjustFontSize(1, 1)">A+</button>
+                       <button class="font-btn" onclick="adjustFontSize(1, -1)">A−</button>
+                   </div>
+               </div>
+               <textarea class="editor-box" id="editor1" placeholder="여기에 입력..." autocomplete="off"></textarea>
+               <div class="status-bar" id="statusBar1">
+                   <span class="status-dot waiting" id="dot1"></span> 
+                   <span id="statusText1">대기 중</span>
+               </div>
+           </div>
+           
+           <div class="column" id="col2">
+               <div class="title-bar">
+                   <span id="title2">Stenographer 2</span>
+                   <span class="role-badge" id="badge2">대기</span>
+               </div>
+               <div class="font-controls" id="font-controls-2">
+                   <div class="performance-info" id="performanceInfo2">
+                       <span id="perfChars2">0자</span>
+                       <span id="perfStatus2">최적화됨</span>
+                       <span id="perfMonitor2"></span>
+                   </div>
+                   <div class="font-controls-right">
+                       <button class="font-btn" onclick="adjustFontSize(2, 1)">A+</button>
+                       <button class="font-btn" onclick="adjustFontSize(2, -1)">A−</button>
+                   </div>
+               </div>
+               <textarea class="editor-box" id="editor2" placeholder="상대 입력 대기 중..." autocomplete="off" readonly></textarea>
+               <div class="status-bar" id="statusBar2">
+                   <span class="status-dot waiting" id="dot2"></span> 
+                   <span id="statusText2">대기 중</span>
+               </div>
+           </div>
+       </div>
+       
+       <!-- 하단 영역: 모니터링뷰어, 유틸리티 -->
+       <div class="bottom-row">
+           <div class="viewer" id="viewer">
+               <div class="title-bar">
+                   <div style="display: flex; align-items: center; gap: 10px;">
+                       <span>Monitoring Viewer</span>
+                       <span id="viewerIconBtn" title="Open Viewer in new window" style="cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; background: #2b2b2b; border-radius: 4px; border: 1px solid #444;">
+                           <svg width="16" height="16" fill="#a2c1ff" viewBox="0 0 24 24">
+                               <path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zM4 18V6h16v12H4zm4-2h2v-2H6v2h2zm0-4h8v-2H8v2zm4 4h6v-2h-6v2z"/>
+                           </svg>
+                       </span>
+                   </div>
+                   <div style="display: flex; align-items: center; gap: 6px;">
+                       <button class="viewer-edit-btn" id="viewerEditBtn" onclick="toggleViewerEdit()" title="뷰어 편집" style="display: none;">편집</button>
+                       <button class="font-btn" onclick="adjustViewerFontSize(1)" title="뷰어 폰트 크게">A+</button>
+                       <button class="font-btn" onclick="adjustViewerFontSize(-1)" title="뷰어 폰트 작게">A−</button>
+                   </div>
+               </div>
+               <div class="panel-body" id="viewer-body">
+                   <div class="panel-content" id="viewerContent" style="font-size: 15px;">
+                       <span class="viewer-placeholder">자막이 여기에 표시됩니다.</span>
+                   </div>
+               </div>
+           </div>
+           
+           <div class="utility" id="utility">
+               <div class="title-bar">
+                   <span class="utility-title">Utility Box</span>
+               </div>
+               <div class="panel-body" id="utility-body">
+                   <div class="tab-nav">
+                       <button class="tab-btn active" onclick="switchTab('settings')">설정</button>
+                       <button class="tab-btn" onclick="switchTab('chat')">
+                           소통
+                           <span class="chat-badge" id="chatBadge" style="display: none;">0</span>
+                       </button>
+                       <button class="tab-btn" onclick="switchTab('control')">제어</button>
+                   </div>
+                   
+                   <!-- 설정 탭 -->
+                   <div class="tab-content active" id="settings-tab">
+                       <div class="settings-section">
+                           <h4>테마 설정</h4>
+                           <div class="theme-selector">
+                               <button class="theme-option dark active" onclick="setTheme('dark')" title="다크 테마">다크</button>
+                               <button class="theme-option light" onclick="setTheme('light')" title="라이트 테마">라이트</button>
+                               <button class="theme-option solarized" onclick="setTheme('solarized')" title="솔라라이즈드">솔라라이즈드</button>
+                               <button class="theme-option contrast" onclick="setTheme('contrast')" title="고대비">고대비</button>
+                           </div>
+                       </div>
+                       
+                       <div class="settings-section">
+                           <h4>텍스트 개인화</h4>
+                           <div class="text-setting-item">
+                               <label>글자 크기</label>
+                               <div class="setting-control">
+                                   <input type="range" id="fontSizeRange" min="11" max="24" value="15" onchange="updateTextSettings()">
+                                   <span id="fontSizeValue">15px</span>
+                               </div>
+                           </div>
+                           <div class="text-setting-item">
+                               <label>행간 간격</label>
+                               <div class="setting-control">
+                                   <input type="range" id="lineHeightRange" min="10" max="25" value="14" onchange="updateTextSettings()">
+                                   <span id="lineHeightValue">1.4</span>
+                               </div>
+                           </div>
+                           <div class="text-setting-item">
+                               <label>자간 간격</label>
+                               <div class="setting-control">
+                                   <input type="range" id="letterSpacingRange" min="-2" max="5" value="0" onchange="updateTextSettings()">
+                                   <span id="letterSpacingValue">0px</span>
+                               </div>
+                           </div>
+                           <div class="text-setting-item">
+                               <label>단어 간격</label>
+                               <div class="setting-control">
+                                   <input type="range" id="wordSpacingRange" min="-2" max="10" value="0" onchange="updateTextSettings()">
+                                   <span id="wordSpacingValue">0px</span>
+                               </div>
+                           </div>
+                       </div>
+                       
+                       <div class="settings-section">
+                           <h4>단축키</h4>
+                           <div class="shortcut-info">
+                               <div>F4: 단어 삭제</div>
+                               <div>F6: 권한 양보</div>
+                               <div>F7: 권한 요청</div>
+                               <div>F8: 교정 요청</div>
+                               <div>Shift+Enter: 엔터 모드 전환</div>
+                           </div>
+                       </div>
+                   </div>
+                   
+                   <!-- 소통 탭 -->
+                   <div class="tab-content" id="chat-tab">
+                       <div class="chat-container">
+                           <div class="chat-messages" id="chatMessages">
+                               <div class="chat-placeholder">협업 소통 메시지가 여기에 표시됩니다.</div>
+                           </div>
+                           <div class="chat-input-container">
+                               <input type="text" id="chatInput" class="chat-input" placeholder="메시지 입력..." maxlength="200">
+                               <button class="chat-send-btn" onclick="sendChatMessage()">전송</button>
+                           </div>
+                           <div class="chat-quick-messages">
+                               <button class="quick-msg-btn" onclick="sendQuickMessage('교대하겠습니다')">교대</button>
+                               <button class="quick-msg-btn" onclick="sendQuickMessage('잠시 대기')">대기</button>
+                               <button class="quick-msg-btn" onclick="sendQuickMessage('확인했습니다')">확인</button>
+                               <button class="quick-msg-btn" onclick="sendQuickMessage('도움 필요')">도움</button>
+                           </div>
+                       </div>
+                   </div>
+                   
+                   <!-- 제어 탭 -->
+                   <div class="tab-content" id="control-tab">
+                       <div class="control-compact">
+                           <div class="control-group">
+                               <label>권한 제어</label>
+                               <div class="control-row">
+                                   <button class="ctrl-btn" onclick="requestRole()" title="권한을 요청합니다 (F7)">권한 요청</button>
+                                   <button class="ctrl-btn" onclick="offerRole()" title="권한을 양보합니다 (F6)">권한 양보</button>
+                               </div>
+                               <div class="control-row">
+                                   <button class="ctrl-btn warning" onclick="forceGetRole()" title="강제로 권한을 가져옵니다 (상대 연결 끊김 시)">권한 가져오기</button>
+                               </div>
+                           </div>
+                           
+                           <div class="control-group">
+                               <label>연결 상태</label>
+                               <div class="status-row">
+                                   <div class="status-mini">
+                                       <span>내 연결:</span>
+                                       <span id="myConnectionStatus" class="stat-val good">정상</span>
+                                   </div>
+                                   <div class="status-mini">
+                                       <span>상대:</span>
+                                       <span id="otherConnectionStatus" class="stat-val">대기</span>
+                                   </div>
+                                   <div class="status-mini">
+                                       <span>핑:</span>
+                                       <span id="serverPing" class="stat-val">-ms</span>
+                                   </div>
+                               </div>
+                               <button class="ctrl-btn mini" onclick="checkConnection()">연결 확인</button>
+                           </div>
+                           
+                           <div class="control-group">
+                               <label>데이터 관리</label>
+                               <button class="ctrl-btn" onclick="downloadFullText()">전체 텍스트 다운로드</button>
+                               <button class="ctrl-btn" onclick="clearLocalStorage()">로컬 데이터 초기화</button>
+                           </div>
+                       </div>
+                   </div>
+               </div>
+           </div>
        </div>
    </div>
    
    <footer>
-       <div class="theme-toggle">
-           <div class="theme-btn dark active" onclick="setTheme('dark')" title="다크 테마"></div>
-           <div class="theme-btn light" onclick="setTheme('light')" title="라이트 테마"></div>
-           <div class="layout-reset-btn" onclick="resetToDefaultLayout()" title="기본 레이아웃으로 복귀">
-               <svg viewBox="0 0 24 24">
-                   <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/>
-               </svg>
-           </div>
-       </div>
        UI Prototype + 실시간 협업 기능 완전 결합<br>Designed to match dev tools aesthetic.
    </footer>
    
