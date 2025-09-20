@@ -1,3 +1,5 @@
+// socket-server.js (patched, feature-preserving)
+
 const express = require('express');
 const http = require('http');
 const crypto = require('crypto');
@@ -7,134 +9,97 @@ const helmet = require('helmet');
 const compression = require('compression');
 const cors = require('cors');
 
-// Initialize Express app
+// =========================
+// 서버/상태 전역 (라우트보다 먼저 선언)
+// =========================
+const channelDatabase = new Map();        // 채널 메타 (in-memory)
+const stenoChannels = {};                 // 채널별 속기사 소켓 [{id, role}]
+const channelStates = {};                 // 채널별 상태 { activeStenographer, accumulatedText, lastSwitchText }
+const channelSpeakers = {};               // 채널별 화자 리스트
+const channelEditStates = {};             // 채널별 뷰어 편집 상태
+const recentMessages = new Map();         // 중복방지 (socket.emit 훅)
+
+// =========================
+// Express/IO 부팅
+// =========================
 const app = express();
 const server = http.createServer(app);
 
-// Security and performance middleware
-app.use(helmet({
-  contentSecurityPolicy: false  // Required for Socket.IO
-}));
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
 app.use(cors({
-  origin: '*',  // Production: specify actual domain
-  credentials: true
+  origin: '*',
+  credentials: false // '*'와 credentials 동시 사용 불가. 필요시 origin에 도메인 지정.
 }));
 
-// Health check endpoint (CRITICAL for Render.com)
+// 헬스체크
 app.get('/health', (req, res) => {
-  res.status(200).json({ 
+  res.status(200).json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    memory: process.memoryUsage().rss / 1024 / 1024 + ' MB'
+    memory: (process.memoryUsage().rss / 1024 / 1024).toFixed(1) + ' MB'
   });
 });
 
-// Static files and JSON parsing
 app.use(express.static(__dirname));
 app.use(express.json());
 
-// Initialize Socket.IO with proper CORS and transport fallback
+// Socket.IO
 const io = new Server(server, {
-  cors: { 
-    origin: '*',
-    methods: ['GET', 'POST']
-  },
-  transports: ['websocket', 'polling'],  // Fallback support
+  cors: { origin: '*', methods: ['GET', 'POST'] },
+  transports: ['websocket', 'polling'],
   pingInterval: 25000,
   pingTimeout: 60000
 });
 
-// Channel database (in-memory)
-const channelDatabase = new Map();
-
-// Admin accounts
+// =========================
+// (선택) 관리자 세션
+// =========================
 const ADMIN_ACCOUNTS = {
-  'admin': {
-    password: '123456s',
-    role: 'system_admin'
-  }
+  'admin': { password: '123456s', role: 'system_admin' }
 };
-
-// Active sessions storage
 const activeSessions = new Map();
 
-// Token generation
 function generateToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
-// Auth middleware
 function requireAuth(req, res, next) {
   const token = req.headers['authorization'];
-  
   if (!token || !activeSessions.has(token)) {
     return res.status(401).json({ error: 'Authentication required' });
   }
-  
   req.user = activeSessions.get(token);
   next();
 }
 
-// Admin login API
 app.post('/api/admin/login', (req, res) => {
   const { username, password } = req.body;
-  
-  console.log(`[Admin Login] Attempt - Username: ${username}`);
-  
   const account = ADMIN_ACCOUNTS[username];
   if (account && account.password === password) {
     const token = generateToken();
-    const sessionData = {
-      username,
-      role: account.role,
-      loginTime: new Date()
-    };
-    
-    activeSessions.set(token, sessionData);
-    
-    // Auto logout after 30 minutes
-    setTimeout(() => {
-      activeSessions.delete(token);
-      console.log(`[Admin] Session expired for ${username}`);
-    }, 30 * 60 * 1000);
-    
-    console.log(`[Admin Login] Success - Username: ${username}`);
-    
-    res.json({ 
-      success: true, 
-      token,
-      role: account.role 
-    });
-  } else {
-    console.log(`[Admin Login] Failed - Invalid credentials for: ${username}`);
-    res.status(401).json({ 
-      success: false, 
-      error: 'Invalid credentials' 
-    });
+    activeSessions.set(token, { username, role: account.role, loginTime: new Date() });
+    setTimeout(() => activeSessions.delete(token), 30 * 60 * 1000);
+    return res.json({ success: true, token, role: account.role });
   }
+  return res.status(401).json({ success: false, error: 'Invalid credentials' });
 });
 
-// Logout API
 app.post('/api/admin/logout', (req, res) => {
   const token = req.headers['authorization'];
-  if (token && activeSessions.has(token)) {
-    const session = activeSessions.get(token);
-    console.log(`[Admin Logout] ${session.username}`);
-    activeSessions.delete(token);
-  }
+  if (token) activeSessions.delete(token);
   res.json({ success: true });
 });
 
-// Channel creation API
+// =========================
+// 채널 REST API
+// =========================
 app.post('/api/channel/create', (req, res) => {
   const { code, type, passkey, eventName, eventDateTime } = req.body;
-  
   if (channelDatabase.has(code)) {
     return res.status(400).json({ error: 'Channel already exists' });
   }
-  
   const channelInfo = {
     code,
     type,
@@ -142,28 +107,22 @@ app.post('/api/channel/create', (req, res) => {
     eventName,
     eventDateTime,
     createdAt: new Date(),
-    activeUsers: 0
   };
-  
   channelDatabase.set(code, channelInfo);
   console.log(`[API] Channel created: ${code}`);
-  
   res.json({ success: true, channel: channelInfo });
 });
 
-// Channel list API
 app.get('/api/channels', (req, res) => {
   const channels = Array.from(channelDatabase.values()).map(ch => ({
     ...ch,
-    activeUsers: stenoChannels[ch.code] ? stenoChannels[ch.code].length : 0
+    activeUsers: Array.isArray(stenoChannels[ch.code]) ? stenoChannels[ch.code].length : 0
   }));
   res.json(channels);
 });
 
-// Channel verification API
 app.get('/api/channel/:code/verify', (req, res) => {
   const { code } = req.params;
-  
   if (channelDatabase.has(code)) {
     res.json({ exists: true, channel: channelDatabase.get(code) });
   } else {
@@ -171,105 +130,94 @@ app.get('/api/channel/:code/verify', (req, res) => {
   }
 });
 
-// Channel deletion API
 app.delete('/api/channel/:code', (req, res) => {
   const { code } = req.params;
-  
-  if (channelDatabase.has(code)) {
-    channelDatabase.delete(code);
-    console.log(`[API] Channel deleted: ${code}`);
-    res.json({ success: true });
-  } else {
-    res.status(404).json({ error: 'Channel not found' });
-  }
+  if (!channelDatabase.has(code)) return res.status(404).json({ error: 'Channel not found' });
+  channelDatabase.delete(code);
+  // in-memory 상태도 정리
+  delete stenoChannels[code];
+  delete channelStates[code];
+  delete channelSpeakers[code];
+  delete channelEditStates[code];
+  console.log(`[API] Channel deleted: ${code}`);
+  res.json({ success: true });
 });
 
-// Channel state management
-const recentMessages = new Map();
-const stenoChannels = {};
-const channelStates = {};
-const channelSpeakers = {};
-const channelEditStates = {};
-
-// Socket.IO connection handling
+// =========================
+/** Socket.IO 이벤트 */
+// =========================
 io.on('connection', (socket) => {
   console.log(`[${new Date().toISOString()}] Socket connected: ${socket.id}`);
-  
-  // Duplicate event prevention
-  const socketEmit = socket.emit;
-  socket.emit = function(...args) {
+
+  // 중복 emit 방지 훅(서버에서 동일 텍스트 폭주 시 필터)
+  const _emit = socket.emit;
+  socket.emit = function (...args) {
     if (args[0] === 'steno_input' && args[1]) {
       const key = `${socket.id}_${args[1].text}`;
       const now = Date.now();
-      
-      if (recentMessages.has(key)) {
-        const lastTime = recentMessages.get(key);
-        if (now - lastTime < 50) {
-          return; // Ignore duplicates within 50ms
-        }
-      }
-      
+      const last = recentMessages.get(key);
+      if (last && now - last < 50) return;
       recentMessages.set(key, now);
       setTimeout(() => recentMessages.delete(key), 100);
     }
-    
-    return socketEmit.apply(this, args);
+    return _emit.apply(this, args);
   };
-  
-  // Join channel handler
+
+  // -------- 조인 --------
   socket.on('join_channel', ({ channel, role, requestSync }) => {
     console.log(`[${channel}] Join request - Role: ${role}, Socket: ${socket.id}`);
-    
     socket.join(channel);
     socket.data.channel = channel;
 
-    if (role === 'steno') {
-      // Initialize channel if needed
+    const isStenoJoin = role === 'steno' || role === 'steno1' || role === 'steno2';
+    if (isStenoJoin) {
       if (!stenoChannels[channel]) {
         stenoChannels[channel] = [];
-        channelStates[channel] = {
-          activeStenographer: 'steno1',
-          accumulatedText: '',
-          lastSwitchText: ''
-        };
-        channelEditStates[channel] = {
-          isEditing: false,
-          editorId: null,
-          editorRole: null
-        };
+        channelStates[channel] = { activeStenographer: 'steno1', accumulatedText: '', lastSwitchText: '' };
+        channelEditStates[channel] = { isEditing: false, editorId: null, editorRole: null };
       }
-
-      // Check capacity (max 2)
       if (stenoChannels[channel].length >= 2) {
         socket.emit('join_reject', { reason: 'Channel full (max 2 stenographers)' });
         console.log(`[${channel}] Join rejected: capacity exceeded`);
         return;
       }
 
-      // Assign role
-      const myRole = stenoChannels[channel].length === 0 ? 'steno1' : 'steno2';
+      // 클라가 steno1/steno2로 들어와도 서버가 최종 배정(중복 방지)
+      let myRole;
+      const requested = (role === 'steno1' || role === 'steno2') ? role : null;
+      const hasSteno1 = stenoChannels[channel].some(s => s.role === 'steno1');
+      const hasSteno2 = stenoChannels[channel].some(s => s.role === 'steno2');
+
+      if (requested && !stenoChannels[channel].some(s => s.role === requested)) {
+        myRole = requested;
+      } else if (!hasSteno1) {
+        myRole = 'steno1';
+      } else {
+        myRole = 'steno2';
+      }
+
       stenoChannels[channel].push({ id: socket.id, role: myRole });
       socket.data.role = myRole;
 
       console.log(`[${channel}] Role assigned: ${myRole} to ${socket.id}`);
 
-      // Broadcast stenographer list
+      // 전체에게 속기사 리스트 브로드캐스트
       const stenos = stenoChannels[channel].map(s => s.role);
       io.to(channel).emit('steno_list', { stenos });
 
-      // Send role assignment
+      // 본인에게 역할 통지
       socket.emit('role_assigned', { role: myRole });
 
-      // Send accumulated text if exists
-      if (requestSync || channelStates[channel].accumulatedText) {
-        socket.emit('sync_accumulated', { 
-          accumulatedText: channelStates[channel].accumulatedText 
+      // 누적 텍스트 동기화
+      if (requestSync || (channelStates[channel] && channelStates[channel].accumulatedText)) {
+        socket.emit('sync_accumulated', {
+          accumulatedText: channelStates[channel]?.accumulatedText || ''
         });
         console.log(`[${channel}] Sync sent to ${myRole}`);
       }
 
-      // Sync edit state
-      if (channelEditStates[channel].isEditing) {
+      // 편집 상태 동기화
+      if (channelEditStates[channel]?.isEditing) {
         socket.emit('viewer_edit_state', {
           isEditing: true,
           editorRole: channelEditStates[channel].editorRole
@@ -277,362 +225,252 @@ io.on('connection', (socket) => {
       }
 
     } else {
-      // Viewer role
+      // Viewer
       socket.data.role = 'viewer';
       io.to(channel).emit('user_joined', { role: 'viewer' });
-      
-      // Send accumulated text to viewer
-      if (channelStates[channel] && channelStates[channel].accumulatedText) {
-        socket.emit('sync_accumulated', { 
-          accumulatedText: channelStates[channel].accumulatedText 
+
+      if (channelStates[channel]?.accumulatedText) {
+        socket.emit('sync_accumulated', {
+          accumulatedText: channelStates[channel].accumulatedText
         });
         console.log(`[${channel}] Sync sent to viewer`);
       }
       console.log(`[${channel}] Viewer joined: ${socket.id}`);
     }
   });
-  
-  // Stenographer input handler
+
+  // -------- 입력 --------
   socket.on('steno_input', ({ channel, role, text }) => {
     const now = Date.now();
     const msgKey = `${socket.id}_${text}`;
-    
     if (!socket.lastMessages) socket.lastMessages = new Map();
-    
-    if (socket.lastMessages.has(msgKey)) {
-      const lastTime = socket.lastMessages.get(msgKey);
-      if (now - lastTime < 50) {
-        console.log('[Server] Duplicate input blocked');
-        return;
-      }
+    const last = socket.lastMessages.get(msgKey);
+    if (last && now - last < 50) {
+      console.log('[Server] Duplicate input blocked');
+      return;
     }
-    
     socket.lastMessages.set(msgKey, now);
-    
-    // Cleanup after 1 second
-    setTimeout(() => {
-      socket.lastMessages.delete(msgKey);
-    }, 1000);
-    
-    console.log(`[${channel}] Input from ${role}: "${text}"`);
-    
-    // Broadcast to all clients
-    io.to(channel).emit('steno_input', { role, text });
-  });
-  
-  // Role switch handler
-  socket.on('switch_role', ({ channel, newActive, matchedText, manual, reason, matchStartIndex, matchWordCount }) => {
-    console.log(`[${channel}] Role switch request - New active: ${newActive}`);
-    
-    if (!channelStates[channel]) {
-      channelStates[channel] = {
-        activeStenographer: 'steno1',
-        accumulatedText: '',
-        lastSwitchText: ''
-      };
-    }
+    setTimeout(() => socket.lastMessages.delete(msgKey), 1000);
 
-    // Check if already active
-    const currentActive = channelStates[channel].activeStenographer;
+    const ch = channel || socket.data.channel;
+    const serverRole = socket.data.role || role || 'viewer';
+    console.log(`[${ch}] Input from ${serverRole}: "${text}"`);
+
+    // 본인에게는 에코하지 않음(기존 클라 로컬 렌더와 충돌 방지)
+    socket.broadcast.to(ch).emit('steno_input', { role: serverRole, text });
+  });
+
+  // -------- 역할 스위치 --------
+  socket.on('switch_role', ({ channel, newActive, matchedText, manual, reason, matchStartIndex, matchWordCount }) => {
+    const ch = channel || socket.data.channel;
+    if (!channelStates[ch]) {
+      channelStates[ch] = { activeStenographer: 'steno1', accumulatedText: '', lastSwitchText: '' };
+    }
+    if (newActive !== 'steno1' && newActive !== 'steno2') return;
+
+    const currentActive = channelStates[ch].activeStenographer;
     if (currentActive === newActive) {
-      console.log(`[${channel}] Switch aborted - ${newActive} already active`);
+      console.log(`[${ch}] Switch aborted - ${newActive} already active`);
       return;
     }
 
-    // Perform role switch
-    const previousActive = channelStates[channel].activeStenographer;
-    channelStates[channel].activeStenographer = newActive;
-    
-    // Handle manual vs automatic switch
+    const previousActive = currentActive;
+    channelStates[ch].activeStenographer = newActive;
+
     if (manual && matchedText && matchedText.trim()) {
-      // Manual switch (F6/F7): append to accumulated text
-      const beforeLength = channelStates[channel].accumulatedText.length;
-      channelStates[channel].accumulatedText += matchedText;
-      const afterLength = channelStates[channel].accumulatedText.length;
-      
-      console.log(`[${channel}] Manual switch - Text accumulated: ${beforeLength} -> ${afterLength} chars`);
-      
+      const before = channelStates[ch].accumulatedText.length;
+      channelStates[ch].accumulatedText += matchedText;
+      const after = channelStates[ch].accumulatedText.length;
+      console.log(`[${ch}] Manual switch - Text accumulated: ${before} -> ${after} chars`);
     } else if (!manual && matchedText && matchedText.trim()) {
-      // Automatic matching: replace up to match point
-      channelStates[channel].accumulatedText = matchedText;
-      channelStates[channel].lastSwitchText = matchedText;
-      
-      console.log(`[${channel}] Auto match - Text confirmed: "${matchedText}"`);
+      channelStates[ch].accumulatedText = matchedText;
+      channelStates[ch].lastSwitchText = matchedText;
+      console.log(`[${ch}] Auto match - Text confirmed: "${matchedText}"`);
     }
 
-    // Broadcast role switch
-    io.to(channel).emit('switch_role', { 
-      newActive, 
+    io.to(ch).emit('switch_role', {
+      newActive,
       matchedText,
-      accumulatedText: channelStates[channel].accumulatedText,
+      accumulatedText: channelStates[ch].accumulatedText,
       previousActive,
-      manual: manual || false,
-      matchStartIndex: matchStartIndex, 
-      matchWordCount: matchWordCount     
+      manual: !!manual,
+      matchStartIndex,
+      matchWordCount
     });
 
-    const switchType = manual ? 'Manual' : 'Auto';
-    console.log(`[${channel}] ${switchType} switch complete: ${previousActive} -> ${newActive}`);
+    console.log(`[${ch}] ${(manual ? 'Manual' : 'Auto')} switch complete: ${previousActive} -> ${newActive}`);
   });
-  
-  // Text sent handler
+
+  // -------- 누적 텍스트 확정/전송 --------
   socket.on('text_sent', ({ channel, accumulatedText, sender }) => {
-    console.log(`[${channel}] Text sent by ${sender}`);
-    
-    // Update channel state
-    if (channelStates[channel]) {
-      channelStates[channel].accumulatedText = accumulatedText;
-    }
-    
-    // Broadcast to other clients
-    socket.broadcast.to(channel).emit('text_sent', { 
-      accumulatedText, 
-      sender 
-    });
+    const ch = channel || socket.data.channel;
+    console.log(`[${ch}] Text sent by ${sender}`);
+    if (channelStates[ch]) channelStates[ch].accumulatedText = accumulatedText;
+    socket.broadcast.to(ch).emit('text_sent', { accumulatedText, sender });
   });
-  
-  // Speaker update handler
+
+  // -------- 화자 관리 --------
   socket.on('speaker_update', ({ channel, action, speaker, speakerId }) => {
-    console.log(`[${channel}] Speaker update - Action: ${action}`);
-    
-    // Initialize speaker array
-    if (!channelSpeakers[channel]) {
-      channelSpeakers[channel] = [];
-    }
-    
+    const ch = channel || socket.data.channel;
+    if (!channelSpeakers[ch]) channelSpeakers[ch] = [];
+
     switch (action) {
       case 'add':
-        channelSpeakers[channel].push(speaker);
-        socket.broadcast.to(channel).emit('speaker_update', { 
-          action: 'add', 
-          speaker 
-        });
+        channelSpeakers[ch].push(speaker);
+        socket.broadcast.to(ch).emit('speaker_update', { action: 'add', speaker });
         break;
-        
-      case 'edit':
-        const editIndex = channelSpeakers[channel].findIndex(s => s.id === speaker.id);
-        if (editIndex !== -1) {
-          channelSpeakers[channel][editIndex] = speaker;
-        }
-        socket.broadcast.to(channel).emit('speaker_update', { 
-          action: 'edit', 
-          speaker 
-        });
+      case 'edit': {
+        const i = channelSpeakers[ch].findIndex(s => s.id === speaker.id);
+        if (i !== -1) channelSpeakers[ch][i] = speaker;
+        socket.broadcast.to(ch).emit('speaker_update', { action: 'edit', speaker });
         break;
-        
+      }
       case 'delete':
-        channelSpeakers[channel] = channelSpeakers[channel].filter(s => s.id !== speakerId);
-        socket.broadcast.to(channel).emit('speaker_update', { 
-          action: 'delete', 
-          speakerId 
-        });
+        channelSpeakers[ch] = channelSpeakers[ch].filter(s => s.id !== speakerId);
+        socket.broadcast.to(ch).emit('speaker_update', { action: 'delete', speakerId });
         break;
     }
   });
 
-  // Speaker sync request
   socket.on('speaker_sync_request', ({ channel }) => {
-    console.log(`[${channel}] Speaker sync requested`);
-    
-    if (channelSpeakers[channel] && channelSpeakers[channel].length > 0) {
-      socket.emit('speaker_update', { 
-        action: 'sync', 
-        speakers: channelSpeakers[channel] 
-      });
+    const ch = channel || socket.data.channel;
+    if (channelSpeakers[ch]?.length) {
+      socket.emit('speaker_update', { action: 'sync', speakers: channelSpeakers[ch] });
     }
   });
 
-  // Speaker drag handlers
   socket.on('speaker_drag_start', (data) => {
-    socket.broadcast.to(data.channel).emit('speaker_drag_start', data);
+    const ch = data.channel || socket.data.channel;
+    socket.broadcast.to(ch).emit('speaker_drag_start', data);
   });
 
   socket.on('speaker_dragging', (data) => {
-    socket.broadcast.to(data.channel).emit('speaker_dragging', data);
+    const ch = data.channel || socket.data.channel;
+    socket.broadcast.to(ch).emit('speaker_dragging', data);
   });
 
   socket.on('speaker_drag_end', ({ channel, speaker }) => {
-    const speakers = channelSpeakers[channel];
+    const ch = channel || socket.data.channel;
+    const speakers = channelSpeakers[ch];
     if (speakers) {
-      const speakerIndex = speakers.findIndex(s => s.id === speaker.id);
-      if (speakerIndex !== -1) {
-        speakers[speakerIndex] = speaker;
-      }
+      const idx = speakers.findIndex(s => s.id === speaker.id);
+      if (idx !== -1) speakers[idx] = speaker;
     }
-    socket.broadcast.to(channel).emit('speaker_drag_end', { speaker });
+    socket.broadcast.to(ch).emit('speaker_drag_end', { speaker });
   });
 
-  // Correction request handler
+  // -------- 뷰어 편집 --------
   socket.on('correction_request', ({ channel, active, requester, requesterRole }) => {
-    console.log(`[${channel}] Correction request from ${requester}`);
-    
-    socket.broadcast.to(channel).emit('correction_request', { 
-      active, 
-      requester,
-      requesterRole 
-    });
+    const ch = channel || socket.data.channel;
+    socket.broadcast.to(ch).emit('correction_request', { active, requester, requesterRole });
   });
 
-  // Viewer edit handlers
   socket.on('viewer_edit_start', ({ channel, editorRole }) => {
-    console.log(`[${channel}] Viewer edit started by ${editorRole}`);
-    
-    if (!channelEditStates[channel]) {
-      channelEditStates[channel] = { isEditing: false, editorId: null, editorRole: null };
-    }
-    
-    // Check if someone is already editing
-    if (channelEditStates[channel].isEditing) {
-      socket.emit('viewer_edit_denied', { 
-        reason: `${channelEditStates[channel].editorRole} is already editing` 
-      });
+    const ch = channel || socket.data.channel;
+    if (!channelEditStates[ch]) channelEditStates[ch] = { isEditing: false, editorId: null, editorRole: null };
+    if (channelEditStates[ch].isEditing) {
+      socket.emit('viewer_edit_denied', { reason: `${channelEditStates[ch].editorRole} is already editing` });
       return;
     }
-    
-    // Set edit state
-    channelEditStates[channel].isEditing = true;
-    channelEditStates[channel].editorId = socket.id;
-    channelEditStates[channel].editorRole = editorRole;
-    
-    // Broadcast edit state
-    io.to(channel).emit('viewer_edit_state', {
-      isEditing: true,
-      editorRole: editorRole
-    });
+    channelEditStates[ch] = { isEditing: true, editorId: socket.id, editorRole: editorRole };
+    io.to(ch).emit('viewer_edit_state', { isEditing: true, editorRole });
   });
 
   socket.on('viewer_edit_complete', ({ channel, editedText, editorRole }) => {
-    console.log(`[${channel}] Viewer edit completed`);
-    
-    if (!channelEditStates[channel]) {
-      channelEditStates[channel] = { isEditing: false, editorId: null, editorRole: null };
-    }
-    
-    // Verify editor permission
-    if (channelEditStates[channel].editorId !== socket.id) {
-      console.log(`[${channel}] Edit complete denied - not current editor`);
+    const ch = channel || socket.data.channel;
+    if (!channelEditStates[ch]) channelEditStates[ch] = { isEditing: false, editorId: null, editorRole: null };
+    if (channelEditStates[ch].editorId !== socket.id) {
+      console.log(`[${ch}] Edit complete denied - not current editor`);
       return;
     }
-    
-    // Update accumulated text
-    if (channelStates[channel]) {
-      channelStates[channel].accumulatedText = editedText;
-      console.log(`[${channel}] Text updated to ${editedText.length} chars`);
+    if (channelStates[ch]) {
+      channelStates[ch].accumulatedText = editedText;
+      console.log(`[${ch}] Text updated to ${editedText.length} chars`);
     }
-    
-    // Clear edit state
-    channelEditStates[channel].isEditing = false;
-    channelEditStates[channel].editorId = null;
-    channelEditStates[channel].editorRole = null;
-    
-    // Broadcast updated content
-    io.to(channel).emit('viewer_content_updated', {
-      accumulatedText: editedText,
-      editorRole: editorRole
-    });
-    
-    // Broadcast edit state cleared
-    io.to(channel).emit('viewer_edit_state', {
-      isEditing: false,
-      editorRole: null
-    });
+    channelEditStates[ch] = { isEditing: false, editorId: null, editorRole: null };
+    io.to(ch).emit('viewer_content_updated', { accumulatedText: editedText, editorRole });
+    io.to(ch).emit('viewer_edit_state', { isEditing: false, editorRole: null });
   });
 
   socket.on('viewer_edit_cancel', ({ channel }) => {
-    console.log(`[${channel}] Viewer edit cancelled`);
-    
-    if (channelEditStates[channel] && channelEditStates[channel].editorId === socket.id) {
-      // Clear edit state
-      channelEditStates[channel].isEditing = false;
-      channelEditStates[channel].editorId = null;
-      channelEditStates[channel].editorRole = null;
-      
-      // Broadcast cancellation
-      io.to(channel).emit('viewer_edit_state', {
-        isEditing: false,
-        editorRole: null
-      });
+    const ch = channel || socket.data.channel;
+    if (channelEditStates[ch]?.editorId === socket.id) {
+      channelEditStates[ch] = { isEditing: false, editorId: null, editorRole: null };
+      io.to(ch).emit('viewer_edit_state', { isEditing: false, editorRole: null });
     }
   });
 
-  // Sync response handler
   socket.on('sync_response', ({ channel, role, currentAccumulated, lastDisplayed }) => {
-    console.log(`[${channel}] Sync response from ${role}`);
+    const ch = channel || socket.data.channel;
+    console.log(`[${ch}] Sync response from ${role}`);
   });
 
-  // Disconnect handler
+  // -------- 연결 해제 --------
   socket.on('disconnect', () => {
-    const { channel, role } = socket.data;
+    const ch = socket.data.channel;
+    const role = socket.data.role;
     console.log(`[${new Date().toISOString()}] Socket disconnected: ${socket.id}`);
-    
-    if (channel && role && (role === 'steno1' || role === 'steno2')) {
-      if (stenoChannels[channel]) {
-        // Remove from stenographer list
-        stenoChannels[channel] = stenoChannels[channel].filter(s => s.id !== socket.id);
-        const stenos = stenoChannels[channel].map(s => s.role);
-        
-        // Notify remaining stenographers
-        io.to(channel).emit('steno_list', { stenos });
-        
-        console.log(`[${channel}] Stenographer ${role} left`);
-        
-        // Clear edit state if editor disconnected
-        if (channelEditStates[channel] && channelEditStates[channel].editorId === socket.id) {
-          channelEditStates[channel].isEditing = false;
-          channelEditStates[channel].editorId = null;
-          channelEditStates[channel].editorRole = null;
-          
-          io.to(channel).emit('viewer_edit_state', {
-            isEditing: false,
-            editorRole: null
-          });
+
+    if (ch && (role === 'steno1' || role === 'steno2')) {
+      if (stenoChannels[ch]) {
+        stenoChannels[ch] = stenoChannels[ch].filter(s => s.id !== socket.id);
+        const stenos = stenoChannels[ch].map(s => s.role);
+        io.to(ch).emit('steno_list', { stenos });
+
+        // 편집 중이던 사람이면 편집 상태 해제
+        if (channelEditStates[ch]?.editorId === socket.id) {
+          channelEditStates[ch] = { isEditing: false, editorId: null, editorRole: null };
+          io.to(ch).emit('viewer_edit_state', { isEditing: false, editorRole: null });
         }
-        
-        // Cleanup empty channel
-        if (stenoChannels[channel].length === 0) {
-          delete stenoChannels[channel];
-          delete channelStates[channel];
-          delete channelSpeakers[channel];
-          delete channelEditStates[channel];
-          console.log(`[${channel}] Channel cleaned up (empty)`);
+
+        // 채널 비면 정리
+        if (stenoChannels[ch].length === 0) {
+          delete stenoChannels[ch];
+          delete channelStates[ch];
+          delete channelSpeakers[ch];
+          delete channelEditStates[ch];
+          console.log(`[${ch}] Channel cleaned up (empty)`);
         }
       }
-    } else if (channel) {
-      // Viewer left
-      io.to(channel).emit('user_left', { role });
-      console.log(`[${channel}] Viewer left: ${socket.id}`);
+    } else if (ch) {
+      io.to(ch).emit('user_left', { role });
+      console.log(`[${ch}] Viewer left: ${socket.id}`);
     }
   });
 
-  // Channel state query (debugging)
+  // -------- 디버그 --------
   socket.on('get_channel_state', ({ channel }) => {
-    if (channelStates[channel]) {
+    const ch = channel || socket.data.channel;
+    if (channelStates[ch]) {
       socket.emit('channel_state', {
-        channel,
-        state: channelStates[channel],
-        stenographers: stenoChannels[channel] || [],
-        speakers: channelSpeakers[channel] || [],
-        editState: channelEditStates[channel] || { isEditing: false }
+        channel: ch,
+        state: channelStates[ch],
+        stenographers: stenoChannels[ch] || [],
+        speakers: channelSpeakers[ch] || [],
+        editState: channelEditStates[ch] || { isEditing: false }
       });
     }
   });
 });
 
-// Graceful shutdown
+// =========================
+// 종료 핸들러
+// =========================
 process.on('SIGTERM', () => {
   console.log('[Shutdown] SIGTERM received');
   server.close(() => {
     console.log('[Shutdown] Server closed');
     process.exit(0);
   });
-  // Force exit after 10 seconds
   setTimeout(() => {
     console.log('[Shutdown] Forced exit');
     process.exit(1);
   }, 10000);
 });
 
-// Start server
+// =========================
+// 기동
+// =========================
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`[Server] Running on port ${PORT}`);
