@@ -1,4 +1,4 @@
-// socket-server.js (patched, feature-preserving)
+// socket-server.js (feature-preserving + active gating + robust 1↔2 fallback)
 
 const express = require('express');
 const http = require('http');
@@ -18,6 +18,37 @@ const channelStates = {};                 // 채널별 상태 { activeStenograph
 const channelSpeakers = {};               // 채널별 화자 리스트
 const channelEditStates = {};             // 채널별 뷰어 편집 상태
 const recentMessages = new Map();         // 중복방지 (socket.emit 훅)
+
+// Helpers
+function listRolesPresent(channel) {
+  return (stenoChannels[channel] || []).map(s => s.role);
+}
+function hasRole(channel, role) {
+  return (stenoChannels[channel] || []).some(s => s.role === role);
+}
+function ensureActiveConsistent(channel) {
+  if (!channelStates[channel]) {
+    channelStates[channel] = { activeStenographer: 'steno1', accumulatedText: '', lastSwitchText: '' };
+  }
+  const present = listRolesPresent(channel);
+  const current = channelStates[channel].activeStenographer || 'steno1';
+  if (present.length === 0) return current; // 의미 없음
+  if (present.length === 1) {
+    // 1인 전환 시: 남아있는 사람을 자동 활성화
+    channelStates[channel].activeStenographer = present[0];
+    return present[0];
+  }
+  // 2인인데 active가 접속 목록에 없으면 첫 사람으로 지정
+  if (!present.includes(current)) {
+    channelStates[channel].activeStenographer = present[0];
+  }
+  return channelStates[channel].activeStenographer;
+}
+function broadcastActiveRole(io, channel) {
+  const active = ensureActiveConsistent(channel);
+  io.to(channel).emit('active_role', { active });
+  return active;
+}
 
 // =========================
 // Express/IO 부팅
@@ -185,10 +216,10 @@ io.on('connection', (socket) => {
       // 클라가 steno1/steno2로 들어와도 서버가 최종 배정(중복 방지)
       let myRole;
       const requested = (role === 'steno1' || role === 'steno2') ? role : null;
-      const hasSteno1 = stenoChannels[channel].some(s => s.role === 'steno1');
-      const hasSteno2 = stenoChannels[channel].some(s => s.role === 'steno2');
+      const hasSteno1 = hasRole(channel, 'steno1');
+      const hasSteno2 = hasRole(channel, 'steno2');
 
-      if (requested && !stenoChannels[channel].some(s => s.role === requested)) {
+      if (requested && !hasRole(channel, requested)) {
         myRole = requested;
       } else if (!hasSteno1) {
         myRole = 'steno1';
@@ -202,11 +233,14 @@ io.on('connection', (socket) => {
       console.log(`[${channel}] Role assigned: ${myRole} to ${socket.id}`);
 
       // 전체에게 속기사 리스트 브로드캐스트
-      const stenos = stenoChannels[channel].map(s => s.role);
+      const stenos = listRolesPresent(channel);
       io.to(channel).emit('steno_list', { stenos });
 
       // 본인에게 역할 통지
       socket.emit('role_assigned', { role: myRole });
+
+      // 활성자 일관성 보정 및 방송
+      const active = broadcastActiveRole(io, channel);
 
       // 누적 텍스트 동기화
       if (requestSync || (channelStates[channel] && channelStates[channel].accumulatedText)) {
@@ -228,6 +262,9 @@ io.on('connection', (socket) => {
       // Viewer
       socket.data.role = 'viewer';
       io.to(channel).emit('user_joined', { role: 'viewer' });
+
+      // 현재 활성자 공지
+      broadcastActiveRole(io, channel);
 
       if (channelStates[channel]?.accumulatedText) {
         socket.emit('sync_accumulated', {
@@ -254,9 +291,20 @@ io.on('connection', (socket) => {
 
     const ch = channel || socket.data.channel;
     const serverRole = socket.data.role || role || 'viewer';
-    console.log(`[${ch}] Input from ${serverRole}: "${text}"`);
+    const active = ensureActiveConsistent(ch);
 
-    // 본인에게는 에코하지 않음(기존 클라 로컬 렌더와 충돌 방지)
+    // 권한자만 송출(뷰어에 동일 화면 보장)
+    if (serverRole !== active) {
+      // 선택: 상대 속기사에게만 파트너 입력 공유(뷰어에게는 송출 안 함)
+      const peers = (stenoChannels[ch] || []).map(s => s.id);
+      peers.forEach(id => {
+        if (id !== socket.id) io.to(id).emit('partner_input', { role: serverRole, text });
+      });
+      return;
+    }
+
+    console.log(`[${ch}] Input from ACTIVE ${serverRole}: "${text}"`);
+    // 본인 제외 브로드캐스트 → 모든 뷰어/상대 속기사는 동일 이벤트 수신
     socket.broadcast.to(ch).emit('steno_input', { role: serverRole, text });
   });
 
@@ -267,8 +315,13 @@ io.on('connection', (socket) => {
       channelStates[ch] = { activeStenographer: 'steno1', accumulatedText: '', lastSwitchText: '' };
     }
     if (newActive !== 'steno1' && newActive !== 'steno2') return;
+    // 실제 접속자 검증: 없는 역할로 전환 방지
+    if (!hasRole(ch, newActive)) {
+      console.log(`[${ch}] Switch denied - ${newActive} not present`);
+      return;
+    }
 
-    const currentActive = channelStates[ch].activeStenographer;
+    const currentActive = ensureActiveConsistent(ch);
     if (currentActive === newActive) {
       console.log(`[${ch}] Switch aborted - ${newActive} already active`);
       return;
@@ -288,6 +341,10 @@ io.on('connection', (socket) => {
       console.log(`[${ch}] Auto match - Text confirmed: "${matchedText}"`);
     }
 
+    // 활성자 방송
+    broadcastActiveRole(io, ch);
+
+    // 스위치 이벤트 방송
     io.to(ch).emit('switch_role', {
       newActive,
       matchedText,
@@ -414,7 +471,7 @@ io.on('connection', (socket) => {
     if (ch && (role === 'steno1' || role === 'steno2')) {
       if (stenoChannels[ch]) {
         stenoChannels[ch] = stenoChannels[ch].filter(s => s.id !== socket.id);
-        const stenos = stenoChannels[ch].map(s => s.role);
+        const stenos = listRolesPresent(ch);
         io.to(ch).emit('steno_list', { stenos });
 
         // 편집 중이던 사람이면 편집 상태 해제
@@ -422,6 +479,9 @@ io.on('connection', (socket) => {
           channelEditStates[ch] = { isEditing: false, editorId: null, editorRole: null };
           io.to(ch).emit('viewer_edit_state', { isEditing: false, editorRole: null });
         }
+
+        // 활성자 일관성 보정 및 방송 (1인 남았을 때 자동 활성화)
+        broadcastActiveRole(io, ch);
 
         // 채널 비면 정리
         if (stenoChannels[ch].length === 0) {
