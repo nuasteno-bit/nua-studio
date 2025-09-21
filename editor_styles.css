@@ -39,6 +39,7 @@ header, footer {
     gap: 10px;
     flex: 1;
     min-height: 250px;
+    transition: flex-direction 0.3s ease;
 }
 
 /* 하단 영역 (모니터링뷰어, 유틸리티) */
@@ -69,7 +70,7 @@ header, footer {
 }
 
 #col2 {
-    min-width: 0; /* 필요시 자연스럽게 사라지도록 */
+    min-width: 350px;
     min-height: 200px;
 }
 
@@ -92,6 +93,10 @@ header, footer {
 }
 
 /* 1인 모드 스타일 */
+body.solo-mode .top-row {
+    flex-direction: row !important;  /* 1인 모드에서는 화면 반전 안함 */
+}
+
 body.solo-mode #col1 {
     flex: 1;
     max-width: none;
@@ -119,7 +124,7 @@ body.solo-mode #col2 {
 }
 
 .utility {
-    min-width: 0; /* 필요시 자연스럽게 사라지도록 */
+    min-width: 250px;
     min-height: 150px;
 }
 
@@ -179,12 +184,22 @@ body.solo-mode #col2 {
     width: 100%;
     min-height: 120px;
     max-height: 100%;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease;
 }
 
-.editor-box[readonly] {
+.editor-box[readonly],
+.editor-box.readonly {
     background: #232323;
-    color: #aaa;
+    color: #999;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.editor-box:not([readonly]):not(.readonly) {
+    background: #181818;
+    color: #e0e0e0;
+    cursor: text;
+    opacity: 1;
 }
 
 /* 폰트 컨트롤 */
@@ -1015,7 +1030,8 @@ body.light-theme .editor-box {
     color: #3a4a5c;
 }
 
-body.light-theme .editor-box[readonly] {
+body.light-theme .editor-box[readonly],
+body.light-theme .editor-box.readonly {
     background: #f5f7fa;
     color: #8899aa;
 }
@@ -1193,4 +1209,11 @@ body.contrast .editor-box {
 .correction-alert {
     background: rgba(255, 69, 0, 0.1);
     border: 1px solid #ff4500;
+}
+
+/* 엔터 모드 인디케이터 */
+.enter-mode-indicator {
+    color: #5a78ff;
+    font-weight: bold;
+    margin-left: 16px;
 }
