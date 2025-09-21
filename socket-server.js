@@ -303,7 +303,7 @@ io.on('connection', (socket) => {
       return;
     }
 
-    console.log(`[${ch}] Input from ACTIVE ${serverRole}: "${text}"`);
+    console.log(`[${ch}] Input from ACTIVE ${serverRole}: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
     // 본인 제외 브로드캐스트 → 모든 뷰어/상대 속기사는 동일 이벤트 수신
     socket.broadcast.to(ch).emit('steno_input', { role: serverRole, text });
   });
@@ -331,14 +331,16 @@ io.on('connection', (socket) => {
     channelStates[ch].activeStenographer = newActive;
 
     if (manual && matchedText && matchedText.trim()) {
+      // 수동 전환 시: 누적 텍스트 업데이트
       const before = channelStates[ch].accumulatedText.length;
-      channelStates[ch].accumulatedText += matchedText;
+      channelStates[ch].accumulatedText = matchedText;
       const after = channelStates[ch].accumulatedText.length;
       console.log(`[${ch}] Manual switch - Text accumulated: ${before} -> ${after} chars`);
     } else if (!manual && matchedText && matchedText.trim()) {
+      // 자동 전환 시: 매칭된 텍스트로 누적 텍스트 설정
       channelStates[ch].accumulatedText = matchedText;
       channelStates[ch].lastSwitchText = matchedText;
-      console.log(`[${ch}] Auto match - Text confirmed: "${matchedText}"`);
+      console.log(`[${ch}] Auto match - Text confirmed: "${matchedText.substring(0, 50)}${matchedText.length > 50 ? '...' : ''}"`);
     }
 
     // 활성자 방송
@@ -356,6 +358,26 @@ io.on('connection', (socket) => {
     });
 
     console.log(`[${ch}] ${(manual ? 'Manual' : 'Auto')} switch complete: ${previousActive} -> ${newActive}`);
+  });
+
+  // -------- 강제 권한 전환 --------
+  socket.on('force_role_switch', ({ channel, newActive, reason }) => {
+    const ch = channel || socket.data.channel;
+    if (!channelStates[ch]) {
+      channelStates[ch] = { activeStenographer: 'steno1', accumulatedText: '', lastSwitchText: '' };
+    }
+    
+    if (newActive !== 'steno1' && newActive !== 'steno2') return;
+    if (!hasRole(ch, newActive)) {
+      console.log(`[${ch}] Force switch denied - ${newActive} not present`);
+      return;
+    }
+    
+    const previousActive = channelStates[ch].activeStenographer;
+    channelStates[ch].activeStenographer = newActive;
+    
+    io.to(ch).emit('force_role_switch', { newActive, previousActive });
+    console.log(`[${ch}] Force switch: ${previousActive} -> ${newActive} (${reason})`);
   });
 
   // -------- 누적 텍스트 확정/전송 --------
@@ -457,6 +479,18 @@ io.on('connection', (socket) => {
     }
   });
 
+  // -------- 채팅 메시지 --------
+  socket.on('chat_message', ({ channel, sender, message }) => {
+    const ch = channel || socket.data.channel;
+    socket.broadcast.to(ch).emit('chat_message', { sender, message });
+    console.log(`[${ch}] Chat from ${sender}: ${message}`);
+  });
+
+  // -------- 핑/퐁 테스트 --------
+  socket.on('ping_test', ({ channel }) => {
+    socket.emit('pong_test', { channel, timestamp: Date.now() });
+  });
+
   socket.on('sync_response', ({ channel, role, currentAccumulated, lastDisplayed }) => {
     const ch = channel || socket.data.channel;
     console.log(`[${ch}] Sync response from ${role}`);
@@ -537,4 +571,13 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`[Environment] ${process.env.NODE_ENV || 'development'}`);
   console.log(`[Health] http://localhost:${PORT}/health`);
   console.log(`[Admin] username=admin, password=123456s`);
+  console.log('=================================');
+  console.log('[Features]');
+  console.log('- 2인 1조 실시간 협업 속기');
+  console.log('- 자동 3단어 매칭 교대');
+  console.log('- 수동 교대 (F6/F7)');
+  console.log('- 뷰어 편집 기능');
+  console.log('- 협업 채팅');
+  console.log('- 테마 시스템');
+  console.log('=================================');
 });
