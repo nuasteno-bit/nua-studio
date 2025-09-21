@@ -1,4 +1,4 @@
-// socket-server.js - 루트 디렉토리용 수정 완료 버전
+// socket-server.js - 관리자 API 포함 완전판
 // NUA STUDIO 실시간 협업 속기 서버 v2.0
 
 const express = require('express');
@@ -170,12 +170,12 @@ const corsOptions = IS_PRODUCTION ? {
     /\.onrender\.com$/
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS'],
+  methods: ['GET', 'POST', 'OPTIONS', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 } : {
   origin: '*',
   credentials: false,
-  methods: ['GET', 'POST', 'OPTIONS'],
+  methods: ['GET', 'POST', 'OPTIONS', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
 
@@ -187,7 +187,7 @@ app.use(helmet({
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 
-// ⚡ 정적 파일 서빙 - 루트 디렉토리 사용 (수정됨!)
+// 정적 파일 서빙 - 루트 디렉토리 사용
 app.use(express.static(__dirname));
 console.log(`[정적 파일] 루트 디렉토리 서빙: ${__dirname}`);
 
@@ -195,7 +195,7 @@ console.log(`[정적 파일] 루트 디렉토리 서빙: ${__dirname}`);
 // 라우트 설정
 // =========================
 
-// ⚡ 루트 경로 - index.html 우선 제공 (수정됨!)
+// 루트 경로 - index.html 우선 제공
 app.get('/', (req, res) => {
   const indexPath = path.join(__dirname, 'index.html');
   
@@ -336,6 +336,198 @@ app.get('/api/metrics', (req, res) => {
   };
   res.status(200).json(metrics);
 });
+
+// =========================
+// 관리자 인증 시스템
+// =========================
+const ADMIN_ACCOUNTS = {
+  'admin': { password: process.env.ADMIN_PASSWORD || '123456s', role: 'system_admin' }
+};
+const activeSessions = new Map();
+
+function generateToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+function requireAuth(req, res, next) {
+  const token = req.headers['authorization'];
+  if (!token || !activeSessions.has(token)) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  req.user = activeSessions.get(token);
+  next();
+}
+
+// =========================
+// 관리자 API 라우트
+// =========================
+
+// 관리자 로그인
+app.post('/api/admin/login', (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    console.log(`[관리자 로그인 시도] Username: ${username}`);
+    
+    // 계정 확인
+    const account = ADMIN_ACCOUNTS[username];
+    if (!account) {
+      console.log(`[관리자 로그인 실패] 계정 없음: ${username}`);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    // 비밀번호 확인
+    if (account.password !== password) {
+      console.log(`[관리자 로그인 실패] 잘못된 비밀번호`);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    // 토큰 생성
+    const token = generateToken();
+    activeSessions.set(token, {
+      username,
+      role: account.role,
+      loginTime: Date.now()
+    });
+    
+    console.log(`[관리자 로그인 성공] ${username} - Token: ${token.substring(0, 8)}...`);
+    
+    res.json({
+      success: true,
+      token,
+      role: account.role
+    });
+    
+  } catch (error) {
+    console.error('[관리자 로그인 오류]', error);
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// 관리자 로그아웃
+app.post('/api/admin/logout', (req, res) => {
+  const token = req.headers['authorization'];
+  if (token && activeSessions.has(token)) {
+    activeSessions.delete(token);
+    console.log('[관리자 로그아웃] 토큰 삭제됨');
+  }
+  res.json({ success: true });
+});
+
+// 관리자 세션 체크
+app.get('/api/admin/check', (req, res) => {
+  const token = req.headers['authorization'];
+  if (token && activeSessions.has(token)) {
+    const session = activeSessions.get(token);
+    res.json({
+      authenticated: true,
+      username: session.username,
+      role: session.role
+    });
+  } else {
+    res.json({ authenticated: false });
+  }
+});
+
+// 관리자 대시보드 통계
+app.get('/api/admin/stats', requireAuth, (req, res) => {
+  try {
+    const stats = {
+      channels: {
+        total: channelDatabase.size,
+        active: Object.keys(channelStates).length,
+        list: Array.from(channelDatabase.values()).map(ch => ({
+          code: ch.code,
+          type: ch.type,
+          eventName: ch.eventName,
+          createdAt: ch.createdAt,
+          activeUsers: stenoChannels[ch.code]?.length || 0,
+          accumulatedText: channelStates[ch.code]?.accumulatedText?.length || 0
+        }))
+      },
+      connections: {
+        current: io.engine ? io.engine.clientsCount : 0,
+        today: Array.from(connectionStats.values())
+          .filter(stat => Date.now() - stat.firstConnect < 24 * 60 * 60 * 1000)
+          .reduce((sum, stat) => sum + stat.count, 0)
+      },
+      server: {
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        nodeVersion: process.version,
+        platform: IS_RENDER ? 'Render' : 'Local'
+      }
+    };
+    res.json(stats);
+  } catch (error) {
+    console.error('[관리자 통계 오류]', error);
+    res.status(500).json({ error: 'Failed to get stats' });
+  }
+});
+
+// 채널 삭제 (관리자 전용)
+app.delete('/api/admin/channel/:code', requireAuth, (req, res) => {
+  try {
+    const { code } = req.params;
+    
+    if (!channelDatabase.has(code)) {
+      return res.status(404).json({ error: 'Channel not found' });
+    }
+    
+    // 채널 관련 데이터 모두 삭제
+    delete channelStates[code];
+    delete stenoChannels[code];
+    delete channelSpeakers[code];
+    delete channelEditStates[code];
+    delete channelBackups[code];
+    channelDatabase.delete(code);
+    
+    // 연결된 사용자들 강제 퇴장
+    io.to(code).emit('channel_closed', { reason: 'Admin closed this channel' });
+    io.socketsLeave(code);
+    
+    console.log(`[관리자] 채널 삭제: ${code}`);
+    res.json({ success: true, message: `Channel ${code} deleted` });
+    
+  } catch (error) {
+    console.error('[채널 삭제 오류]', error);
+    res.status(500).json({ error: 'Failed to delete channel' });
+  }
+});
+
+// 모든 채널 초기화 (관리자 전용)
+app.post('/api/admin/reset-all', requireAuth, (req, res) => {
+  try {
+    const { confirm } = req.body;
+    
+    if (confirm !== 'RESET_ALL') {
+      return res.status(400).json({ error: 'Confirmation required' });
+    }
+    
+    // 모든 데이터 초기화
+    const channelCount = channelDatabase.size;
+    channelDatabase.clear();
+    Object.keys(channelStates).forEach(key => delete channelStates[key]);
+    Object.keys(stenoChannels).forEach(key => delete stenoChannels[key]);
+    Object.keys(channelSpeakers).forEach(key => delete channelSpeakers[key]);
+    Object.keys(channelEditStates).forEach(key => delete channelEditStates[key]);
+    Object.keys(channelBackups).forEach(key => delete channelBackups[key]);
+    
+    console.log(`[관리자] 전체 초기화 - ${channelCount}개 채널 삭제됨`);
+    res.json({ 
+      success: true, 
+      message: `Reset complete. ${channelCount} channels deleted.` 
+    });
+    
+  } catch (error) {
+    console.error('[전체 초기화 오류]', error);
+    res.status(500).json({ error: 'Failed to reset' });
+  }
+});
+
+// =========================
+// 채널 API 라우트
+// =========================
 
 // 채널 생성 API
 app.post('/api/channel/create', (req, res) => {
@@ -1017,9 +1209,14 @@ const startServer = () => {
         console.log('=========================================');
         console.log('[엔드포인트]');
         console.log(`✅ 메인: ${SERVICE_URL}/`);
+        console.log(`✅ 관리자: ${SERVICE_URL}/channel-manager.html`);
         console.log(`✅ Health: ${SERVICE_URL}/health`);
         console.log(`✅ Status: ${SERVICE_URL}/status`);
         console.log(`✅ Metrics: ${SERVICE_URL}/api/metrics`);
+        console.log('=========================================');
+        console.log('[관리자 계정]');
+        console.log(`아이디: admin`);
+        console.log(`비밀번호: ${ADMIN_ACCOUNTS.admin.password}`);
         console.log('=========================================');
         
         // 시작 시 메모리 정리
