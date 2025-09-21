@@ -604,7 +604,10 @@ function updateViewerFromEditor() {
   const viewerContent = document.getElementById('viewerContent');
   if (!viewerContent || !myEditor) return;
   
-  const currentText = accumulatedText + myEditor.value;
+  // HTML 모드에서는 항상 권한자
+  const currentText = accumulatedText + 
+    (accumulatedText && myEditor.value && !accumulatedText.endsWith(' ') ? ' ' : '') + 
+    myEditor.value;
   
   fullTextStorage = currentText;
   updateMonitoringFromText(currentText);
@@ -663,24 +666,26 @@ function toggleEnterMode() {
 function sendToMonitor() {
   if (!myEditor || myEditor.value.trim() === '') return;
   
-  accumulatedText += myEditor.value + '\n';
-  fullTextStorage = accumulatedText;
-  myEditor.value = '';
-  
-  if (isHtmlMode) {
-    updateViewerFromEditor();
-  } else {
+  // 1인 모드이거나 권한자인 경우만 전송 가능
+  if (isSoloMode() || myRole === activeStenographer) {
+    accumulatedText += (accumulatedText && !accumulatedText.endsWith(' ') ? ' ' : '') + myEditor.value.trim();
+    fullTextStorage = accumulatedText;
+    myEditor.value = '';
+    
     updateViewerContent();
-    if (socket && socket.connected) {
+    
+    if (!isHtmlMode && socket && socket.connected) {
       socket.emit('text_sent', { 
         channel, 
         accumulatedText,
         sender: myRole 
       });
     }
+    
+    console.log('[전송 모드] 텍스트 전송 완료 - 누적:', accumulatedText.length, '자');
+  } else {
+    console.log('[전송 모드] 대기자는 전송할 수 없습니다.');
   }
-  
-  console.log('[전송 모드] 텍스트 전송 완료');
 }
 
 // 입력 처리 함수
@@ -696,9 +701,9 @@ function handleInputChange() {
   }
   
   if (isHtmlMode) {
-    updateViewerFromEditor();
+    updateViewerFromEditor();  // HTML 모드에서는 직접 뷰어 업데이트
   } else {
-    sendInput();
+    sendInput();  // 소켓 모드에서는 역할별 처리
   }
 }
 
@@ -706,16 +711,18 @@ function handleInputChange() {
 function sendInput() {
   if (!socket || isHtmlMode) return;
   
-  if (shouldUpdateViewer()) {
-    updateViewerWithCurrentInput();
-  }
+  const currentText = myEditor.value;
   
-  if (myRole === activeStenographer) {
+  // 1인 모드이거나 권한자인 경우
+  if (isSoloMode() || myRole === activeStenographer) {
+    // 뷰어 업데이트
+    updateViewerWithCurrentInput();
+    
+    // 서버로 입력 전송 (throttling)
     if (sendInputTimeout) {
       clearTimeout(sendInputTimeout);
     }
     
-    const currentText = myEditor.value;
     const shouldSendImmediately = 
       currentText.endsWith(' ') ||
       currentText.endsWith('\n') ||
@@ -754,39 +761,55 @@ function sendInput() {
         }
       }, 200);
     }
-  } else {
+  } 
+  // 2인 모드의 대기자인 경우
+  else {
+    // 즉시 서버로 전송 (파트너와 공유)
     if (socket.connected) {
       socket.emit('steno_input', { 
         channel: channel, 
         role: `steno${myRole}`, 
-        text: myEditor.value 
+        text: currentText 
       });
     }
   }
   
-  if (isCollaborationMode() && myRole !== activeStenographer) {
-    checkWordMatchingAsWaiting();
-  }
-  
-  if (isCollaborationMode() && myRole === activeStenographer) {
-    checkWordMatchingAsActive();
+  // 2인 모드에서만 단어 매칭 체크
+  if (isCollaborationMode()) {
+    if (myRole !== activeStenographer) {
+      checkWordMatchingAsWaiting();  // 대기자: 권한 획득 체크
+    } else {
+      checkWordMatchingAsActive();   // 권한자: 대기자 매칭 확인
+    }
   }
 }
 
-// 뷰어 업데이트 with 입력
+// 뷰어 업데이트 with 입력 (권한자의 입력만 반영)
 function updateViewerWithCurrentInput() {
   if (isViewerEditing) return;
+  if (myRole !== activeStenographer) return; // 권한자만 뷰어 업데이트
   
   const viewerContent = document.getElementById('viewerContent');
   if (!viewerContent) return;
   
   let displayText = accumulatedText;
-  if (myEditor.value.endsWith(' ')) {
-    displayText = accumulatedText + myEditor.value;
-  } else {
-    const words = myEditor.value.split(' ');
-    if (words.length > 1) {
-      displayText = accumulatedText + words.slice(0, -1).join(' ') + ' ';
+  
+  // 현재 입력 중인 텍스트 추가 (단어 단위로)
+  if (myEditor.value) {
+    if (myEditor.value.endsWith(' ')) {
+      // 공백으로 끝나면 전체 추가
+      displayText = accumulatedText + 
+        (accumulatedText && !accumulatedText.endsWith(' ') ? ' ' : '') + 
+        myEditor.value.trim();
+    } else {
+      // 아직 입력 중인 마지막 단어는 제외
+      const words = myEditor.value.trim().split(' ').filter(Boolean);
+      if (words.length > 1) {
+        const completeWords = words.slice(0, -1).join(' ');
+        displayText = accumulatedText + 
+          (accumulatedText && !accumulatedText.endsWith(' ') ? ' ' : '') + 
+          completeWords;
+      }
     }
   }
   
@@ -810,12 +833,21 @@ function updateViewerWithOtherInput(otherText) {
   if (!viewerContent) return;
   
   let displayText = accumulatedText;
-  if (otherText.endsWith(' ')) {
-    displayText = accumulatedText + otherText;
-  } else {
-    const words = otherText.split(' ');
-    if (words.length > 1) {
-      displayText = accumulatedText + words.slice(0, -1).join(' ') + ' ';
+  
+  // 권한자의 입력 추가
+  if (otherText) {
+    if (otherText.endsWith(' ')) {
+      displayText = accumulatedText + 
+        (accumulatedText && !accumulatedText.endsWith(' ') ? ' ' : '') + 
+        otherText.trim();
+    } else {
+      const words = otherText.trim().split(' ').filter(Boolean);
+      if (words.length > 1) {
+        const completeWords = words.slice(0, -1).join(' ');
+        displayText = accumulatedText + 
+          (accumulatedText && !accumulatedText.endsWith(' ') ? ' ' : '') + 
+          completeWords;
+      }
     }
   }
   
@@ -862,11 +894,6 @@ function isSoloMode() {
 
 function isCollaborationMode() {
   return stenoList.length === 2;
-}
-
-function shouldUpdateViewer() {
-  if (isSoloMode()) return true;
-  return myRole === activeStenographer;
 }
 
 // 상태 업데이트
@@ -1006,53 +1033,84 @@ function updatePerformanceInfo() {
   }
 }
 
-// 🔥 수정된 단어 매칭 체크 - 문장 중간 어디서든 매칭 가능
+// 🔥 수정된 단어 매칭 체크 - 과거 단어 매칭 방지 + 시간 제한
 function checkWordMatchingAsWaiting() {
   if (isHtmlMode) return;
   if (myRole === activeStenographer) return;
   
-  const myWordsArr = myEditor.value.split(' ').filter(Boolean);
+  // 🛡️ 시간 제한: 마지막 교대로부터 3초 이상 경과해야 함
+  if (Date.now() - lastSwitchTime < MIN_SWITCH_INTERVAL) {
+    return;
+  }
   
-  if (!otherEditor.value) return;
+  const myText = myEditor.value.trim();
+  if (!myText) return;
   
-  const currentViewerText = accumulatedText + otherEditor.value;
+  const myWords = myText.split(' ').filter(Boolean);
+  if (myWords.length < matchWordCount) return;
+  
+  const otherText = otherEditor.value.trim();
+  if (!otherText) return;
+  
+  // 🛡️ 안전장치: 권한자 입력이 너무 짧으면 매칭 안 함
+  const otherWords = otherText.split(' ').filter(Boolean);
+  if (otherWords.length < matchWordCount) return;
   
   // 대기자 입력의 모든 위치에서 매칭 체크
-  for (let startIdx = 0; startIdx <= myWordsArr.length - matchWordCount; startIdx++) {
-    const candidateWords = myWordsArr.slice(startIdx, startIdx + matchWordCount).join(' ');
+  for (let startIdx = 0; startIdx <= myWords.length - matchWordCount; startIdx++) {
+    const candidateWords = myWords.slice(startIdx, startIdx + matchWordCount);
+    const candidatePhrase = candidateWords.join(' ').toLowerCase();
     
-    if (candidateWords && matchWordCount >= 3) {
-      const trimmedViewer = currentViewerText.trim().toLowerCase();
-      const trimmedCandidate = candidateWords.trim().toLowerCase();
+    // 🛡️ 안전장치: 과거 텍스트와 매칭되지 않도록 확인
+    // accumulatedText에 이미 있는 단어는 매칭하지 않음
+    if (accumulatedText && accumulatedText.toLowerCase().includes(candidatePhrase)) {
+      console.log('[매칭 방지] 이미 송출된 과거 단어와 일치:', candidatePhrase);
+      continue; // 다음 위치 체크
+    }
+    
+    // 권한자의 현재 입력에서만 매칭 확인
+    if (otherText.toLowerCase().includes(candidatePhrase)) {
+      // 권한자 텍스트에서 매칭된 부분의 끝 위치 찾기
+      let matchEndIndex = -1;
       
-      // 권한자의 입력(뷰어 텍스트)에서 대기자의 3단어가 포함되어 있는지 확인
-      if (trimmedViewer.includes(trimmedCandidate)) {
-        const matchedPartFromActive = getMatchedTextUpToBySequence(otherEditor.value, candidateWords);
+      for (let i = 0; i <= otherWords.length - matchWordCount; i++) {
+        const otherPhrase = otherWords.slice(i, i + matchWordCount).join(' ').toLowerCase();
+        if (otherPhrase === candidatePhrase) {
+          matchEndIndex = i + matchWordCount;
+          break;
+        }
+      }
+      
+      if (matchEndIndex > 0) {
+        // 권한자가 입력한 부분까지를 누적 텍스트로 설정
+        const matchedTextFromActive = otherWords.slice(0, matchEndIndex).join(' ');
+        const newAccumulatedText = accumulatedText + 
+          (accumulatedText && !accumulatedText.endsWith(' ') ? ' ' : '') + 
+          matchedTextFromActive;
         
-        if (matchedPartFromActive) {
-          const fullMatchedText = accumulatedText + matchedPartFromActive;
-          const newActive = myRole === '1' ? 'steno1' : 'steno2';
-          
-          if ((newActive === 'steno1' && activeStenographer === '1') || 
-              (newActive === 'steno2' && activeStenographer === '2')) {
-            return;
-          }
-          
+        const newActive = myRole === '1' ? 'steno1' : 'steno2';
+        
+        console.log('[단어 매칭 감지] 대기자 → 권한자 전환', {
+          대기자역할: myRole,
+          매칭위치: startIdx,
+          매칭단어: candidatePhrase,
+          권한자입력: matchedTextFromActive,
+          새누적텍스트: newAccumulatedText
+        });
+        
+        lastSwitchTime = Date.now(); // 교대 시간 기록
+        
+        if (socket && socket.connected) {
           socket.emit('switch_role', { 
             channel: channel, 
             newActive: newActive, 
-            matchedText: fullMatchedText,
+            matchedText: newAccumulatedText,
             matchStartIndex: startIdx,
-            matchWordCount: matchWordCount || 3
+            matchWordCount: matchWordCount
           });
-          
-          console.log('[단어 매칭] 대기자 → 권한자 전환 요청', {
-            매칭위치: startIdx,
-            매칭단어: candidateWords
-          });
-          
-          return;
         }
+        
+        return;
       }
     }
   }
@@ -1062,102 +1120,97 @@ function checkWordMatchingAsWaiting() {
 function checkWordMatchingAsActive() {
   if (isHtmlMode) return;
   if (myRole !== activeStenographer) return;
-  if (!otherEditor.value) return;
   
-  const currentViewerText = accumulatedText + myEditor.value;
-  const otherWords = otherEditor.value.trim().split(' ').filter(Boolean);
+  // 🛡️ 시간 제한: 마지막 교대로부터 3초 이상 경과해야 함
+  if (Date.now() - lastSwitchTime < MIN_SWITCH_INTERVAL) {
+    return;
+  }
+  
+  const myText = myEditor.value.trim();
+  if (!myText) return;
+  
+  const otherText = otherEditor.value.trim();
+  if (!otherText) return;
+  
+  const otherWords = otherText.split(' ').filter(Boolean);
+  if (otherWords.length < matchWordCount) return;
+  
+  // 🛡️ 안전장치: 권한자 입력이 너무 짧으면 매칭 안 함
+  const myWords = myText.split(' ').filter(Boolean);
+  if (myWords.length < matchWordCount) return;
   
   // 대기자 입력의 모든 위치에서 매칭 체크
   for (let startIdx = 0; startIdx <= otherWords.length - matchWordCount; startIdx++) {
-    const candidateWords = otherWords.slice(startIdx, startIdx + matchWordCount).join(' ').toLowerCase();
+    const candidateWords = otherWords.slice(startIdx, startIdx + matchWordCount);
+    const candidatePhrase = candidateWords.join(' ').toLowerCase();
     
-    // 권한자의 현재 입력에서 매칭 확인
-    if (currentViewerText.toLowerCase().includes(candidateWords)) {
-      const newActive = myRole === '1' ? 'steno2' : 'steno1';
+    // 🛡️ 안전장치: 과거 텍스트와 매칭되지 않도록 확인
+    if (accumulatedText && accumulatedText.toLowerCase().includes(candidatePhrase)) {
+      console.log('[매칭 방지] 이미 송출된 과거 단어와 일치:', candidatePhrase);
+      continue; // 다음 위치 체크
+    }
+    
+    // 권한자(나)의 현재 입력에서만 매칭 확인
+    if (myText.toLowerCase().includes(candidatePhrase)) {
+      // 나의 텍스트에서 매칭 위치 찾기
+      let matchEndIndex = -1;
       
-      socket.emit('switch_role', { 
-        channel, 
-        newActive, 
-        matchedText: currentViewerText,
-        matchStartIndex: startIdx,
-        matchWordCount: matchWordCount || 3
-      });
+      for (let i = 0; i <= myWords.length - matchWordCount; i++) {
+        const myPhrase = myWords.slice(i, i + matchWordCount).join(' ').toLowerCase();
+        if (myPhrase === candidatePhrase) {
+          matchEndIndex = i + matchWordCount;
+          break;
+        }
+      }
       
-      console.log('[단어 매칭] 권한자 확인 → 전환', {
-        매칭위치: startIdx,
-        매칭단어: candidateWords
-      });
-      
-      return;
+      if (matchEndIndex > 0) {
+        // 내가 입력한 부분까지를 누적 텍스트로 설정
+        const matchedTextFromMe = myWords.slice(0, matchEndIndex).join(' ');
+        const newAccumulatedText = accumulatedText + 
+          (accumulatedText && !accumulatedText.endsWith(' ') ? ' ' : '') + 
+          matchedTextFromMe;
+        
+        // 🛡️ 추가 안전장치: 중복 확인
+        // 새로 추가될 텍스트가 이미 누적 텍스트의 끝에 있는지 확인
+        if (accumulatedText.trim().endsWith(matchedTextFromMe.trim())) {
+          console.log('[매칭 방지] 중복 텍스트 감지, 교대 취소');
+          return;
+        }
+        
+        const newActive = myRole === '1' ? 'steno2' : 'steno1';
+        
+        console.log('[단어 매칭 감지] 권한자 확인 → 전환', {
+          권한자역할: myRole,
+          대기자매칭위치: startIdx,
+          매칭단어: candidatePhrase,
+          누적텍스트: newAccumulatedText
+        });
+        
+        lastSwitchTime = Date.now(); // 교대 시간 기록
+        
+        if (socket && socket.connected) {
+          socket.emit('switch_role', { 
+            channel, 
+            newActive, 
+            matchedText: newAccumulatedText,
+            matchStartIndex: startIdx,
+            matchWordCount: matchWordCount
+          });
+        }
+        
+        return;
+      }
     }
   }
 }
 
-function getMatchedTextUpToBySequence(fullText, matchSeq) {
-  if (!fullText || !matchSeq || typeof fullText !== 'string' || typeof matchSeq !== 'string') {
-    return '';
-  }
-  
-  try {
-    const normalizeForMatch = s => s.trim().replace(/\s+/g, ' ').toLowerCase();
-    const normalizedFull = normalizeForMatch(fullText);
-    const normalizedMatch = normalizeForMatch(matchSeq);
-    
-    if (!normalizedFull || !normalizedMatch) {
-      return '';
-    }
-    
-    const fullWords = normalizedFull.split(' ').filter(Boolean);
-    const matchWords = normalizedMatch.split(' ').filter(Boolean);
-    
-    if (matchWords.length === 0) {
-      return '';
-    }
-    
-    let lastIdx = -1;
-    for (let i = 0; i <= fullWords.length - matchWords.length; i++) {
-      let isMatch = true;
-      for (let j = 0; j < matchWords.length; j++) {
-        if (fullWords[i + j].toLowerCase() !== matchWords[j].toLowerCase()) {
-          isMatch = false; 
-          break; 
-        }
-      }
-      if (isMatch) {
-        lastIdx = i + matchWords.length;
-      }
-    }
-    
-    if (lastIdx === -1) {
-      return '';
-    }
-    
-    let wordCount = 0, idx = 0;
-    for (let i = 0; i < fullText.length; i++) {
-      if (fullText[i] === ' ') {
-        wordCount++;
-        if (wordCount === lastIdx) {
-          idx = i + 1;
-          break;
-        }
-      }
-    }
-    
-    if (wordCount < lastIdx) {
-      idx = fullText.length;
-    }
-    
-    return fullText.slice(0, idx);
-    
-  } catch (error) {
-    console.error('[매칭 함수] 에러:', error);
-    return '';
-  }
-}
+// 더 이상 사용하지 않는 함수 제거 (단어 매칭 로직이 개선되어 불필요)
 
 // 수동 권한 전환
 let manualSwitchCooldown = false;
 let isSwitchingRole = false;
+let lastSwitchTime = 0;
+const MIN_SWITCH_INTERVAL = 3000; // 3초 (자동 교대 간격 제한)
 
 function offerRole() {
   if (isHtmlMode) return;
@@ -1208,11 +1261,25 @@ function manualSwitchRole(reason) {
     
     isSwitchingRole = true;
     manualSwitchCooldown = true;
+    lastSwitchTime = Date.now(); // 교대 시간 기록
     
     const newActive = myRole === '1' ? 'steno2' : 'steno1';
-    const matchedText = accumulatedText + myEditor.value;  // 수동 전환 시 현재까지의 텍스트
     
-    console.log(`[수동 전환] ${reason}: ${myRole} → ${myRole === '1' ? '2' : '1'}`);
+    // 수동 전환 시 누적 텍스트 처리
+    let matchedText = accumulatedText;
+    
+    // 현재 권한자인 경우: 입력한 내용을 누적 텍스트에 추가
+    if (myRole === activeStenographer && myEditor.value.trim()) {
+      matchedText = accumulatedText + 
+        (accumulatedText && !accumulatedText.endsWith(' ') ? ' ' : '') + 
+        myEditor.value.trim();
+    }
+    
+    console.log(`[수동 전환] ${reason}: ${myRole} → ${myRole === '1' ? '2' : '1'}`, {
+      현재권한자: activeStenographer,
+      새권한자: newActive,
+      누적텍스트: matchedText
+    });
     
     if (socket && socket.connected) {
       socket.emit('switch_role', { 
@@ -1367,10 +1434,14 @@ function deleteWordBackward() {
     editor.setSelectionRange(deleteStartPos, deleteStartPos);
   }
   
-  if (isHtmlMode || myRole === activeStenographer) {
+  // HTML 모드, 1인 모드, 또는 권한자인 경우 뷰어 업데이트
+  if (isHtmlMode) {
     updateViewerFromEditor();
+  } else if (isSoloMode() || myRole === activeStenographer) {
+    updateViewerWithCurrentInput();
   }
   
+  // 서버에 변경사항 전송
   if (!isHtmlMode && socket && socket.connected) {
     socket.emit('steno_input', { 
       channel: channel, 
@@ -1521,11 +1592,21 @@ if (!isHtmlMode && socket) {
       updateUtilityStatus();
     }
     
+    // 1인 모드로 전환 시 내가 자동으로 권한자가 됨
+    if (nowSolo && !wasSolo && myRole) {
+      activeStenographer = myRole;
+      console.log('[1인 모드] 자동 권한자 설정:', myRole);
+    }
+    
     // 상대방이 나갔을 때 입력창 초기화
     if (stenoList.length < 2 && otherEditor) {
       otherEditor.value = '';
       console.log('[상대방 퇴장] 입력창 초기화');
-      updateViewerContent();
+      
+      // 1인 모드에서는 뷰어 계속 업데이트
+      if (nowSolo) {
+        updateViewerContent();
+      }
     }
   });
 
@@ -1603,12 +1684,15 @@ if (!isHtmlMode && socket) {
     }
   });
 
-  // 🔥 수정된 switch_role 이벤트 처리
+  // 🔥 수정된 switch_role 이벤트 처리 - 정확한 교대 시나리오 구현
   socket.on('switch_role', ({ newActive, matchedText, accumulatedText: serverAccum, previousActive, manual, matchStartIndex, matchWordCount: matchCount }) => {
     try {
       const wasIActive = (activeStenographer === myRole);
       activeStenographer = newActive === 'steno1' ? '1' : '2';
       const amINowActive = (activeStenographer === myRole);
+      
+      // 교대 시간 기록
+      lastSwitchTime = Date.now();
       
       console.log('[권한 전환]', {
         이전활성자: previousActive,
@@ -1626,10 +1710,7 @@ if (!isHtmlMode && socket) {
         cancelViewerEdit();
       }
       
-      if (manual) {
-        console.log('[수동 전환 완료]', wasIActive ? '권한 상실' : '권한 획득');
-      }
-      
+      // 누적 텍스트 업데이트 (뷰어 표시용)
       if (typeof serverAccum === 'string') {
         accumulatedText = serverAccum;
         fullTextStorage = serverAccum;
@@ -1639,41 +1720,68 @@ if (!isHtmlMode && socket) {
       
       updateStatus();
       
-      // 🔥 교대 시 처리 수정: 권한자 → 대기자는 전체 삭제, 대기자 → 권한자는 매칭 부분만 삭제
-      if (amINowActive && !wasIActive) {
-        // 대기자 → 권한자로 전환된 경우
+      // ===== 교대 시 입력창 처리 =====
+      
+      // 1️⃣ 권한자 → 대기자로 전환된 경우: 입력창 완전히 비움
+      if (!amINowActive && wasIActive) {
+        if (myEditor) {
+          console.log('[권한자→대기자] 입력창 완전 비우기 (이미 송출 완료)');
+          myEditor.value = '';
+          lastSentText = '';
+          
+          // 서버에 빈 텍스트 전송
+          if (socket.connected) {
+            socket.emit('steno_input', { 
+              channel: channel, 
+              role: `steno${myRole}`, 
+              text: '' 
+            });
+          }
+        }
+      }
+      
+      // 2️⃣ 대기자 → 권한자로 전환된 경우: 매칭된 단어만 삭제
+      else if (amINowActive && !wasIActive) {
         if (sendInputTimeout) {
           clearTimeout(sendInputTimeout);
           sendInputTimeout = null;
         }
         
         if (myEditor) {
+          const currentText = myEditor.value;
+          
           if (manual) {
-            // 수동 전환 시: 내용 유지
-            console.log('[수동 전환] 권한 획득 - 입력창 유지');
-          } else {
-            // 자동 전환 시: 매칭된 단어만 삭제
-            const currentText = myEditor.value;
+            // 수동 전환: 입력창 내용 그대로 유지
+            console.log('[대기자→권한자] 수동 전환 - 입력창 유지');
+            
+          } else if (typeof matchStartIndex === 'number' && matchCount) {
+            // 자동 전환: 매칭된 단어들만 정확히 제거
             const words = currentText.split(' ').filter(Boolean);
             
-            if (typeof matchStartIndex === 'number' && matchCount) {
-              // 매칭된 단어들만 제거
-              words.splice(matchStartIndex, matchCount);
-              myEditor.value = words.length > 0 ? words.join(' ') + ' ' : '';
-              
-              console.log('[자동 전환] 권한 획득 - 매칭 단어 삭제', {
-                원본: currentText,
-                삭제후: myEditor.value,
-                삭제위치: matchStartIndex,
-                삭제개수: matchCount
-              });
-            }
+            // 매칭된 단어 제거
+            const removedWords = words.splice(matchStartIndex, matchCount);
+            const remainingText = words.join(' ');
+            
+            myEditor.value = remainingText ? remainingText + ' ' : '';
+            
+            console.log('[대기자→권한자] 자동 전환 - 매칭 단어 제거', {
+              원본텍스트: currentText,
+              제거된단어: removedWords.join(' '),
+              남은텍스트: myEditor.value,
+              매칭위치: matchStartIndex,
+              매칭개수: matchCount
+            });
+          } else {
+            // matchStartIndex가 없는 경우 (예외 처리)
+            console.log('[대기자→권한자] 매칭 정보 없음 - 입력창 유지');
           }
           
-          // 입력창 포커스
+          // 포커스 재설정
           myEditor.blur();
           setTimeout(() => {
             myEditor.focus();
+            // 커서를 끝으로 이동
+            myEditor.setSelectionRange(myEditor.value.length, myEditor.value.length);
           }, 10);
           
           // 서버에 현재 상태 전송
@@ -1685,46 +1793,31 @@ if (!isHtmlMode && socket) {
             });
             lastSentText = myEditor.value;
           }
-        }
-        
-        setTimeout(() => {
-          if (socket.connected && myEditor) {
-            socket.emit('steno_input', { 
-              channel: channel, 
-              role: `steno${myRole}`, 
-              text: myEditor.value 
-            });
-            console.log('[권한 전환] 입력창 상태 재전송:', myEditor.value);
-          }
-        }, 100);
-        
-        setTimeout(() => {
-          if (myEditor) myEditor.focus();
-        }, 100);
-        
-      } else if (!amINowActive && wasIActive) {
-        // 권한자 → 대기자로 전환된 경우: 입력창 전체 삭제
-        if (myEditor) {
-          console.log('[권한 상실] 입력창 비우기');
-          myEditor.value = '';
-          lastSentText = '';
-          if (socket.connected) {
-            socket.emit('steno_input', { 
-              channel: channel, 
-              role: `steno${myRole}`, 
-              text: '' 
-            });
-          }
+          
+          // 100ms 후 재전송 (동기화 보장)
+          setTimeout(() => {
+            if (socket.connected && myEditor) {
+              socket.emit('steno_input', { 
+                channel: channel, 
+                role: `steno${myRole}`, 
+                text: myEditor.value 
+              });
+              console.log('[권한 전환] 입력창 상태 재전송 완료');
+            }
+          }, 100);
         }
       }
       
-      // 상대방 입력창은 항상 초기화
+      // 3️⃣ 상대방 입력창은 항상 초기화 (읽기 전용이므로)
       if (otherEditor) {
         otherEditor.value = '';
+        console.log('[권한 전환] 상대방 입력창 초기화');
       }
       
+      // 수동 전환 플래그 해제
       if (manual) {
         isSwitchingRole = false;
+        console.log('[수동 전환] 처리 완료');
       }
       
     } catch (error) {
