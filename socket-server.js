@@ -1,4 +1,4 @@
-// socket-server.js - Render 최적화 완전판
+// socket-server.js - 루트 디렉토리용 수정 완료 버전
 // NUA STUDIO 실시간 협업 속기 서버 v2.0
 
 const express = require('express');
@@ -187,25 +187,25 @@ app.use(helmet({
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 
-// 정적 파일 서빙
-const publicPath = path.join(__dirname, 'public');
-if (fs.existsSync(publicPath)) {
-  app.use(express.static(publicPath));
-  console.log(`[정적 파일] ${publicPath} 서빙 중`);
-} else {
-  console.log(`[경고] public 디렉토리 없음`);
-}
+// ⚡ 정적 파일 서빙 - 루트 디렉토리 사용 (수정됨!)
+app.use(express.static(__dirname));
+console.log(`[정적 파일] 루트 디렉토리 서빙: ${__dirname}`);
 
 // =========================
 // 라우트 설정
 // =========================
 
-// 루트 경로
+// ⚡ 루트 경로 - index.html 우선 제공 (수정됨!)
 app.get('/', (req, res) => {
-  const indexPath = path.join(__dirname, 'public', 'index.html');
+  const indexPath = path.join(__dirname, 'index.html');
+  
+  // index.html이 있으면 제공
   if (fs.existsSync(indexPath)) {
+    console.log('[라우트] index.html 제공');
     res.sendFile(indexPath);
   } else {
+    // index.html이 없을 때만 서버 상태 페이지 표시
+    console.log('[라우트] index.html 없음, 기본 페이지 표시');
     res.status(200).send(`
       <!DOCTYPE html>
       <html>
@@ -240,33 +240,31 @@ app.get('/', (req, res) => {
             font-weight: bold;
             margin: 1rem 0;
           }
+          .warning {
+            background: #ef4444;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+          }
           .info { margin-top: 2rem; opacity: 0.9; }
           .info p { margin: 0.5rem 0; }
           a { color: white; text-decoration: underline; }
-          .stats {
-            margin-top: 2rem;
-            padding: 1rem;
-            background: rgba(0,0,0,0.2);
-            border-radius: 0.5rem;
-          }
         </style>
       </head>
       <body>
         <div class="container">
           <h1>🎙️ NUA STUDIO</h1>
           <div class="status">✅ Server Active</div>
+          <div class="warning">
+            ⚠️ index.html 파일을 찾을 수 없습니다!
+          </div>
           <div class="info">
-            <p>실시간 협업 속기 서버가 정상 작동 중입니다</p>
-            <p>환경: ${NODE_ENV} | 포트: ${PORT}</p>
+            <p>서버는 정상 작동 중이지만 앱 파일이 없습니다.</p>
+            <p>파일 위치: ${__dirname}</p>
             <p>
               <a href="/health">시스템 상태</a> | 
-              <a href="/api/metrics">성능 지표</a> | 
-              <a href="/api/channels">채널 목록</a>
+              <a href="/api/metrics">성능 지표</a>
             </p>
-          </div>
-          <div class="stats">
-            <p>서버 시작: ${new Date().toLocaleString('ko-KR')}</p>
-            <p>플랫폼: ${IS_RENDER ? 'Render Cloud' : 'Local Server'}</p>
           </div>
         </div>
       </body>
@@ -307,7 +305,8 @@ app.get('/health', (req, res) => {
       node: process.version,
       platform: process.platform,
       env: NODE_ENV,
-      port: PORT
+      port: PORT,
+      workingDir: __dirname
     }
   });
 });
@@ -1009,19 +1008,18 @@ const startServer = () => {
         console.log(`[외부 URL] ${SERVICE_URL}`);
         console.log(`[Node.js] ${process.version}`);
         console.log(`[메모리] ${Math.round(process.memoryUsage().heapTotal / 1024 / 1024)} MB`);
+        console.log(`[작업 디렉토리] ${__dirname}`);
         console.log(`[시작 시간] ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`);
         console.log('=========================================');
+        console.log('[파일 확인]');
+        const indexExists = fs.existsSync(path.join(__dirname, 'index.html'));
+        console.log(`index.html: ${indexExists ? '✅ 존재' : '❌ 없음'}`);
+        console.log('=========================================');
         console.log('[엔드포인트]');
+        console.log(`✅ 메인: ${SERVICE_URL}/`);
         console.log(`✅ Health: ${SERVICE_URL}/health`);
         console.log(`✅ Status: ${SERVICE_URL}/status`);
         console.log(`✅ Metrics: ${SERVICE_URL}/api/metrics`);
-        console.log('=========================================');
-        console.log('[기능]');
-        console.log('✅ 2인 1조 실시간 협업 속기');
-        console.log('✅ 자동 3단어 매칭 교대');
-        console.log('✅ 파트너 간 실시간 입력 공유');
-        console.log('✅ 2시간 백업/자동 복구');
-        console.log('✅ 24시간 연속 운영 최적화');
         console.log('=========================================');
         
         // 시작 시 메모리 정리
