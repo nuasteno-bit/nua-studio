@@ -43,7 +43,6 @@ const PING_TIMEOUT = IS_RENDER ? 60000 : 30000;
 const channelDatabase = new Map();
 const stenoChannels = {};
 const channelStates = {};
-const channelSpeakers = {};
 const channelEditStates = {};
 const recentMessages = new Map();
 const channelBackups = {};
@@ -129,7 +128,6 @@ function cleanupInactiveChannels() {
         (!stenoChannels[channel] || stenoChannels[channel].length === 0)) {
       delete channelStates[channel];
       delete stenoChannels[channel];
-      delete channelSpeakers[channel];
       delete channelEditStates[channel];
       delete channelBackups[channel];
       channelDatabase.delete(channel);
@@ -170,12 +168,12 @@ const corsOptions = IS_PRODUCTION ? {
     /\.onrender\.com$/
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS', 'DELETE'],
+  methods: ['GET', 'POST', 'OPTIONS', 'DELETE', 'PUT'],
   allowedHeaders: ['Content-Type', 'Authorization']
 } : {
   origin: '*',
   credentials: false,
-  methods: ['GET', 'POST', 'OPTIONS', 'DELETE'],
+  methods: ['GET', 'POST', 'OPTIONS', 'DELETE', 'PUT'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
 
@@ -477,7 +475,6 @@ app.delete('/api/admin/channel/:code', requireAuth, (req, res) => {
     // 채널 관련 데이터 모두 삭제
     delete channelStates[code];
     delete stenoChannels[code];
-    delete channelSpeakers[code];
     delete channelEditStates[code];
     delete channelBackups[code];
     channelDatabase.delete(code);
@@ -509,7 +506,6 @@ app.post('/api/admin/reset-all', requireAuth, (req, res) => {
     channelDatabase.clear();
     Object.keys(channelStates).forEach(key => delete channelStates[key]);
     Object.keys(stenoChannels).forEach(key => delete stenoChannels[key]);
-    Object.keys(channelSpeakers).forEach(key => delete channelSpeakers[key]);
     Object.keys(channelEditStates).forEach(key => delete channelEditStates[key]);
     Object.keys(channelBackups).forEach(key => delete channelBackups[key]);
     
@@ -575,7 +571,37 @@ app.get('/api/channels', (req, res) => {
   }
 });
 
-// 채널 확인 API
+// 채널 확인 API (index.html이 실제 사용하는 버전)
+app.get('/api/channel/:code/verify', (req, res) => {
+  try {
+    const { code } = req.params;
+    
+    if (channelDatabase.has(code)) {
+      const channel = channelDatabase.get(code);
+      res.json({ 
+        success: true,
+        exists: true,
+        channel: {
+          code: channel.code,
+          type: channel.type,
+          eventName: channel.eventName,
+          needsPasskey: channel.type === 'secured'
+        }
+      });
+    } else {
+      res.json({ 
+        success: false,
+        exists: false,
+        message: 'Channel not found'
+      });
+    }
+  } catch (error) {
+    console.error('[API] Channel verify error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 채널 확인 API (신버전)
 app.get('/api/channel/check/:code', (req, res) => {
   try {
     const { code } = req.params;
@@ -596,6 +622,26 @@ app.get('/api/channel/check/:code', (req, res) => {
     }
   } catch (error) {
     console.error('[API] Channel check error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 채널 확인 API (구버전 호환 - POST)
+app.post('/api/check-channel', (req, res) => {
+  try {
+    const { code } = req.body;
+    
+    if (channelDatabase.has(code)) {
+      const channel = channelDatabase.get(code);
+      res.json({ 
+        exists: true,
+        needsPasskey: channel.type === 'secured'
+      });
+    } else {
+      res.json({ exists: false });
+    }
+  } catch (error) {
+    console.error('[API] Check channel error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -662,6 +708,117 @@ app.get('/api/channel/info/:code', (req, res) => {
     });
   } catch (error) {
     console.error('[API] Channel info error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// =========================
+// 추가 API 라우트
+// =========================
+
+// 채널 텍스트 조회
+app.get('/api/channel/text/:code', (req, res) => {
+  try {
+    const { code } = req.params;
+    
+    if (!channelDatabase.has(code)) {
+      return res.status(404).json({ error: 'Channel not found' });
+    }
+    
+    const state = channelStates[code];
+    res.json({
+      code,
+      accumulatedText: state?.accumulatedText || '',
+      length: state?.accumulatedText?.length || 0,
+      lastActivity: state?.lastActivity || null
+    });
+  } catch (error) {
+    console.error('[API] Channel text error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 채널 텍스트 내보내기
+app.get('/api/channel/export/:code', (req, res) => {
+  try {
+    const { code } = req.params;
+    
+    if (!channelDatabase.has(code)) {
+      return res.status(404).json({ error: 'Channel not found' });
+    }
+    
+    const channel = channelDatabase.get(code);
+    const state = channelStates[code];
+    const text = state?.accumulatedText || '';
+    
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${code}_${Date.now()}.txt"`);
+    res.send(text);
+  } catch (error) {
+    console.error('[API] Channel export error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 채널 업데이트
+app.put('/api/channel/update/:code', requireAuth, (req, res) => {
+  try {
+    const { code } = req.params;
+    const { eventName, eventDateTime, passkey } = req.body;
+    
+    if (!channelDatabase.has(code)) {
+      return res.status(404).json({ error: 'Channel not found' });
+    }
+    
+    const channel = channelDatabase.get(code);
+    
+    if (eventName !== undefined) channel.eventName = eventName;
+    if (eventDateTime !== undefined) channel.eventDateTime = eventDateTime;
+    if (passkey !== undefined) channel.passkey = passkey;
+    
+    channelDatabase.set(code, channel);
+    
+    res.json({ success: true, channel });
+  } catch (error) {
+    console.error('[API] Channel update error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 채널 백업
+app.post('/api/channel/backup/:code', requireAuth, (req, res) => {
+  try {
+    const { code } = req.params;
+    
+    if (!channelStates[code]) {
+      return res.status(404).json({ error: 'Channel state not found' });
+    }
+    
+    backupChannelState(code);
+    
+    res.json({ 
+      success: true, 
+      backup: channelBackups[code]
+    });
+  } catch (error) {
+    console.error('[API] Channel backup error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 백업 목록
+app.get('/api/admin/backups', requireAuth, (req, res) => {
+  try {
+    const backups = Object.entries(channelBackups).map(([code, backup]) => ({
+      code,
+      backupTime: backup.backupTime,
+      textLength: backup.accumulatedText?.length || 0,
+      age: Date.now() - backup.backupTime
+    }));
+    
+    res.json(backups);
+  } catch (error) {
+    console.error('[API] Backups list error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -1183,7 +1340,6 @@ io.on('connection', (socket) => {
           channel: ch,
           state: channelStates[ch],
           stenographers: stenoChannels[ch] || [],
-          speakers: channelSpeakers[ch] || [],
           editState: channelEditStates[ch] || { isEditing: false }
         });
       }
@@ -1304,6 +1460,13 @@ const startServer = () => {
         console.log(`✅ Health: ${SERVICE_URL}/health`);
         console.log(`✅ Status: ${SERVICE_URL}/status`);
         console.log(`✅ Metrics: ${SERVICE_URL}/api/metrics`);
+        console.log('=========================================');
+        console.log('[채널 API]');
+        console.log('✅ GET /api/channels - 채널 목록');
+        console.log('✅ GET /api/channel/check/:code - 채널 확인');
+        console.log('✅ GET /api/channel/info/:code - 채널 정보');
+        console.log('✅ GET /api/channel/text/:code - 텍스트 조회');
+        console.log('✅ GET /api/channel/export/:code - 내보내기');
         console.log('=========================================');
         console.log('[관리자 계정]');
         console.log(`아이디: admin`);
