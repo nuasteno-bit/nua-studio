@@ -575,6 +575,97 @@ app.get('/api/channels', (req, res) => {
   }
 });
 
+// 채널 확인 API
+app.get('/api/channel/check/:code', (req, res) => {
+  try {
+    const { code } = req.params;
+    
+    if (channelDatabase.has(code)) {
+      const channel = channelDatabase.get(code);
+      res.json({ 
+        exists: true, 
+        channel: {
+          code: channel.code,
+          type: channel.type,
+          eventName: channel.eventName,
+          needsPasskey: channel.type === 'secured'
+        }
+      });
+    } else {
+      res.json({ exists: false });
+    }
+  } catch (error) {
+    console.error('[API] Channel check error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 채널 입장 API (패스키 확인)
+app.post('/api/channel/join', (req, res) => {
+  try {
+    const { code, passkey } = req.body;
+    
+    if (!channelDatabase.has(code)) {
+      return res.status(404).json({ error: 'Channel not found' });
+    }
+    
+    const channel = channelDatabase.get(code);
+    
+    // 보안 채널인 경우 패스키 확인
+    if (channel.type === 'secured' && channel.passkey) {
+      if (passkey !== channel.passkey) {
+        return res.status(401).json({ error: 'Invalid passkey' });
+      }
+    }
+    
+    res.json({ 
+      success: true,
+      channel: {
+        code: channel.code,
+        type: channel.type,
+        eventName: channel.eventName
+      }
+    });
+  } catch (error) {
+    console.error('[API] Channel join error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 채널 정보 조회
+app.get('/api/channel/info/:code', (req, res) => {
+  try {
+    const { code } = req.params;
+    
+    if (!channelDatabase.has(code)) {
+      return res.status(404).json({ error: 'Channel not found' });
+    }
+    
+    const channel = channelDatabase.get(code);
+    const state = channelStates[code];
+    const stenos = stenoChannels[code] || [];
+    
+    res.json({
+      channel: {
+        code: channel.code,
+        type: channel.type,
+        eventName: channel.eventName,
+        eventDateTime: channel.eventDateTime,
+        createdAt: channel.createdAt
+      },
+      status: {
+        activeUsers: stenos.length,
+        accumulatedText: state?.accumulatedText?.length || 0,
+        activeStenographer: state?.activeStenographer || null,
+        stenographers: stenos.map(s => s.role)
+      }
+    });
+  } catch (error) {
+    console.error('[API] Channel info error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // =========================
 // Socket.IO 서버 설정
 // =========================
