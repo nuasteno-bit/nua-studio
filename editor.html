@@ -19,7 +19,7 @@
        <span id="matchControl" style="position:absolute; left:50%; transform:translateX(-50%); text-align:center;">
            <span style="font-size:13px; color:#a2c1ff;">권한매칭 단어 수:</span>
            <select id="matchWordSelect" style="font-size:13px; padding:2px 8px; border-radius:4px; border:1px solid #444; background:#232323; color:#a2c1ff;">
-               <option value="3">3</option>
+               <option value="3" selected>3</option>
                <option value="4">4</option>
                <option value="5">5</option>
                <option value="6">6</option>
@@ -31,7 +31,7 @@
    
    <div class="main-container" id="mainContainer">
        <!-- 상단 영역: 속기사1, 속기사2 -->
-       <div class="top-row">
+       <div class="top-row" id="topRow">
            <div class="column" id="col1">
                <div class="title-bar">
                    <span id="title1">Stenographer 1</span>
@@ -71,7 +71,7 @@
                        <button class="font-btn" onclick="adjustFontSize(2, -1)">A−</button>
                    </div>
                </div>
-               <textarea class="editor-box" id="editor2" placeholder="상대 입력 대기 중..." autocomplete="off" readonly></textarea>
+               <textarea class="editor-box" id="editor2" placeholder="여기에 입력..." autocomplete="off"></textarea>
                <div class="status-bar" id="statusBar2">
                    <span class="status-dot waiting" id="dot2"></span> 
                    <span id="statusText2">대기 중</span>
