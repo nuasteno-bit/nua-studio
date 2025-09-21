@@ -1,5 +1,5 @@
-// socket-server.js - Render 유료 플랜 24시간 운영 버전
-// NUA STUDIO 실시간 협업 속기 서버 (24/7 운영 최적화)
+// socket-server.js - Render 최적화 완전판
+// NUA STUDIO 실시간 협업 속기 서버 v2.0
 
 const express = require('express');
 const http = require('http');
@@ -9,35 +9,45 @@ const path = require('path');
 const helmet = require('helmet');
 const compression = require('compression');
 const cors = require('cors');
+const fs = require('fs');
 
 // =========================
-// 환경 변수 및 설정
+// 환경 자동 감지 및 설정
 // =========================
-const PORT = process.env.PORT || 3000;
-const NODE_ENV = process.env.NODE_ENV || 'development';
+const IS_RENDER = process.env.RENDER === 'true' || process.env.RENDER_SERVICE_NAME;
+const NODE_ENV = process.env.NODE_ENV || (IS_RENDER ? 'production' : 'development');
 const IS_PRODUCTION = NODE_ENV === 'production';
 
-// 연결 설정 (Render 유료 플랜 - 24시간 운영)
-const HEARTBEAT_TIMEOUT = 30000; // 30초
-const PING_INTERVAL = 25000; // 25초
-const PING_TIMEOUT = 60000; // 60초
+// Render는 PORT를 자동 할당 - 절대 수동 설정하지 마세요
+const PORT = process.env.PORT || 3000;
+const SERVICE_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
 
-// 추후 데이터베이스 연동 옵션 (유료 플랜 확장 가능)
-// const REDIS_URL = process.env.REDIS_URL;  // Redis for session/cache
-// const DATABASE_URL = process.env.DATABASE_URL;  // PostgreSQL for persistence
+// 시작 로그
+console.log('=================================');
+console.log('[NUA STUDIO] 서버 초기화');
+console.log('=================================');
+console.log(`플랫폼: ${IS_RENDER ? 'Render Cloud' : 'Local'}`);
+console.log(`환경: ${NODE_ENV}`);
+console.log(`포트: ${PORT}`);
+console.log(`URL: ${SERVICE_URL}`);
+console.log('=================================');
+
+// 연결 설정 (Render 유료 플랜 최적화)
+const HEARTBEAT_TIMEOUT = IS_RENDER ? 30000 : 20000;
+const PING_INTERVAL = IS_RENDER ? 25000 : 15000;
+const PING_TIMEOUT = IS_RENDER ? 60000 : 30000;
 
 // =========================
-// 메모리 기반 데이터 저장소 
-// 24/7 운영용 - 추후 Redis/PostgreSQL 연동 가능
+// 메모리 기반 데이터 저장소
 // =========================
-const channelDatabase = new Map();        // 채널 메타 정보
-const stenoChannels = {};                 // 채널별 속기사 소켓 [{id, role}]
-const channelStates = {};                 // 채널별 상태 { activeStenographer, accumulatedText, lastSwitchText }
-const channelSpeakers = {};               // 채널별 화자 리스트
-const channelEditStates = {};             // 채널별 뷰어 편집 상태
-const recentMessages = new Map();         // 중복방지 (socket.emit 훅)
-const channelBackups = {};                // 채널별 백업 데이터 (복구용)
-const connectionStats = new Map();        // 연결 통계
+const channelDatabase = new Map();
+const stenoChannels = {};
+const channelStates = {};
+const channelSpeakers = {};
+const channelEditStates = {};
+const recentMessages = new Map();
+const channelBackups = {};
+const connectionStats = new Map();
 
 // =========================
 // Helper 함수들
@@ -66,12 +76,10 @@ function ensureActiveConsistent(channel) {
   if (present.length === 0) return current;
   
   if (present.length === 1) {
-    // 1인 전환 시: 남아있는 사람을 자동 활성화
     channelStates[channel].activeStenographer = present[0];
     return present[0];
   }
   
-  // 2인인데 active가 접속 목록에 없으면 첫 사람으로 지정
   if (!present.includes(current)) {
     channelStates[channel].activeStenographer = present[0];
   }
@@ -85,7 +93,6 @@ function broadcastActiveRole(io, channel) {
   return active;
 }
 
-// 채널 백업 함수
 function backupChannelState(channel) {
   if (channelStates[channel]) {
     channelBackups[channel] = {
@@ -96,11 +103,9 @@ function backupChannelState(channel) {
   }
 }
 
-// 채널 복구 함수 (24시간 운영용)
 function restoreChannelState(channel) {
   if (channelBackups[channel]) {
     const backup = channelBackups[channel];
-    // 2시간 이내 백업 복구 (유료 플랜용 확대)
     if (Date.now() - backup.backupTime < 2 * 60 * 60 * 1000) {
       channelStates[channel] = {
         ...backup,
@@ -113,16 +118,15 @@ function restoreChannelState(channel) {
   return false;
 }
 
-// 메모리 정리 함수 (24시간 운영 최적화)
 function cleanupInactiveChannels() {
   const now = Date.now();
-  const INACTIVE_THRESHOLD = 2 * 60 * 60 * 1000; // 2시간 (유료 플랜용 확대)
+  const INACTIVE_THRESHOLD = 2 * 60 * 60 * 1000; // 2시간
   
   let cleanedCount = 0;
   
-  // 비활성 채널 정리
   for (const [channel, state] of Object.entries(channelStates)) {
-    if (now - state.lastActivity > INACTIVE_THRESHOLD && (!stenoChannels[channel] || stenoChannels[channel].length === 0)) {
+    if (now - state.lastActivity > INACTIVE_THRESHOLD && 
+        (!stenoChannels[channel] || stenoChannels[channel].length === 0)) {
       delete channelStates[channel];
       delete stenoChannels[channel];
       delete channelSpeakers[channel];
@@ -133,7 +137,6 @@ function cleanupInactiveChannels() {
     }
   }
   
-  // 오래된 백업 정리 (24시간 이상)
   for (const [channel, backup] of Object.entries(channelBackups)) {
     if (now - backup.backupTime > 24 * 60 * 60 * 1000) {
       delete channelBackups[channel];
@@ -141,17 +144,9 @@ function cleanupInactiveChannels() {
     }
   }
   
-  // 오래된 메시지 정리
   for (const [key, time] of recentMessages.entries()) {
     if (now - time > 1000) {
       recentMessages.delete(key);
-    }
-  }
-  
-  // 오래된 연결 통계 정리 (7일 이상)
-  for (const [key, stat] of connectionStats.entries()) {
-    if (now - stat.firstConnect > 7 * 24 * 60 * 60 * 1000) {
-      connectionStats.delete(key);
     }
   }
   
@@ -166,32 +161,134 @@ function cleanupInactiveChannels() {
 const app = express();
 const server = http.createServer(app);
 
-// 보안 및 최적화 미들웨어
+// CORS 설정
+const corsOptions = IS_PRODUCTION ? {
+  origin: [
+    'https://nuastudio.co.kr',
+    'https://www.nuastudio.co.kr',
+    /\.nuastudio\.co\.kr$/,
+    /\.onrender\.com$/
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+} : {
+  origin: '*',
+  credentials: false,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 app.use(helmet({ 
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false 
 }));
 app.use(compression());
-app.use(cors({
-  origin: '*',
-  credentials: false,
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+
+// 정적 파일 서빙
+const publicPath = path.join(__dirname, 'public');
+if (fs.existsSync(publicPath)) {
+  app.use(express.static(publicPath));
+  console.log(`[정적 파일] ${publicPath} 서빙 중`);
+} else {
+  console.log(`[경고] public 디렉토리 없음`);
+}
 
 // =========================
-// 헬스체크 엔드포인트 (24/7 모니터링용)
+// 라우트 설정
 // =========================
+
+// 루트 경로
+app.get('/', (req, res) => {
+  const indexPath = path.join(__dirname, 'public', 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(200).send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>NUA STUDIO Server</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+          }
+          .container {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 1rem;
+            backdrop-filter: blur(10px);
+          }
+          h1 { margin: 0 0 1rem 0; font-size: 2.5rem; }
+          .status { 
+            display: inline-block; 
+            padding: 0.5rem 1rem; 
+            background: #22c55e;
+            border-radius: 2rem;
+            font-weight: bold;
+            margin: 1rem 0;
+          }
+          .info { margin-top: 2rem; opacity: 0.9; }
+          .info p { margin: 0.5rem 0; }
+          a { color: white; text-decoration: underline; }
+          .stats {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: 0.5rem;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>🎙️ NUA STUDIO</h1>
+          <div class="status">✅ Server Active</div>
+          <div class="info">
+            <p>실시간 협업 속기 서버가 정상 작동 중입니다</p>
+            <p>환경: ${NODE_ENV} | 포트: ${PORT}</p>
+            <p>
+              <a href="/health">시스템 상태</a> | 
+              <a href="/api/metrics">성능 지표</a> | 
+              <a href="/api/channels">채널 목록</a>
+            </p>
+          </div>
+          <div class="stats">
+            <p>서버 시작: ${new Date().toLocaleString('ko-KR')}</p>
+            <p>플랫폼: ${IS_RENDER ? 'Render Cloud' : 'Local Server'}</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+  }
+});
+
+// 헬스체크 (Render 필수)
 app.get('/health', (req, res) => {
   const memoryUsage = process.memoryUsage();
   const uptime = process.uptime();
   
+  // Render 헬스체크는 빠르게 응답
+  if (req.headers['user-agent']?.includes('Render')) {
+    return res.status(200).json({ status: 'healthy', timestamp: Date.now() });
+  }
+  
   res.status(200).json({
     status: 'healthy',
     service: 'NUA STUDIO Socket Server',
+    platform: IS_RENDER ? 'Render' : 'Local',
     timestamp: new Date().toISOString(),
     uptime: {
       seconds: uptime,
@@ -200,33 +297,27 @@ app.get('/health', (req, res) => {
     memory: {
       rss: `${(memoryUsage.rss / 1024 / 1024).toFixed(1)} MB`,
       heapUsed: `${(memoryUsage.heapUsed / 1024 / 1024).toFixed(1)} MB`,
-      heapTotal: `${(memoryUsage.heapTotal / 1024 / 1024).toFixed(1)} MB`,
-      external: `${(memoryUsage.external / 1024 / 1024).toFixed(1)} MB`
+      heapTotal: `${(memoryUsage.heapTotal / 1024 / 1024).toFixed(1)} MB`
     },
     channels: {
       active: Object.keys(channelStates).length,
-      total: channelDatabase.size,
-      connections: Array.from(connectionStats.values()).reduce((sum, stat) => sum + stat.count, 0)
+      total: channelDatabase.size
     },
-    performance: {
-      avgResponseTime: '< 50ms',
-      operatingMode: '24/7 Premium'
-    },
-    environment: NODE_ENV,
-    version: '2.0.0'
+    environment: {
+      node: process.version,
+      platform: process.platform,
+      env: NODE_ENV,
+      port: PORT
+    }
   });
 });
 
-// 서버 상태 엔드포인트
+// 상태 체크
 app.get('/status', (req, res) => {
-  res.status(200).json({ 
-    status: 'active',
-    timestamp: Date.now(),
-    version: '2.0.0'
-  });
+  res.status(200).send('OK');
 });
 
-// 성능 모니터링 엔드포인트 (24/7 운영 모니터링)
+// 성능 지표
 app.get('/api/metrics', (req, res) => {
   const metrics = {
     server: {
@@ -240,64 +331,14 @@ app.get('/api/metrics', (req, res) => {
       backups: Object.keys(channelBackups).length
     },
     connections: {
-      current: io.engine.clientsCount,
-      today: Array.from(connectionStats.values())
-        .filter(stat => Date.now() - stat.firstConnect < 24 * 60 * 60 * 1000)
-        .reduce((sum, stat) => sum + stat.count, 0)
-    },
-    performance: {
-      messagesProcessed: Array.from(connectionStats.values())
-        .reduce((sum, stat) => sum + (stat.messageCount || 0), 0),
-      lastCleanup: new Date(Date.now() - (Date.now() % (10 * 60 * 1000))).toISOString()
+      current: io.engine ? io.engine.clientsCount : 0,
+      stats: Array.from(connectionStats.values()).length
     }
   };
-  
   res.status(200).json(metrics);
 });
 
-// =========================
-// Socket.IO 서버 설정
-// =========================
-const io = new Server(server, {
-  cors: { 
-    origin: '*', 
-    methods: ['GET', 'POST'] 
-  },
-  transports: ['websocket', 'polling'],
-  pingInterval: PING_INTERVAL,
-  pingTimeout: PING_TIMEOUT,
-  // Render 최적화 설정
-  perMessageDeflate: {
-    threshold: 1024 // 1KB 이상만 압축
-  },
-  httpCompression: true,
-  maxHttpBufferSize: 1e6 // 1MB
-});
-
-// =========================
-// 관리자 인증 시스템
-// =========================
-const ADMIN_ACCOUNTS = {
-  'admin': { password: process.env.ADMIN_PASSWORD || '123456s', role: 'system_admin' }
-};
-const activeSessions = new Map();
-
-function generateToken() {
-  return crypto.randomBytes(32).toString('hex');
-}
-
-function requireAuth(req, res, next) {
-  const token = req.headers['authorization'];
-  if (!token || !activeSessions.has(token)) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  req.user = activeSessions.get(token);
-  next();
-}
-
-// =========================
-// 채널 REST API
-// =========================
+// 채널 생성 API
 app.post('/api/channel/create', (req, res) => {
   try {
     const { code, type, passkey, eventName, eventDateTime } = req.body;
@@ -328,6 +369,7 @@ app.post('/api/channel/create', (req, res) => {
   }
 });
 
+// 채널 목록
 app.get('/api/channels', (req, res) => {
   try {
     const channels = Array.from(channelDatabase.values()).map(ch => ({
@@ -343,20 +385,37 @@ app.get('/api/channels', (req, res) => {
 });
 
 // =========================
+// Socket.IO 서버 설정
+// =========================
+const io = new Server(server, {
+  cors: corsOptions,
+  transports: IS_RENDER ? ['websocket', 'polling'] : ['polling', 'websocket'],
+  pingInterval: PING_INTERVAL,
+  pingTimeout: PING_TIMEOUT,
+  perMessageDeflate: IS_PRODUCTION ? {
+    threshold: 1024
+  } : false,
+  httpCompression: IS_PRODUCTION,
+  maxHttpBufferSize: 1e6,
+  allowEIO3: true,
+  connectTimeout: 45000
+});
+
+// =========================
 // Socket.IO 이벤트 핸들러
 // =========================
 io.on('connection', (socket) => {
   const clientIP = socket.handshake.address;
   console.log(`[연결] Socket connected: ${socket.id} from ${clientIP}`);
   
-  // 연결 통계 업데이트
+  // 연결 통계
   const statKey = `${clientIP}_${new Date().toDateString()}`;
   if (!connectionStats.has(statKey)) {
-    connectionStats.set(statKey, { count: 0, firstConnect: Date.now() });
+    connectionStats.set(statKey, { count: 0, firstConnect: Date.now(), messageCount: 0 });
   }
   connectionStats.get(statKey).count++;
   
-  // 소켓별 상태 초기화
+  // 소켓 상태 초기화
   socket.data = {
     channel: null,
     role: null,
@@ -364,7 +423,7 @@ io.on('connection', (socket) => {
     messageCount: 0
   };
   
-  // 중복 emit 방지 래퍼
+  // 중복 방지 래퍼
   const originalEmit = socket.emit;
   socket.emit = function(...args) {
     if (args[0] === 'steno_input' && args[1]) {
@@ -373,7 +432,7 @@ io.on('connection', (socket) => {
       const last = recentMessages.get(key);
       
       if (last && now - last < 50) {
-        return; // 중복 차단
+        return;
       }
       
       recentMessages.set(key, now);
@@ -382,7 +441,7 @@ io.on('connection', (socket) => {
     return originalEmit.apply(this, args);
   };
 
-  // -------- 채널 입장 --------
+  // 채널 입장
   socket.on('join_channel', ({ channel, role, requestSync, currentInput, lastData }) => {
     try {
       console.log(`[${channel}] Join request - Role: ${role}, Socket: ${socket.id}`);
@@ -429,7 +488,7 @@ io.on('connection', (socket) => {
         } else if (!hasSteno2) {
           myRole = 'steno2';
         } else {
-          myRole = 'steno1'; // 폴백
+          myRole = 'steno1';
         }
         
         stenoChannels[channel].push({ id: socket.id, role: myRole });
@@ -437,28 +496,20 @@ io.on('connection', (socket) => {
         
         console.log(`[${channel}] Role assigned: ${myRole} to ${socket.id}`);
         
-        // 속기사 목록 브로드캐스트
         const stenos = listRolesPresent(channel);
         io.to(channel).emit('steno_list', { stenos });
-        
-        // 역할 할당 통지
         socket.emit('role_assigned', { role: myRole });
-        
-        // 활성 역할 브로드캐스트
         broadcastActiveRole(io, channel);
         
-        // 누적 텍스트 동기화
         if (requestSync || channelStates[channel]?.accumulatedText) {
           socket.emit('sync_accumulated', {
             accumulatedText: channelStates[channel]?.accumulatedText || ''
           });
         }
         
-        // 2인 매칭 시 서로의 현재 입력 상태 요청
         if (stenoChannels[channel].length === 2) {
           const otherSteno = stenoChannels[channel].find(s => s.id !== socket.id);
           if (otherSteno) {
-            // 기존 속기사에게 새 속기사 입장 알림 (입력 상태 공유 요청)
             io.to(otherSteno.id).emit('partner_joined', {
               newPartner: myRole,
               requestSync: true
@@ -466,7 +517,6 @@ io.on('connection', (socket) => {
           }
         }
         
-        // 편집 상태 동기화
         if (channelEditStates[channel]?.isEditing) {
           socket.emit('viewer_edit_state', {
             isEditing: true,
@@ -475,10 +525,8 @@ io.on('connection', (socket) => {
         }
         
       } else {
-        // 뷰어로 입장
         socket.data.role = 'viewer';
         io.to(channel).emit('user_joined', { role: 'viewer' });
-        
         broadcastActiveRole(io, channel);
         
         if (channelStates[channel]?.accumulatedText) {
@@ -489,21 +537,17 @@ io.on('connection', (socket) => {
         
         console.log(`[${channel}] Viewer joined: ${socket.id}`);
       }
-      
     } catch (error) {
       console.error('[join_channel] Error:', error);
       socket.emit('error', { message: 'Failed to join channel' });
     }
   });
 
-  // -------- 입력 처리 (개선된 실시간 공유) --------
+  // 입력 처리
   socket.on('steno_input', ({ channel, role, text, isSync }) => {
     try {
-      // 레이트 리밋 체크
       socket.data.messageCount++;
       
-      // 통계 업데이트
-      const clientIP = socket.handshake.address;
       const statKey = `${clientIP}_${new Date().toDateString()}`;
       if (connectionStats.has(statKey)) {
         connectionStats.get(statKey).messageCount = (connectionStats.get(statKey).messageCount || 0) + 1;
@@ -524,14 +568,11 @@ io.on('connection', (socket) => {
       const serverRole = socket.data.role || role || 'viewer';
       const active = ensureActiveConsistent(ch);
       
-      // 채널 활동 시간 업데이트
       if (channelStates[ch]) {
         channelStates[ch].lastActivity = Date.now();
       }
       
-      // 권한자와 대기자 구분 처리
       if (serverRole !== active) {
-        // 대기자 입력: 다른 속기사에게만 실시간 전송 (뷰어 제외)
         const stenoPeers = stenoChannels[ch] || [];
         stenoPeers.forEach(s => {
           if (s.id !== socket.id) {
@@ -542,25 +583,21 @@ io.on('connection', (socket) => {
             });
           }
         });
-        
         console.log(`[${ch}] 대기자 입력 공유: ${serverRole}, ${text.length}자`);
       } else {
-        // 권한자 입력: 모든 참가자에게 전송
         socket.broadcast.to(ch).emit('steno_input', { 
           role: serverRole, 
           text,
           isSync: isSync || false
         });
-        
         console.log(`[${ch}] 권한자 입력 송출: ${serverRole}, ${text.length}자`);
       }
-      
     } catch (error) {
       console.error('[steno_input] Error:', error);
     }
   });
 
-  // -------- 역할 전환 --------
+  // 역할 전환
   socket.on('switch_role', ({ channel, newActive, matchedText, manual, reason, matchStartIndex, matchWordCount }) => {
     try {
       const ch = channel || socket.data.channel;
@@ -576,7 +613,6 @@ io.on('connection', (socket) => {
       
       if (newActive !== 'steno1' && newActive !== 'steno2') return;
       
-      // 실제 접속자 검증
       if (!hasRole(ch, newActive)) {
         console.log(`[${ch}] Switch denied - ${newActive} not present`);
         return;
@@ -592,22 +628,17 @@ io.on('connection', (socket) => {
       channelStates[ch].activeStenographer = newActive;
       channelStates[ch].lastActivity = Date.now();
       
-      // 누적 텍스트 업데이트
       if (matchedText && matchedText.trim()) {
         const before = channelStates[ch].accumulatedText.length;
         channelStates[ch].accumulatedText = matchedText;
         const after = channelStates[ch].accumulatedText.length;
         
-        // 백업
         backupChannelState(ch);
-        
         console.log(`[${ch}] Text accumulated: ${before} -> ${after} chars`);
       }
       
-      // 활성자 방송
       broadcastActiveRole(io, ch);
       
-      // 스위치 이벤트 방송
       io.to(ch).emit('switch_role', {
         newActive,
         matchedText,
@@ -619,13 +650,12 @@ io.on('connection', (socket) => {
       });
       
       console.log(`[${ch}] ${manual ? 'Manual' : 'Auto'} switch: ${previousActive} -> ${newActive}`);
-      
     } catch (error) {
       console.error('[switch_role] Error:', error);
     }
   });
 
-  // -------- 강제 권한 전환 --------
+  // 강제 권한 전환
   socket.on('force_role_switch', ({ channel, newActive, reason }) => {
     try {
       const ch = channel || socket.data.channel;
@@ -652,13 +682,12 @@ io.on('connection', (socket) => {
       
       io.to(ch).emit('force_role_switch', { newActive, previousActive });
       console.log(`[${ch}] Force switch: ${previousActive} -> ${newActive} (${reason})`);
-      
     } catch (error) {
       console.error('[force_role_switch] Error:', error);
     }
   });
 
-  // -------- 텍스트 전송 확정 --------
+  // 텍스트 전송 확정
   socket.on('text_sent', ({ channel, accumulatedText, sender }) => {
     try {
       const ch = channel || socket.data.channel;
@@ -667,25 +696,21 @@ io.on('connection', (socket) => {
       if (channelStates[ch]) {
         channelStates[ch].accumulatedText = accumulatedText;
         channelStates[ch].lastActivity = Date.now();
-        
-        // 주기적 백업
         backupChannelState(ch);
       }
       
       socket.broadcast.to(ch).emit('text_sent', { accumulatedText, sender });
-      
     } catch (error) {
       console.error('[text_sent] Error:', error);
     }
   });
 
-  // -------- 파트너 입장 알림 (실시간 동기화) --------
+  // 파트너 입장 응답
   socket.on('partner_joined_ack', ({ channel }) => {
-    // 클라이언트가 파트너 입장을 인지하고 응답
     console.log(`[${channel}] Partner sync acknowledged`);
   });
 
-  // -------- 교정 요청 --------
+  // 교정 요청
   socket.on('correction_request', ({ channel, active, requester, requesterRole }) => {
     try {
       const ch = channel || socket.data.channel;
@@ -694,13 +719,12 @@ io.on('connection', (socket) => {
         requester, 
         requesterRole 
       });
-      
     } catch (error) {
       console.error('[correction_request] Error:', error);
     }
   });
 
-  // -------- 뷰어 편집 --------
+  // 뷰어 편집 시작
   socket.on('viewer_edit_start', ({ channel, editorRole }) => {
     try {
       const ch = channel || socket.data.channel;
@@ -723,12 +747,12 @@ io.on('connection', (socket) => {
       };
       
       io.to(ch).emit('viewer_edit_state', { isEditing: true, editorRole });
-      
     } catch (error) {
       console.error('[viewer_edit_start] Error:', error);
     }
   });
 
+  // 뷰어 편집 완료
   socket.on('viewer_edit_complete', ({ channel, editedText, editorRole }) => {
     try {
       const ch = channel || socket.data.channel;
@@ -746,8 +770,6 @@ io.on('connection', (socket) => {
         channelStates[ch].accumulatedText = editedText;
         channelStates[ch].lastActivity = Date.now();
         console.log(`[${ch}] Text updated to ${editedText.length} chars`);
-        
-        // 백업
         backupChannelState(ch);
       }
       
@@ -758,12 +780,12 @@ io.on('connection', (socket) => {
         editorRole 
       });
       io.to(ch).emit('viewer_edit_state', { isEditing: false, editorRole: null });
-      
     } catch (error) {
       console.error('[viewer_edit_complete] Error:', error);
     }
   });
 
+  // 뷰어 편집 취소
   socket.on('viewer_edit_cancel', ({ channel }) => {
     try {
       const ch = channel || socket.data.channel;
@@ -772,30 +794,28 @@ io.on('connection', (socket) => {
         channelEditStates[ch] = { isEditing: false, editorId: null, editorRole: null };
         io.to(ch).emit('viewer_edit_state', { isEditing: false, editorRole: null });
       }
-      
     } catch (error) {
       console.error('[viewer_edit_cancel] Error:', error);
     }
   });
 
-  // -------- 채팅 메시지 --------
+  // 채팅 메시지
   socket.on('chat_message', ({ channel, sender, message }) => {
     try {
       const ch = channel || socket.data.channel;
       socket.broadcast.to(ch).emit('chat_message', { sender, message });
       console.log(`[${ch}] Chat from ${sender}: ${message}`);
-      
     } catch (error) {
       console.error('[chat_message] Error:', error);
     }
   });
 
-  // -------- 핑/퐁 테스트 --------
+  // 핑/퐁 테스트
   socket.on('ping_test', ({ channel }) => {
     socket.emit('pong_test', { channel, timestamp: Date.now() });
   });
 
-  // -------- Keep-alive (클라이언트) --------
+  // Keep-alive
   socket.on('keep_alive', ({ channel, role, dataCheck }) => {
     socket.emit('keep_alive_ack', { timestamp: Date.now() });
     
@@ -804,7 +824,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // -------- 백업 상태 저장 --------
+  // 백업 상태 저장
   socket.on('backup_state', ({ channel, accumulated, checksum }) => {
     try {
       const ch = channel || socket.data.channel;
@@ -813,17 +833,15 @@ io.on('connection', (socket) => {
         channelStates[ch].accumulatedText = accumulated;
         channelStates[ch].lastActivity = Date.now();
         backupChannelState(ch);
-        
         socket.emit('backup_saved', { success: true });
       }
-      
     } catch (error) {
       console.error('[backup_state] Error:', error);
       socket.emit('backup_saved', { success: false });
     }
   });
 
-  // -------- 동기화 요청 --------
+  // 동기화 요청
   socket.on('request_sync', ({ channel }) => {
     try {
       const ch = channel || socket.data.channel;
@@ -833,13 +851,12 @@ io.on('connection', (socket) => {
           accumulatedText: channelStates[ch].accumulatedText || ''
         });
       }
-      
     } catch (error) {
       console.error('[request_sync] Error:', error);
     }
   });
 
-  // -------- 연결 해제 --------
+  // 연결 해제
   socket.on('disconnect', () => {
     try {
       const ch = socket.data.channel;
@@ -853,16 +870,13 @@ io.on('connection', (socket) => {
           const stenos = listRolesPresent(ch);
           io.to(ch).emit('steno_list', { stenos });
           
-          // 편집 중이던 사람이면 편집 상태 해제
           if (channelEditStates[ch]?.editorId === socket.id) {
             channelEditStates[ch] = { isEditing: false, editorId: null, editorRole: null };
             io.to(ch).emit('viewer_edit_state', { isEditing: false, editorRole: null });
           }
           
-          // 활성자 재조정
           broadcastActiveRole(io, ch);
           
-          // 채널 비면 백업
           if (stenoChannels[ch].length === 0) {
             backupChannelState(ch);
             console.log(`[${ch}] Channel empty - backed up`);
@@ -872,13 +886,12 @@ io.on('connection', (socket) => {
         io.to(ch).emit('user_left', { role });
         console.log(`[${ch}] Viewer left: ${socket.id}`);
       }
-      
     } catch (error) {
       console.error('[disconnect] Error:', error);
     }
   });
 
-  // -------- 디버그용 --------
+  // 디버그용
   socket.on('get_channel_state', ({ channel }) => {
     try {
       const ch = channel || socket.data.channel;
@@ -892,7 +905,6 @@ io.on('connection', (socket) => {
           editState: channelEditStates[ch] || { isEditing: false }
         });
       }
-      
     } catch (error) {
       console.error('[get_channel_state] Error:', error);
     }
@@ -900,14 +912,13 @@ io.on('connection', (socket) => {
 });
 
 // =========================
-// 정기 작업 스케줄러 (24/7 운영 최적화)
+// 정기 작업
 // =========================
 
-// 메모리 정리 (10분마다 - 유료 플랜용 최적화)
+// 메모리 정리 (10분마다)
 setInterval(() => {
   cleanupInactiveChannels();
   
-  // 가비지 컬렉션 강제 실행 (프로덕션 환경에서만)
   if (IS_PRODUCTION && global.gc) {
     global.gc();
     console.log('[GC] 가비지 컬렉션 실행');
@@ -921,25 +932,26 @@ setInterval(() => {
     timestamp: new Date().toISOString(),
     activeChannels: Object.keys(channelStates).length,
     totalChannels: channelDatabase.size,
-    totalConnections: io.engine.clientsCount,
+    totalConnections: io.engine ? io.engine.clientsCount : 0,
     memory: {
       rss: `${(memUsage.rss / 1024 / 1024).toFixed(1)} MB`,
       heapUsed: `${(memUsage.heapUsed / 1024 / 1024).toFixed(1)} MB`,
       heapTotal: `${(memUsage.heapTotal / 1024 / 1024).toFixed(1)} MB`
     },
-    uptime: `${Math.floor(process.uptime() / 3600)}h ${Math.floor((process.uptime() % 3600) / 60)}m`,
-    backups: Object.keys(channelBackups).length,
-    dailyConnections: Array.from(connectionStats.values())
-      .filter(stat => Date.now() - stat.firstConnect < 24 * 60 * 60 * 1000)
-      .reduce((sum, stat) => sum + stat.count, 0)
+    uptime: `${Math.floor(process.uptime() / 3600)}h ${Math.floor((process.uptime() % 3600) / 60)}m`
   };
   console.log('[통계]', JSON.stringify(stats, null, 2));
 }, 60 * 60 * 1000);
 
 // =========================
-// 종료 핸들러 (Graceful Shutdown)
+// 종료 핸들러
 // =========================
+let isShuttingDown = false;
+
 const gracefulShutdown = (signal) => {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  
   console.log(`[종료] ${signal} 신호 수신`);
   
   // 모든 채널 백업
@@ -950,57 +962,94 @@ const gracefulShutdown = (signal) => {
   server.close(() => {
     console.log('[종료] HTTP 서버 종료 완료');
     
-    // 모든 소켓 연결 종료
     io.close(() => {
       console.log('[종료] Socket.IO 서버 종료 완료');
       process.exit(0);
     });
   });
   
-  // 10초 후 강제 종료
+  // 타임아웃
   setTimeout(() => {
     console.error('[종료] 강제 종료');
     process.exit(1);
-  }, 10000);
+  }, IS_RENDER ? 30000 : 10000);
 };
 
-// 종료 신호 처리
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-// 예외 처리
 process.on('uncaughtException', (error) => {
   console.error('[치명적 오류] Uncaught Exception:', error);
-  gracefulShutdown('UNCAUGHT_EXCEPTION');
+  if (IS_PRODUCTION) {
+    console.error('[복구] 서비스 계속 실행');
+  } else {
+    gracefulShutdown('UNCAUGHT_EXCEPTION');
+  }
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('[치명적 오류] Unhandled Rejection:', reason);
-  // 종료하지 않고 계속 실행
+  console.error('[경고] Unhandled Rejection:', reason);
 });
 
 // =========================
 // 서버 시작
 // =========================
-server.listen(PORT, '0.0.0.0', () => {
-  console.log('=================================');
-  console.log('[NUA STUDIO] 실시간 협업 속기 서버');
-  console.log(`[서버 시작] http://0.0.0.0:${PORT}`);
-  console.log(`[환경] ${NODE_ENV}`);
-  console.log(`[Node.js] ${process.version}`);
-  console.log(`[메모리] ${Math.round(process.memoryUsage().heapTotal / 1024 / 1024)} MB`);
-  console.log(`[운영 모드] 24/7 연속 운영 (유료 플랜)`);
-  console.log('=================================');
-  console.log('[기능]');
-  console.log('✓ 2인 1조 실시간 협업 속기');
-  console.log('✓ 자동 3단어 매칭 교대');
-  console.log('✓ 파트너 간 실시간 입력 공유');
-  console.log('✓ 2시간 백업/자동 복구');
-  console.log('✓ 24시간 연속 운영 최적화');
-  console.log('✓ 향상된 메모리 관리');
-  console.log('✓ 연결 통계 및 모니터링');
-  console.log('=================================');
-  
-  // 시작 시 메모리 정리
-  cleanupInactiveChannels();
+const startServer = () => {
+  return new Promise((resolve, reject) => {
+    try {
+      const host = '0.0.0.0';  // 모든 인터페이스에서 접근 가능
+      
+      server.listen(PORT, host, () => {
+        console.log('=========================================');
+        console.log('[NUA STUDIO] 실시간 협업 속기 서버 v2.0');
+        console.log('=========================================');
+        console.log(`[플랫폼] ${IS_RENDER ? 'Render Cloud' : 'Local Development'}`);
+        console.log(`[환경] ${NODE_ENV}`);
+        console.log(`[서버] http://${host}:${PORT}`);
+        console.log(`[외부 URL] ${SERVICE_URL}`);
+        console.log(`[Node.js] ${process.version}`);
+        console.log(`[메모리] ${Math.round(process.memoryUsage().heapTotal / 1024 / 1024)} MB`);
+        console.log(`[시작 시간] ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`);
+        console.log('=========================================');
+        console.log('[엔드포인트]');
+        console.log(`✅ Health: ${SERVICE_URL}/health`);
+        console.log(`✅ Status: ${SERVICE_URL}/status`);
+        console.log(`✅ Metrics: ${SERVICE_URL}/api/metrics`);
+        console.log('=========================================');
+        console.log('[기능]');
+        console.log('✅ 2인 1조 실시간 협업 속기');
+        console.log('✅ 자동 3단어 매칭 교대');
+        console.log('✅ 파트너 간 실시간 입력 공유');
+        console.log('✅ 2시간 백업/자동 복구');
+        console.log('✅ 24시간 연속 운영 최적화');
+        console.log('=========================================');
+        
+        // 시작 시 메모리 정리
+        cleanupInactiveChannels();
+        
+        resolve(server);
+      });
+      
+      server.on('error', (error) => {
+        if (error.code === 'EADDRINUSE') {
+          console.error(`[오류] 포트 ${PORT}가 이미 사용 중입니다`);
+        } else if (error.code === 'EACCES') {
+          console.error(`[오류] 포트 ${PORT}에 접근 권한이 없습니다`);
+        } else {
+          console.error('[서버 시작 오류]', error);
+        }
+        reject(error);
+      });
+      
+    } catch (error) {
+      console.error('[시작 실패]', error);
+      reject(error);
+    }
+  });
+};
+
+// 서버 시작 실행
+startServer().catch((error) => {
+  console.error('[치명적 오류] 서버 시작 실패:', error);
+  process.exit(1);
 });
