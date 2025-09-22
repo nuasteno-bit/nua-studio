@@ -1092,12 +1092,15 @@ function updatePerformanceInfo() {
   }
 }
 
-// 🔥 수정된 단어 매칭 체크 - 공백 3개 기준 (정확한 구현)
+// 🔥 강화된 단어 매칭 체크 - 교대 후 초기화 보장
+let isProcessingSwitch = false;  // 교대 처리 중 플래그 추가
+
 function checkWordMatchingAsWaiting() {
   if (isHtmlMode) return;
   if (myRole === activeStenographer) return;
+  if (isProcessingSwitch) return;  // 교대 중이면 매칭 체크 중단
   
-  // 시간 제한: 마지막 교대로부터 3초 이상 경과해야 함
+  // 시간 제한: 마지막 교대로부터 0.6초 이상 경과해야 함
   if (Date.now() - lastSwitchTime < MIN_SWITCH_INTERVAL) {
     return;
   }
@@ -1172,6 +1175,7 @@ function checkWordMatchingAsWaiting() {
         누적확정: matchedFromActive.substring(0, 30)
       });
       
+      isProcessingSwitch = true;  // 교대 처리 시작
       lastSwitchTime = Date.now();
       
       if (socket && socket.connected) {
@@ -1184,6 +1188,11 @@ function checkWordMatchingAsWaiting() {
         });
       }
       
+      // 교대 처리 플래그 해제
+      setTimeout(() => {
+        isProcessingSwitch = false;
+      }, 2000);
+      
       return;
     }
   }
@@ -1193,6 +1202,7 @@ function checkWordMatchingAsWaiting() {
 function checkWordMatchingAsActive() {
   if (isHtmlMode) return;
   if (myRole !== activeStenographer) return;
+  if (isProcessingSwitch) return;  // 교대 중이면 매칭 체크 중단
   
   // 시간 제한
   if (Date.now() - lastSwitchTime < MIN_SWITCH_INTERVAL) {
@@ -1266,6 +1276,7 @@ function checkWordMatchingAsActive() {
         누적확정: matchedFromMe.substring(0, 30)
       });
       
+      isProcessingSwitch = true;  // 교대 처리 시작
       lastSwitchTime = Date.now();
       
       if (socket && socket.connected) {
@@ -1278,6 +1289,11 @@ function checkWordMatchingAsActive() {
         });
       }
       
+      // 교대 처리 플래그 해제
+      setTimeout(() => {
+        isProcessingSwitch = false;
+      }, 2000);
+      
       return;
     }
   }
@@ -1287,7 +1303,7 @@ function checkWordMatchingAsActive() {
 let manualSwitchCooldown = false;
 let isSwitchingRole = false;
 let lastSwitchTime = 0;
-const MIN_SWITCH_INTERVAL = 3000; // 3초 (자동 교대 간격 제한)
+const MIN_SWITCH_INTERVAL = 600; // 0.6초 (서버와 동일)
 
 function offerRole() {
   if (isHtmlMode) return;
@@ -1338,6 +1354,7 @@ function manualSwitchRole(reason) {
     
     isSwitchingRole = true;
     manualSwitchCooldown = true;
+    isProcessingSwitch = true;  // 교대 처리 플래그 추가
     lastSwitchTime = Date.now(); // 교대 시간 기록
     
     const newActive = myRole === '1' ? 'steno2' : 'steno1';
@@ -1369,6 +1386,7 @@ function manualSwitchRole(reason) {
     } else {
       console.error('[수동 전환] 소켓 연결이 끊어졌습니다.');
       isSwitchingRole = false;
+      isProcessingSwitch = false;
       return false;
     }
     
@@ -1379,6 +1397,7 @@ function manualSwitchRole(reason) {
     
     setTimeout(() => {
       isSwitchingRole = false;
+      isProcessingSwitch = false;
       console.log('[수동 전환] 처리 완료');
     }, 1000);
     
@@ -1388,6 +1407,7 @@ function manualSwitchRole(reason) {
     console.error('[수동 전환] 에러 발생:', error);
     isSwitchingRole = false;
     manualSwitchCooldown = false;
+    isProcessingSwitch = false;
     return false;
   }
 }
@@ -1655,6 +1675,12 @@ if (!isHtmlMode && socket) {
 
   // 활성 역할 업데이트 (서버에서 보내는 이벤트)
   socket.on('active_role', ({ active }) => {
+    // 교대 처리 중이면 무시 (switch_role 처리 완료 후 반영)
+    if (isProcessingSwitch) {
+      console.log('[활성 역할] 교대 처리 중 - 지연 처리');
+      return;
+    }
+    
     const newActive = active === 'steno1' ? '1' : '2';
     console.log('[활성 역할] 서버 업데이트:', active, '→', newActive);
     activeStenographer = newActive;
@@ -1771,7 +1797,7 @@ if (!isHtmlMode && socket) {
     }
     
     // 2인 모드에서 단어 매칭 체크
-    if (isCollaborationMode()) {
+    if (isCollaborationMode() && !isProcessingSwitch) {  // 교대 중이 아닐 때만
       if (myRole === activeStenographer && senderRole !== activeStenographer) {
         // 권한자: 대기자 입력으로 매칭 체크
         checkWordMatchingAsActive();
@@ -1804,7 +1830,7 @@ if (!isHtmlMode && socket) {
     }
     
     // 대기자 입력으로 매칭 체크
-    if (isCollaborationMode()) {
+    if (isCollaborationMode() && !isProcessingSwitch) {  // 교대 중이 아닐 때만
       if (myRole === activeStenographer) {
         // 권한자가 대기자 입력 받음
         checkWordMatchingAsActive();
@@ -1814,21 +1840,25 @@ if (!isHtmlMode && socket) {
     }
   });
 
-  // 🔥 수정: switch_role 핸들러 추가 (정확한 교대 규칙 구현)
+  // 🔥 핵심 수정: switch_role 핸들러 - 이전 권한자 완전 초기화 보장
   socket.on('switch_role', ({ 
     newActive, 
     matchedText, 
     accumulatedText: serverAccumulated,
+    previousActive,  // 서버가 보낸 이전 권한자
     manual, 
     matchStartIndex, 
-    matchWordCount: serverMatchCount 
+    matchWordCount: serverMatchCount,
+    ts  // 타임스탬프 추가
   }) => {
     try {
       console.log('[권한 전환 수신] ==================', {
         새권한자: newActive,
+        이전권한자: previousActive,
         누적길이: matchedText?.length || 0,
         수동여부: manual,
-        매칭정보: { startIdx: matchStartIndex, wordCount: serverMatchCount }
+        매칭정보: { startIdx: matchStartIndex, wordCount: serverMatchCount },
+        시간: ts
       });
       
       // 1. 편집 모드 중이면 취소
@@ -1845,27 +1875,70 @@ if (!isHtmlMode && socket) {
         console.log('[권한 전환] 누적 텍스트 갱신:', accumulatedText.length, '자');
       }
       
-      // 3. 역할 전환
-      const previousActive = activeStenographer;
+      // 3. 이전 권한자 판정 (서버가 보낸 previousActive 사용)
+      const prevActiveNum = previousActive === 'steno1' ? '1' : '2';
       const newActiveNum = newActive === 'steno1' ? '1' : '2';
+      
+      // 4. 역할 전환 전 상태 캡처
+      const wasIPreviousActive = (myRole === prevActiveNum);
+      const willIBeNewActive = (myRole === newActiveNum);
+      
+      console.log('[권한 전환] 역할 상태:', {
+        내역할: myRole,
+        이전권한자였음: wasIPreviousActive,
+        새권한자될예정: willIBeNewActive
+      });
+      
+      // 5. activeStenographer 업데이트
       activeStenographer = newActiveNum;
       
-      console.log('[권한 전환] 역할 변경:', previousActive, '→', newActiveNum);
-      console.log('[권한 전환] 내 역할:', myRole, '/ 이전 권한자:', previousActive, '/ 새 권한자:', newActiveNum);
-      
-      // 4. 입력창 처리 (핵심 로직)
-      // 4-1. 이전 권한자 → 새 대기자: 입력창 완전 비우기
-      if (myRole === previousActive && myRole !== newActiveNum) {
-        console.log('[권한 전환] 이전 권한자 → 대기자 전환: 입력창 비우기');
+      // 6. 입력창 처리 (핵심 로직)
+      // 6-1. 이전 권한자 → 새 대기자: 완전 하드 리셋 - 수정됨
+      if (wasIPreviousActive && !willIBeNewActive) {
+        console.log('[권한 전환] 이전 권한자 → 대기자 전환: 완전 초기화');
+        
         if (myEditor) {
+          // 입력창 완전 비우기
           myEditor.value = '';
+          
+          // 모든 버퍼 초기화 - 수정됨: 더 철저한 초기화
           lastSentText = '';
-          myEditor.scrollTop = myEditor.scrollHeight;
+          lastMyInput = '';
+          lastSendTime = Date.now();  // 수정됨: 추가
+          
+          // 전송 타이머 취소
+          if (sendInputTimeout) {
+            clearTimeout(sendInputTimeout);
+            sendInputTimeout = null;
+          }
+          
+          // 입력 최적화 카운터 리셋
+          inputOptimizationCounter = 0;
+          
+          // 스크롤, 커서 위치 초기화
+          myEditor.scrollTop = 0;
+          myEditor.setSelectionRange(0, 0);
+          
+          // 포커스 해제
+          myEditor.blur();
+          
+          // 추가 보장: 100ms 후 재확인 - 수정됨
+          setTimeout(() => {
+            if (myEditor && myEditor.value !== '') {
+              console.warn('[권한 전환] 재초기화 필요 - 수정됨');
+              myEditor.value = '';
+              lastSentText = '';
+            }
+          }, 100);
         }
+        
+        console.log('[권한 전환] 이전 권한자 초기화 완료');
       }
       
-      // 4-2. 이전 대기자 → 새 권한자: 매칭된 부분 제거
-      if (myRole === newActiveNum && myRole !== previousActive) {
+      // 6-2. 이전 대기자 → 새 권한자: 매칭된 부분 제거
+      if (!wasIPreviousActive && willIBeNewActive) {
+        console.log('[권한 전환] 대기자 → 권한자 전환: 매칭 부분 제거');
+        
         if (!manual && myEditor) {
           // 자동 매칭: 매칭된 구간 제거
           if (typeof matchStartIndex === 'number' && typeof serverMatchCount === 'number' && serverMatchCount >= 3) {
@@ -1891,6 +1964,7 @@ if (!isHtmlMode && socket) {
               myEditor.value = tail;
               myEditor.setSelectionRange(tail.length, tail.length);
               lastSentText = tail;  // 새 권한자의 마지막 전송 텍스트 갱신
+              lastSendTime = Date.now();  // 수정됨: 추가
             } else {
               // 매칭 정보 부족 시 입력창 유지
               console.log('[권한 전환] 매칭 정보 부족 - 입력창 유지');
@@ -1913,18 +1987,22 @@ if (!isHtmlMode && socket) {
         }
       }
       
-      // 5. 상대방 입력창 표시 (항상 비우기)
+      // 7. 상대방 입력창 표시 (항상 비우기)
       if (otherEditor) {
         otherEditor.value = '';
         console.log('[권한 전환] 상대방 표시창 초기화');
       }
       
-      // 6. 권한 및 UI 갱신
+      // 8. 권한 및 UI 갱신
       applyEditorLocks();
       updateStatus();
       updateViewerContent();
       
-      // 7. 수동 전환 플래그 해제
+      // 9. 교대 처리 플래그 해제
+      isProcessingSwitch = false;
+      lastSwitchTime = Date.now();
+      
+      // 10. 수동 전환 플래그 해제
       if (manual) {
         isSwitchingRole = false;
         setTimeout(() => {
@@ -1939,6 +2017,7 @@ if (!isHtmlMode && socket) {
       console.error('[switch_role 처리 에러]:', error);
       isSwitchingRole = false;
       manualSwitchCooldown = false;
+      isProcessingSwitch = false;
     }
   });
   
@@ -1963,19 +2042,36 @@ if (!isHtmlMode && socket) {
   });
   
   // 강제 권한 전환
-  socket.on('force_role_switch', ({ newActive }) => {
-    activeStenographer = newActive === 'steno1' ? '1' : '2';
+  socket.on('force_role_switch', ({ newActive, previousActive }) => {
+    const prevActiveNum = previousActive === 'steno1' ? '1' : '2';
+    const newActiveNum = newActive === 'steno1' ? '1' : '2';
+    
+    activeStenographer = newActiveNum;
     updateStatus();
     
-    if (activeStenographer === myRole) {
-      console.log('[강제 권한 획득] 권한을 가져왔습니다.');
-      if (myEditor) myEditor.focus();
-    } else {
+    // 이전 권한자였으면 완전 초기화 - 수정됨
+    if (myRole === prevActiveNum) {
       console.log('[강제 권한 상실] 권한이 이동했습니다.');
       if (myEditor) {
         myEditor.value = '';
         lastSentText = '';
+        lastMyInput = '';
+        lastSendTime = Date.now();  // 수정됨: 추가
+        
+        // 전송 타이머 취소
+        if (sendInputTimeout) {
+          clearTimeout(sendInputTimeout);
+          sendInputTimeout = null;
+        }
+        
+        inputOptimizationCounter = 0;
+        myEditor.scrollTop = 0;
+        myEditor.setSelectionRange(0, 0);
+        myEditor.blur();
       }
+    } else if (myRole === newActiveNum) {
+      console.log('[강제 권한 획득] 권한을 가져왔습니다.');
+      if (myEditor) myEditor.focus();
     }
   });
 
