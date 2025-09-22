@@ -12,16 +12,29 @@
       const role = localStorage.getItem('adminRole');
       
       // 토큰이 없거나 system_admin 역할이 아니면 즉시 리다이렉트
-      if (!token || role !== 'system_admin') {
+      // ⚠️ 중요: 백엔드의 역할 문자열과 정확히 일치해야 함
+      // 예시: 'system_admin', 'admin', 'super', 'owner' 등
+      // 실제 백엔드에서 사용하는 값으로 변경 필요
+      const REQUIRED_ROLE = 'system_admin';  // TODO: 실제 백엔드 역할 문자열로 변경
+      
+      if (!token || role !== REQUIRED_ROLE) {
         window.location.replace('index.html');
         return;
       }
     })();
   </script>
   
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=Ubuntu:wght@300;400;500;700&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- 변경: Contact/About과 동일한 폰트 추가 -->
   <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Poppins:100,100italic,200,200italic,300,300italic,regular,italic,500,500italic,600,600italic,700,700italic,800,800italic,900,900italic" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Ubuntu:300,300italic,regular,italic,500,500italic,700,700italic" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xeicon@2.3.3/xeicon.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+  
+  <!-- 변경: GSAP 추가 (About/Contact 애니메이션용) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+  
   <style>
     * {
       box-sizing: border-box;
@@ -34,41 +47,55 @@
       --white: #ffffff;
       --gray: #666666;
       --light-gray: #f5f5f5;
-      --accent: #0044ff;
       --neon-blue: #00f0ff;
       --neon-purple: #a259ff;
-      --accent-gradient: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+      --accent-gradient: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
       --ease: cubic-bezier(0.19, 1, 0.22, 1);
     }
     
+    /* 변경: About/Contact 스타일 적용 */
     body {
-      background: #0e0e0e;
-      color: #f0f0f0;
-      font-family: 'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #fff;
+      color: #000;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
       margin: 0;
       padding: 0;
       min-height: 100vh;
+      line-height: 1;
     }
     
-    /* Header - index.html과 동일한 스타일 */
+    /* Scroll styles */
+    html::-webkit-scrollbar {width: 8px;}
+    html::-webkit-scrollbar-thumb {background-color: #2f3542; border-radius: 10px;}
+    
+    /* General wrapper styles */
+    .wrap {margin: 0 auto; width: 95%;}
+    .wrap[max='1708'] {max-width: 1708px;}
+    .wrap[max='1440'] {max-width: 1440px;}
+    
+    /* Header - About/Contact 스타일 적용 */
     .header {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
-      background: rgba(10, 10, 10, 0.95);
+      background: transparent;
       z-index: 1000;
-      padding: 1.5rem 0;
-      border-bottom: 1px solid #333;
+      padding: 2rem 0;
+      transition: all 0.3s ease;
+    }
+    
+    .header.scrolled {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 2px 20px rgba(0,0,0,0.05);
+      padding: 1rem 0;
     }
     
     .header .wrap {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin: 0 auto;
-      width: 95%;
-      max-width: 1708px;
     }
     
     .header .logo {
@@ -84,12 +111,11 @@
     }
     
     .header .logo svg path {
-      fill: #fff;
-      transition: fill 0.3s ease;
+      fill: #000;
     }
     
     .header .logo svg text {
-      fill: #000;
+      fill: #fff;
     }
     
     .header .menu {
@@ -112,7 +138,7 @@
       font-family: 'Ubuntu', sans-serif;
       position: relative;
       transition: .4s;
-      color: #fff;
+      color: #000;
     }
     
     .header .menu li.active {
@@ -144,141 +170,365 @@
       width: 100%;
     }
     
-    .header .menu li.active::before {
+    /* 변경: Hero Section 추가 (About/Contact 스타일) */
+    .cm-hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #000;
+    }
+    
+    .cm-hero-title {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    
+    .cm-hero-title h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: clamp(80px, 10vw, 160px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: transparent;
+      -webkit-text-stroke: 2px var(--neon-blue);
+      margin-bottom: 2rem;
+      position: relative;
+      display: inline-block;
+    }
+    
+    .cm-hero-title h1::after {
+      content: 'CHANNEL';
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      z-index: -1;
+      background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      -webkit-text-stroke: 0;
+    }
+    
+    .cm-hero-subtitle {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.5rem;
+      color: #fff;
+      opacity: 0.8;
+      margin-bottom: 1rem;
+    }
+    
+    .cm-hero-desc {
+      font-family: 'Pretendard', sans-serif;
+      font-size: 1.1rem;
+      color: #fff;
+      opacity: 0.6;
+    }
+    
+    /* 변경: Floating objects (About/Contact 스타일) */
+    .cm-objects {
+      position: absolute;
       width: 100%;
-      opacity: 0.2;
+      height: 100%;
+      top: 0;
+      left: 0;
+      filter: url(#gooey);
+      opacity: 0;
     }
     
+    .cm-obj {
+      position: absolute;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+      opacity: 0.3;
+    }
+    
+    .cm-obj:nth-child(1) {
+      width: 200px;
+      height: 200px;
+      top: 10%;
+      left: 10%;
+      animation: float1 8s ease-in-out infinite;
+    }
+    
+    .cm-obj:nth-child(2) {
+      width: 150px;
+      height: 150px;
+      top: 60%;
+      right: 15%;
+      animation: float2 10s ease-in-out infinite;
+    }
+    
+    .cm-obj:nth-child(3) {
+      width: 100px;
+      height: 100px;
+      bottom: 20%;
+      left: 30%;
+      animation: float3 6s ease-in-out infinite;
+    }
+    
+    @keyframes float1 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(30px, -50px) scale(0.9); }
+    }
+    
+    @keyframes float2 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(-40px, 30px) scale(1.1); }
+    }
+    
+    @keyframes float3 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(20px, -30px) scale(0.95); }
+    }
+    
+    /* Container 조정 */
     .container {
-      max-width: 1400px;
+      max-width: 1440px;
       margin: 0 auto;
-      padding: 6rem 2rem 2rem 2rem;
+      padding: 2rem;
+      position: relative;
+      z-index: 1;
     }
     
-    /* Stats Dashboard */
+    /* 변경: Section Title (About/Contact 스타일) */
+    .cm-section-title {
+      text-align: center;
+      margin: 6rem 0 4rem;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    
+    .cm-section-title span {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--neon-blue);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 1rem;
+    }
+    
+    .cm-section-title h2 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 3rem;
+      font-weight: 700;
+      color: #000;
+      letter-spacing: -0.02em;
+      position: relative;
+      display: inline-block;
+    }
+    
+    .cm-section-title h2 b {
+      background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    /* Stats Dashboard - 리디자인 */
     .stats-dashboard {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin: 2rem 0;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+      margin: 4rem 0;
     }
     
     .stat-card {
-      background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-      border: 1px solid #333;
-      border-radius: 8px;
-      padding: 1.5rem;
+      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+      border: 2px solid transparent;
+      background-clip: padding-box;
+      border-radius: 20px;
+      padding: 2rem;
       text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--accent-gradient);
+      border-radius: 20px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: -1;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 40px rgba(0, 240, 255, 0.2);
+      border-color: var(--neon-blue);
+    }
+    
+    .stat-card:hover::before {
+      opacity: 0.05;
     }
     
     .stat-number {
-      font-size: 2rem;
+      font-size: 3rem;
       font-weight: 700;
-      color: var(--neon-blue);
+      background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
       margin-bottom: 0.5rem;
       font-family: 'Poppins', sans-serif;
     }
     
     .stat-label {
       font-size: 0.9rem;
-      color: #888;
+      color: #666;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.05em;
       font-family: 'Pretendard', sans-serif;
+      font-weight: 500;
     }
     
-    /* Create Channel Section */
+    /* Create Channel Section - 리디자인 */
     .create-section {
-      background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 50%, #1e1e1e 100%);
-      border: 1px solid #333;
-      border-radius: 12px;
-      padding: 2rem;
-      margin: 2rem 0;
+      background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
+      border: 2px solid transparent;
+      background-clip: padding-box;
+      border-radius: 30px;
+      padding: 3rem;
+      margin: 4rem 0;
       position: relative;
       overflow: hidden;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    
+    .create-section::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      background: var(--accent-gradient);
+      border-radius: 30px;
+      z-index: -1;
     }
     
     .section-title {
-      font-size: 1.5rem;
-      font-weight: 600;
+      font-size: 2rem;
+      font-weight: 700;
       margin-bottom: 2rem;
       color: #fff;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 1rem;
       font-family: 'Poppins', sans-serif;
+      letter-spacing: -0.02em;
     }
     
     .create-form {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
     }
     
     .form-group {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 0.8rem;
     }
     
     .form-label {
-      font-size: 0.85rem;
-      color: #a2c1ff;
-      font-family: 'Courier New', monospace;
-      letter-spacing: 0.5px;
+      font-size: 0.9rem;
+      color: var(--neon-blue);
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
     }
     
     input[type="text"], input[type="number"], input[type="datetime-local"], select {
-      padding: 0.8rem 1rem;
-      border-radius: 6px;
-      border: 1px solid #404040;
-      background: #0e0e0e;
-      color: #f0f0f0;
-      font-family: 'Courier New', monospace;
-      font-size: 0.95rem;
-      letter-spacing: 0.1em;
-      transition: all 0.2s ease;
+      padding: 1rem 1.2rem;
+      border-radius: 12px;
+      border: 2px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      color: #fff;
+      font-family: 'Pretendard', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 0.02em;
+      transition: all 0.3s ease;
       width: 100%;
-      height: 42px;
+      height: 50px;
     }
     
     input:focus, select:focus {
       outline: none;
-      border-color: #555;
-      background: #111;
-      box-shadow: 
-        inset 0 1px 3px rgba(0,0,0,0.2),
-        0 0 0 1px rgba(255,255,255,0.1);
+      border-color: var(--neon-blue);
+      background: rgba(0, 240, 255, 0.05);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
     }
     
-    /* Quick Actions */
+    input::placeholder {
+      color: rgba(255,255,255,0.3);
+    }
+    
+    /* Quick Actions - 리디자인 */
     .quick-actions {
       display: flex;
-      gap: 1rem;
-      margin: 1rem 0;
+      gap: 1.5rem;
+      margin: 2rem 0;
       justify-content: center;
+      flex-wrap: wrap;
     }
     
     .quick-btn {
-      padding: 1rem 1.5rem;
-      background: #2a2a2a;
-      border: 1px solid #404040;
-      border-radius: 6px;
-      color: #f0f0f0;
+      padding: 1.2rem 2rem;
+      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+      border: 2px solid #e0e0e0;
+      border-radius: 15px;
+      color: #000;
       cursor: pointer;
       transition: all 0.3s ease;
-      font-size: 0.95rem;
+      font-size: 1rem;
       font-family: 'Pretendard', sans-serif;
-      font-weight: 500;
+      font-weight: 600;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .quick-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 100%;
+      background: var(--accent-gradient);
+      transition: width 0.4s ease;
+      z-index: -1;
     }
     
     .quick-btn:hover {
-      background: #3a3a3a;
+      color: #fff;
       border-color: var(--neon-blue);
-      transform: translateY(-2px);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(0, 240, 255, 0.3);
     }
     
-    /* Channel Type Radio */
+    .quick-btn:hover::before {
+      width: 100%;
+    }
+    
+    /* Channel Type Radio - 리디자인 */
     .channel-types {
       display: flex;
       gap: 1rem;
@@ -297,28 +547,33 @@
     .type-label {
       display: block;
       padding: 1rem;
-      background: #0e0e0e;
-      border: 1px solid #404040;
-      border-radius: 6px;
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
       text-align: center;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.3s ease;
+      color: rgba(255,255,255,0.6);
+      font-family: 'Pretendard', sans-serif;
+      font-weight: 500;
     }
     
     .type-label:hover {
-      background: #1a1a1a;
-      border-color: #4a4a4a;
-    }
-    
-    .type-option input[type="radio"]:checked + .type-label {
-      background: #1a3d1a;
+      background: rgba(0, 240, 255, 0.1);
       border-color: var(--neon-blue);
       color: #fff;
     }
     
+    .type-option input[type="radio"]:checked + .type-label {
+      background: var(--accent-gradient);
+      border-color: transparent;
+      color: #fff;
+      font-weight: 600;
+    }
+    
     .passkey-group {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.8rem;
       align-items: flex-end;
     }
     
@@ -327,15 +582,16 @@
     }
     
     .dice-button {
-      background: transparent;
-      border: none;
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
       padding: 0;
       cursor: pointer;
-      color: #ccc;
-      font-size: 1.3rem;
-      transition: all 0.2s ease;
-      height: 42px;
-      width: 42px;
+      color: #fff;
+      font-size: 1.5rem;
+      transition: all 0.3s ease;
+      height: 50px;
+      width: 50px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -343,56 +599,90 @@
     
     .dice-button:hover {
       color: var(--neon-blue);
-      transform: scale(1.2);
+      background: rgba(0, 240, 255, 0.1);
+      border-color: var(--neon-blue);
+      transform: rotate(180deg) scale(1.1);
     }
     
     .btn-primary {
-      background: #2a2a2a;
-      color: #e0e0e0;
-      padding: 0.8rem 2rem;
-      border: 1px solid #404040;
-      border-radius: 6px;
+      background: var(--accent-gradient);
+      color: #fff;
+      padding: 1rem 3rem;
+      border: none;
+      border-radius: 50px;
       cursor: pointer;
-      font-size: 0.95rem;
-      font-weight: 500;
+      font-size: 1.1rem;
+      font-weight: 600;
       transition: all 0.3s ease;
       font-family: 'Poppins', sans-serif;
+      letter-spacing: 0.02em;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
     }
     
     .btn-primary:hover {
-      background: linear-gradient(135deg, #3a4a5a 0%, var(--neon-blue) 100%);
-      color: #fff;
-      border-color: var(--neon-blue);
-      transform: translateY(-2px);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 40px rgba(0, 240, 255, 0.4);
     }
     
-    /* Channel List Table */
+    .btn-primary:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+    
+    /* Channel List Table - 리디자인 */
     .channel-list {
-      background: #1a1a1a;
-      border: 1px solid #333;
-      border-radius: 12px;
+      background: #fff;
+      border: 2px solid #f0f0f0;
+      border-radius: 30px;
       overflow: hidden;
-      margin: 2rem 0;
+      margin: 4rem 0;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+      opacity: 0;
+      transform: translateY(30px);
     }
     
     .list-header {
-      padding: 1.5rem 2rem;
-      border-bottom: 1px solid #333;
+      padding: 2rem;
+      border-bottom: 2px solid #f0f0f0;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
     }
     
     .search-box {
       display: flex;
-      gap: 0.5rem;
+      gap: 1rem;
       align-items: center;
     }
     
     .search-box input {
-      width: 250px;
-      padding: 0.5rem 1rem;
-      font-size: 0.9rem;
+      width: 300px;
+      padding: 0.8rem 1.2rem;
+      font-size: 0.95rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      font-family: 'Pretendard', sans-serif;
+    }
+    
+    .search-box input:focus {
+      border-color: var(--neon-blue);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
     }
     
     table {
@@ -401,40 +691,46 @@
     }
     
     thead {
-      background: #252525;
-      border-bottom: 1px solid #333;
+      background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+      border-bottom: 2px solid #f0f0f0;
     }
     
     th {
-      padding: 1rem;
+      padding: 1.5rem 1rem;
       text-align: left;
       font-size: 0.85rem;
-      color: #a2c1ff;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      font-family: 'Courier New', monospace;
+      color: #666;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      font-family: 'Poppins', sans-serif;
+      text-transform: uppercase;
     }
     
     td {
-      padding: 1rem;
-      border-bottom: 1px solid #2a2a2a;
-      font-size: 0.9rem;
+      padding: 1.2rem 1rem;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.95rem;
+      font-family: 'Pretendard', sans-serif;
     }
     
     tbody tr {
-      transition: background 0.2s ease;
+      transition: all 0.3s ease;
+      background: #fff;
     }
     
     tbody tr:hover {
-      background: #222;
+      background: linear-gradient(135deg, rgba(0,240,255,0.03) 0%, rgba(162,89,255,0.03) 100%);
+      transform: translateX(5px);
     }
     
     .channel-code {
-      font-family: 'Courier New', monospace;
-      font-weight: 600;
-      color: #fff;
-      letter-spacing: 0.1em;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 700;
+      color: #000;
+      letter-spacing: 0.05em;
       cursor: pointer;
+      font-size: 1.1rem;
+      transition: color 0.3s ease;
     }
     
     .channel-code:hover {
@@ -442,51 +738,55 @@
     }
     
     .badge {
-      padding: 0.2rem 0.6rem;
-      border-radius: 4px;
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
       font-size: 0.75rem;
-      font-weight: 500;
+      font-weight: 600;
       display: inline-block;
+      font-family: 'Poppins', sans-serif;
+      letter-spacing: 0.05em;
     }
     
     .badge.public {
-      background: #2a4a2a;
-      color: #4ecdc4;
-      border: 1px solid #3a5a3a;
+      background: linear-gradient(135deg, #4ecdc4, #44a3aa);
+      color: #fff;
+      border: none;
     }
     
     .badge.secured {
-      background: #3a3a5a;
-      color: #74b9ff;
-      border: 1px solid #4a4a6a;
+      background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+      color: #fff;
+      border: none;
     }
     
     .passkey {
-      font-family: 'Courier New', monospace;
-      background: #0e0e0e;
-      padding: 0.2rem 0.5rem;
-      border-radius: 4px;
-      border: 1px solid #333;
+      font-family: 'Poppins', sans-serif;
+      background: #f5f5f5;
+      padding: 0.3rem 0.6rem;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+      font-weight: 600;
+      letter-spacing: 0.1em;
     }
     
     .active-count {
       display: flex;
       align-items: center;
-      gap: 0.3rem;
+      gap: 0.5rem;
     }
     
     .count-dot {
-      width: 8px;
-      height: 8px;
+      width: 10px;
+      height: 10px;
       background: #4ecdc4;
       border-radius: 50%;
       animation: pulse 2s infinite;
     }
     
     @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.3; }
-      100% { opacity: 1; }
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.2); }
+      100% { opacity: 1; transform: scale(1); }
     }
     
     .actions {
@@ -495,39 +795,54 @@
     }
     
     .btn-small {
-      padding: 0.4rem 0.8rem;
-      border: 1px solid #333;
-      background: #222;
-      color: #ccc;
-      border-radius: 4px;
+      padding: 0.5rem 1rem;
+      border: 2px solid #e0e0e0;
+      background: #fff;
+      color: #666;
+      border-radius: 8px;
       font-size: 0.8rem;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.3s ease;
       font-family: 'Pretendard', sans-serif;
+      font-weight: 600;
     }
     
     .btn-small:hover {
-      background: #333;
-      color: #fff;
-      border-color: #444;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
     
     .btn-small.manage {
       border-color: var(--neon-blue);
-      color: #74b9ff;
+      color: var(--neon-blue);
+    }
+    
+    .btn-small.manage:hover {
+      background: var(--neon-blue);
+      color: #fff;
     }
     
     .btn-small.copy {
-      border-color: #4a9e4a;
+      border-color: #4ecdc4;
       color: #4ecdc4;
     }
     
+    .btn-small.copy:hover {
+      background: #4ecdc4;
+      color: #fff;
+    }
+    
     .btn-small.delete {
-      border-color: #a44;
+      border-color: #e06c75;
       color: #e06c75;
     }
     
-    /* Modal */
+    .btn-small.delete:hover {
+      background: #e06c75;
+      color: #fff;
+    }
+    
+    /* Modal - 리디자인 */
     .modal {
       display: none;
       position: fixed;
@@ -536,6 +851,7 @@
       width: 100%;
       height: 100%;
       background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
       z-index: 2000;
       align-items: center;
       justify-content: center;
@@ -546,73 +862,95 @@
     }
     
     .modal-content {
-      background: #1a1a1a;
-      border: 1px solid #333;
-      border-radius: 12px;
-      padding: 2rem;
-      max-width: 600px;
+      background: #fff;
+      border: 2px solid var(--neon-blue);
+      border-radius: 30px;
+      padding: 2.5rem;
+      max-width: 650px;
       width: 90%;
       max-height: 80vh;
       overflow-y: auto;
+      position: relative;
+    }
+    
+    .modal-content::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      right: -10px;
+      bottom: -10px;
+      background: var(--accent-gradient);
+      border-radius: 30px;
+      z-index: -1;
+      opacity: 0.3;
+      filter: blur(20px);
     }
     
     .modal-header {
-      margin-bottom: 1.5rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid #333;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 2px solid #f0f0f0;
     }
     
     .modal-title {
-      font-size: 1.3rem;
-      font-weight: 600;
-      color: #fff;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #000;
       font-family: 'Poppins', sans-serif;
+      letter-spacing: -0.02em;
+    }
+    
+    .modal-title span {
+      color: var(--neon-blue);
     }
     
     .modal-section {
-      margin-bottom: 1.5rem;
+      margin-bottom: 2rem;
     }
     
     .modal-section h4 {
-      color: #a2c1ff;
+      color: var(--neon-purple);
       font-size: 0.9rem;
-      margin-bottom: 0.8rem;
+      margin-bottom: 1rem;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-family: 'Courier New', monospace;
+      letter-spacing: 0.1em;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
     }
     
     .url-group {
       display: flex;
-      gap: 0.5rem;
-      margin-bottom: 0.8rem;
+      gap: 0.8rem;
+      margin-bottom: 1rem;
     }
     
     .url-input {
       flex: 1;
-      padding: 0.6rem;
-      background: #0e0e0e;
-      border: 1px solid #333;
-      border-radius: 4px;
-      color: #888;
-      font-family: 'Courier New', monospace;
-      font-size: 0.85rem;
+      padding: 0.8rem;
+      background: #f5f5f5;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      color: #666;
+      font-family: 'Pretendard', sans-serif;
+      font-size: 0.9rem;
     }
     
     .copy-btn {
-      padding: 0.6rem 1rem;
-      background: #2a2a2a;
-      border: 1px solid #404040;
-      border-radius: 4px;
-      color: #4ecdc4;
+      padding: 0.8rem 1.5rem;
+      background: var(--accent-gradient);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.3s ease;
       font-family: 'Pretendard', sans-serif;
+      font-weight: 600;
     }
     
     .copy-btn:hover {
-      background: #3a3a3a;
-      border-color: #4ecdc4;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0, 240, 255, 0.3);
     }
     
     .type-toggle {
@@ -623,75 +961,90 @@
     
     .type-toggle-btn {
       flex: 1;
-      padding: 0.8rem;
-      background: #2a2a2a;
-      border: 1px solid #404040;
-      border-radius: 6px;
-      color: #f0f0f0;
+      padding: 1rem;
+      background: #f5f5f5;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      color: #666;
       cursor: pointer;
       transition: all 0.3s ease;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       font-family: 'Pretendard', sans-serif;
+      font-weight: 600;
     }
     
     .type-toggle-btn.active {
-      background: linear-gradient(135deg, #3a4a5a 0%, var(--neon-blue) 100%);
+      background: var(--accent-gradient);
       color: #fff;
-      border-color: var(--neon-blue);
+      border-color: transparent;
     }
     
     .type-toggle-btn:hover:not(.active) {
-      background: #3a3a3a;
+      background: #fff;
       border-color: var(--neon-blue);
+      color: var(--neon-blue);
     }
     
     .status-info {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 1rem;
-      padding: 1rem;
-      background: #0e0e0e;
-      border-radius: 8px;
+      gap: 1.5rem;
+      padding: 1.5rem;
+      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+      border-radius: 15px;
+      border: 2px solid #f0f0f0;
     }
     
     .status-item {
       display: flex;
       flex-direction: column;
+      gap: 0.5rem;
     }
     
     .status-label {
       font-size: 0.8rem;
       color: #888;
-      margin-bottom: 0.3rem;
-      font-family: 'Pretendard', sans-serif;
+      font-family: 'Poppins', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
     
     .status-value {
-      font-size: 1.1rem;
-      color: #fff;
-      font-weight: 500;
+      font-size: 1.3rem;
+      color: #000;
+      font-weight: 700;
       font-family: 'Poppins', sans-serif;
     }
     
     .modal-footer {
-      margin-top: 1.5rem;
-      padding-top: 1rem;
-      border-top: 1px solid #333;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 2px solid #f0f0f0;
       display: flex;
       gap: 1rem;
       justify-content: flex-end;
     }
     
-    /* Footer */
+    /* Footer - 리디자인 */
     footer {
-      background: #0e0e0e;
+      background: #000;
       text-align: center;
-      padding: 2rem;
+      padding: 3rem;
       font-size: 0.9rem;
-      color: #888;
-      border-top: 1px solid #333;
-      margin-top: 4rem;
+      color: #666;
+      margin-top: 6rem;
       font-family: 'Pretendard', sans-serif;
+      position: relative;
+    }
+    
+    footer::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent-gradient);
     }
     
     /* Loading */
@@ -699,7 +1052,7 @@
       display: inline-block;
       width: 20px;
       height: 20px;
-      border: 3px solid #333;
+      border: 3px solid #e0e0e0;
       border-radius: 50%;
       border-top-color: var(--neon-blue);
       animation: spin 1s ease-in-out infinite;
@@ -709,21 +1062,23 @@
       to { transform: rotate(360deg); }
     }
     
-    /* Toast Notification */
+    /* Toast Notification - 리디자인 */
     .toast {
       position: fixed;
       bottom: 2rem;
       right: 2rem;
-      background: #2a2a2a;
-      border: 1px solid var(--neon-blue);
-      border-radius: 8px;
-      padding: 1rem 1.5rem;
-      color: #fff;
+      background: #fff;
+      border: 2px solid var(--neon-blue);
+      border-radius: 15px;
+      padding: 1.2rem 2rem;
+      color: #000;
       z-index: 3000;
       opacity: 0;
       transform: translateY(20px);
       transition: all 0.3s ease;
       font-family: 'Pretendard', sans-serif;
+      font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     }
     
     .toast.show {
@@ -733,18 +1088,23 @@
     
     .toast.success {
       border-color: #4ecdc4;
-      background: #2a4a2a;
+      background: linear-gradient(135deg, #e8fffe 0%, #ffffff 100%);
     }
     
     .toast.error {
       border-color: #e06c75;
-      background: #3a2a2a;
+      background: linear-gradient(135deg, #ffe8e8 0%, #ffffff 100%);
+    }
+    
+    /* SVG Filter for Gooey effect */
+    svg {
+      display: none;
     }
     
     /* Responsive */
     @media (max-width: 768px) {
       .container {
-        padding: 5rem 1rem 1rem 1rem;
+        padding: 1rem;
       }
       
       .header .menu ul {
@@ -765,7 +1125,7 @@
       }
       
       th, td {
-        padding: 0.5rem;
+        padding: 0.8rem 0.5rem;
       }
       
       .actions {
@@ -773,20 +1133,42 @@
       }
       
       .stats-dashboard {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .cm-hero-title h1 {
+        font-size: clamp(60px, 8vw, 100px);
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .stats-dashboard {
         grid-template-columns: 1fr;
       }
     }
   </style>
 </head>
 <body>
-  <!-- Header - index.html과 동일한 스타일 -->
+  <!-- SVG Filter for Gooey Effect -->
+  <svg>
+    <filter id="gooey">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" />
+      <feColorMatrix values="
+        1 0 0 0 0
+        0 1 0 0 0
+        0 0 1 0 0
+        0 0 0 20 -10" />
+    </filter>
+  </svg>
+
+  <!-- Header - 구조 유지, 스타일만 변경 -->
   <header class="header" id="header">
-    <div class="wrap">
+    <div class="wrap" max="1708">
       <div class="logo">
         <a href="index.html">
           <svg viewBox="0 0 122 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 25C0 11.193 11.193 0 25 0h72c13.807 0 25 11.193 25 25s-11.193 25-25 25H25C11.193 50 0 38.807 0 25z" fill="#fff"/>
-            <text x="61" y="32" text-anchor="middle" fill="black" font-family="Poppins" font-size="20" font-weight="700">NUA</text>
+            <path d="M0 25C0 11.193 11.193 0 25 0h72c13.807 0 25 11.193 25 25s-11.193 25-25 25H25C11.193 50 0 38.807 0 25z" fill="#000"/>
+            <text x="61" y="32" text-anchor="middle" fill="white" font-family="Poppins" font-size="20" font-weight="700">NUA</text>
           </svg>
         </a>
       </div>
@@ -801,8 +1183,29 @@
     </div>
   </header>
 
+  <!-- 변경: Hero Section 추가 -->
+  <section class="cm-hero">
+    <div class="cm-objects">
+      <div class="cm-obj"></div>
+      <div class="cm-obj"></div>
+      <div class="cm-obj"></div>
+    </div>
+    
+    <div class="cm-hero-title">
+      <h1>CHANNEL</h1>
+      <p class="cm-hero-subtitle">Real-time Caption Management</p>
+      <p class="cm-hero-desc">NUA STUDIO</p>
+    </div>
+  </section>
+
   <div class="container">
-    <!-- Statistics Dashboard -->
+    <!-- 변경: Section Title 추가 -->
+    <div class="cm-section-title">
+      <span>Dashboard</span>
+      <h2>Channel <b>Statistics</b></h2>
+    </div>
+
+    <!-- Statistics Dashboard - 구조 유지, 스타일만 변경 -->
     <div class="stats-dashboard">
       <div class="stat-card">
         <div class="stat-number" id="totalChannels">0</div>
@@ -822,7 +1225,7 @@
       </div>
     </div>
 
-    <!-- Quick Actions -->
+    <!-- Quick Actions - 구조 유지 -->
     <div class="quick-actions">
       <button class="quick-btn" onclick="exportAllData()">
         📊 전체 데이터 내보내기
@@ -832,7 +1235,13 @@
       </button>
     </div>
 
-    <!-- Create New Channel -->
+    <!-- 변경: Section Title 추가 -->
+    <div class="cm-section-title">
+      <span>Create</span>
+      <h2>New <b>Channel</b></h2>
+    </div>
+
+    <!-- Create New Channel - 구조 유지 -->
     <div class="create-section">
       <h2 class="section-title">📡 Create New Channel</h2>
       <form class="create-form" onsubmit="createChannel(event)">
@@ -903,13 +1312,19 @@
       </form>
     </div>
 
-    <!-- Channel List -->
+    <!-- 변경: Section Title 추가 -->
+    <div class="cm-section-title">
+      <span>Manage</span>
+      <h2>Active <b>Channels</b></h2>
+    </div>
+
+    <!-- Channel List - 구조 유지 -->
     <div class="channel-list">
       <div class="list-header">
         <h2 class="section-title">📋 Active Channels</h2>
         <div class="search-box">
           <input type="text" placeholder="Search channels..." onkeyup="searchChannels(this.value)" />
-          <button class="btn-small">Search</button>
+          <button class="btn-small" onclick="searchChannels(document.querySelector('.search-box input').value)">Search</button>
         </div>
       </div>
       
@@ -936,7 +1351,7 @@
     </div>
   </div>
 
-  <!-- Channel Management Modal -->
+  <!-- Channel Management Modal - 구조 유지 -->
   <div class="modal" id="channelModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -1023,18 +1438,35 @@
 
   <script src="config.js"></script>
   <script>
-    // API Base URL
-    const API_BASE_URL = window.CONFIG ? window.CONFIG.SOCKET_URL : 'http://localhost:3000';
+    // API Base URL - REST API 우선, SOCKET_URL은 백업
+    const API_BASE_URL = 
+      (window.CONFIG && (window.CONFIG.API_BASE_URL || window.CONFIG.REST_URL)) ||
+      (window.CONFIG && window.CONFIG.SOCKET_URL) || // 백업
+      'http://localhost:3000';
+    
     let currentModalChannel = null;
     let channels = [];
     
+    // 인증 헤더 공통 함수
+    function authHeaders(extra = {}) {
+      const token = localStorage.getItem('adminToken');
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': token || '',
+        'ngrok-skip-browser-warning': 'true',
+        ...extra
+      };
+    }
+    
     // Auth check - 보안 강화: 토큰과 역할 재확인
+    const REQUIRED_ROLE = 'system_admin';  // TODO: 실제 백엔드 역할 문자열로 변경
+    
     window.addEventListener('DOMContentLoaded', () => {
       const token = localStorage.getItem('adminToken');
       const role = localStorage.getItem('adminRole');
       
-      // 토큰이 없거나 system_admin이 아니면 리다이렉트
-      if (!token || role !== 'system_admin') {
+      // 토큰이 없거나 필요한 역할이 아니면 리다이렉트
+      if (!token || role !== REQUIRED_ROLE) {
         alert('관리자 권한이 필요합니다.');
         window.location.href = 'index.html';
         return;
@@ -1049,7 +1481,84 @@
         loadChannelList();
         updateStats();
       }, 30000);
+      
+      // 변경: GSAP 애니메이션 추가
+      initAnimations();
     });
+    
+    // 변경: 애니메이션 초기화
+    function initAnimations() {
+      // Hero animation
+      gsap.timeline()
+        .to('.cm-hero-title', {opacity: 1, y: 0, duration: 1, delay: 0.5})
+        .to('.cm-objects', {opacity: 1, duration: 1}, '-=0.5');
+      
+      // Scroll animations
+      gsap.registerPlugin(ScrollTrigger);
+      
+      // Section titles
+      gsap.utils.toArray('.cm-section-title').forEach(el => {
+        gsap.to(el, {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 80%',
+            once: true
+          }
+        });
+      });
+      
+      // Stats cards
+      gsap.utils.toArray('.stat-card').forEach((el, i) => {
+        gsap.to(el, {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          delay: i * 0.1,
+          scrollTrigger: {
+            trigger: '.stats-dashboard',
+            start: 'top 70%',
+            once: true
+          }
+        });
+      });
+      
+      // Create section
+      gsap.to('.create-section', {
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        scrollTrigger: {
+          trigger: '.create-section',
+          start: 'top 70%',
+          once: true
+        }
+      });
+      
+      // Channel list
+      gsap.to('.channel-list', {
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        scrollTrigger: {
+          trigger: '.channel-list',
+          start: 'top 70%',
+          once: true
+        }
+      });
+      
+      // Header scroll effect
+      window.addEventListener('scroll', () => {
+        const header = document.getElementById('header');
+        if (window.scrollY > 100) {
+          header.classList.add('scrolled');
+        } else {
+          header.classList.remove('scrolled');
+        }
+      });
+    }
     
     // Logout
     function logout() {
@@ -1057,10 +1566,7 @@
       if (token) {
         fetch(`${API_BASE_URL}/api/admin/logout`, {
           method: 'POST',
-          headers: {
-            'Authorization': token,
-            'ngrok-skip-browser-warning': 'true'
-          }
+          headers: authHeaders()
         });
       }
       localStorage.removeItem('adminToken');
@@ -1084,7 +1590,8 @@
       document.getElementById('totalUsers').textContent = channels.reduce((sum, ch) => sum + (ch.activeUsers || 0), 0);
       document.getElementById('todayChannels').textContent = todayChannels;
       
-      // Calculate average duration (mock data for now)
+      // TODO: 실제 평균 사용시간 계산 로직 구현 필요 (현재는 mock 데이터)
+      // 예: 각 채널의 createdAt과 현재 시간 차이를 계산하여 평균 산출
       document.getElementById('avgDuration').textContent = Math.floor(Math.random() * 60 + 30);
     }
     
@@ -1136,8 +1643,12 @@
       
       // Collect subtitle data for each channel
       for (const channel of channels) {
-        // Here you would fetch actual subtitle data from server
-        // For now, using placeholder
+        // TODO: 실제 서버에서 자막 데이터 가져오기
+        // const response = await fetch(`${API_BASE_URL}/api/channel/${channel.code}/subtitles`, {
+        //   headers: authHeaders()
+        // });
+        // const data = await response.json();
+        
         subtitlesData[channel.code] = {
           channelCode: channel.code,
           eventName: channel.eventName || 'Untitled',
@@ -1178,10 +1689,13 @@
     // Input animation
     function animateInput(inputId) {
       const input = document.getElementById(inputId);
-      input.style.background = '#1a3d1a';
-      setTimeout(() => {
-        input.style.background = '#0e0e0e';
-      }, 300);
+      gsap.to(input, {
+        scale: 1.05,
+        duration: 0.2,
+        onComplete: () => {
+          gsap.to(input, {scale: 1, duration: 0.2});
+        }
+      });
     }
     
     // Create channel
@@ -1221,10 +1735,7 @@
       try {
         const response = await fetch(`${API_BASE_URL}/api/channel/create`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': 'true'
-          },
+          headers: authHeaders(),
           body: JSON.stringify(channelData)
         });
         
@@ -1258,9 +1769,7 @@
     async function loadChannelList() {
       try {
         const response = await fetch(`${API_BASE_URL}/api/channels`, {
-          headers: {
-            'ngrok-skip-browser-warning': 'true'
-          }
+          headers: authHeaders()
         });
         
         if (!response.ok) {
@@ -1388,45 +1897,66 @@
         return;
       }
       
-      // Update local data
-      currentModalChannel.type = newType;
+      // 공개→비공개 전환이면 새 패스키 미리 준비
+      let newPasskey = null;
+      if (newType === 'secured') {
+        newPasskey = Math.floor(1000 + Math.random() * 9000).toString();
+      }
       
-      if (newType === 'public') {
-        currentModalChannel.passkey = null;
-        document.getElementById('publicToggle').classList.add('active');
-        document.getElementById('securedToggle').classList.remove('active');
-        document.getElementById('passkeySection').style.display = 'none';
-      } else {
-        // Generate new passkey for secured channel
-        const newPasskey = Math.floor(1000 + Math.random() * 9000).toString();
+      try {
+        // 1) 서버에 타입과 패스키 함께 반영
+        const res = await fetch(`${API_BASE_URL}/api/channel/${currentModalChannel.code}/type`, {
+          method: 'PATCH',
+          headers: authHeaders(),
+          body: JSON.stringify({ 
+            type: newType, 
+            passkey: newPasskey  // 타입과 패스키 함께 전송
+          })
+        });
+        
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.message || '타입 변경 실패');
+        }
+        
+        // 2) 로컬 데이터 업데이트
+        currentModalChannel.type = newType;
         currentModalChannel.passkey = newPasskey;
-        document.getElementById('publicToggle').classList.remove('active');
-        document.getElementById('securedToggle').classList.add('active');
-        document.getElementById('passkeySection').style.display = 'block';
-        document.getElementById('modalNewPasskey').value = '';
-      }
-      
-      // Update table immediately
-      const typeElement = document.querySelector(`#type-${currentModalChannel.code}`);
-      const passkeyElement = document.querySelector(`#passkey-${currentModalChannel.code}`);
-      
-      if (typeElement) {
-        typeElement.className = `badge ${newType}`;
-        typeElement.textContent = newType === 'public' ? '공개' : '비공개';
-      }
-      
-      if (passkeyElement) {
-        passkeyElement.innerHTML = currentModalChannel.passkey ? 
-          `<span class="passkey">${currentModalChannel.passkey}</span>` : '-';
-      }
-      
-      // Here you would call API to update channel type
-      showToast(`채널이 ${newType === 'public' ? '공개' : '비공개'}로 변경되었습니다`, 'success');
-      
-      // Update channels array
-      const channelIndex = channels.findIndex(ch => ch.code === currentModalChannel.code);
-      if (channelIndex !== -1) {
-        channels[channelIndex] = currentModalChannel;
+        
+        if (newType === 'public') {
+          document.getElementById('publicToggle').classList.add('active');
+          document.getElementById('securedToggle').classList.remove('active');
+          document.getElementById('passkeySection').style.display = 'none';
+        } else {
+          document.getElementById('publicToggle').classList.remove('active');
+          document.getElementById('securedToggle').classList.add('active');
+          document.getElementById('passkeySection').style.display = 'block';
+          document.getElementById('modalNewPasskey').value = '';
+        }
+        
+        // 3) 테이블 UI 업데이트
+        const typeElement = document.querySelector(`#type-${currentModalChannel.code}`);
+        const passkeyElement = document.querySelector(`#passkey-${currentModalChannel.code}`);
+        
+        if (typeElement) {
+          typeElement.className = `badge ${newType}`;
+          typeElement.textContent = newType === 'public' ? '공개' : '비공개';
+        }
+        
+        if (passkeyElement) {
+          passkeyElement.innerHTML = currentModalChannel.passkey ? 
+            `<span class="passkey">${currentModalChannel.passkey}</span>` : '-';
+        }
+        
+        // 4) channels 배열 업데이트
+        const channelIndex = channels.findIndex(ch => ch.code === currentModalChannel.code);
+        if (channelIndex !== -1) {
+          channels[channelIndex] = currentModalChannel;
+        }
+        
+        showToast(`채널이 ${newType === 'public' ? '공개' : '비공개'}로 변경되었습니다`, 'success');
+      } catch (error) {
+        showToast(error.message || '변경 실패', 'error');
       }
     }
     
@@ -1436,56 +1966,115 @@
       currentModalChannel = null;
     }
     
-    // Copy URL
-    function copyURL(inputId) {
+    // Copy URL - 최신 Clipboard API 우선, fallback 포함
+    async function copyURL(inputId) {
       const input = document.getElementById(inputId);
-      input.select();
-      document.execCommand('copy');
-      showToast('URL이 복사되었습니다', 'success');
+      const text = input.value;
+      
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          // Fallback for older browsers or non-secure contexts
+          input.select();
+          document.execCommand('copy');
+        }
+        showToast('URL이 복사되었습니다', 'success');
+      } catch (error) {
+        showToast('복사 실패', 'error');
+      }
     }
     
-    // Copy channel URL directly
-    function copyChannelURL(code) {
+    // Copy channel URL directly - 최신 Clipboard API 우선, fallback 포함
+    async function copyChannelURL(code) {
       const url = `${window.location.origin}/viewer.html?channel=${code}`;
-      navigator.clipboard.writeText(url).then(() => {
+      
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(url);
+        } else {
+          // Fallback: 임시 input 생성
+          const tempInput = document.createElement('input');
+          tempInput.value = url;
+          document.body.appendChild(tempInput);
+          tempInput.select();
+          document.execCommand('copy');
+          document.body.removeChild(tempInput);
+        }
         showToast('뷰어 URL이 복사되었습니다', 'success');
-      });
+      } catch (error) {
+        showToast('복사 실패', 'error');
+      }
     }
     
     // Update passkey
     async function updatePasskey() {
       const newPasskey = document.getElementById('modalNewPasskey').value;
-      if (!newPasskey || newPasskey.length !== 4) {
+      if (!/^\d{4}$/.test(newPasskey)) {
         showToast('4자리 패스키를 입력하세요', 'error');
         return;
       }
       
-      if (currentModalChannel) {
+      if (!currentModalChannel) return;
+      
+      try {
+        // 1) 서버 반영
+        const res = await fetch(`${API_BASE_URL}/api/channel/${currentModalChannel.code}/passkey`, {
+          method: 'PATCH',
+          headers: authHeaders(),
+          body: JSON.stringify({ passkey: newPasskey })
+        });
+        
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.message || '패스키 변경 실패');
+        }
+        
+        // 2) 로컬 데이터 업데이트
         currentModalChannel.passkey = newPasskey;
         
-        // Update table
+        // 3) 테이블 UI 업데이트
         const passkeyElement = document.querySelector(`#passkey-${currentModalChannel.code}`);
         if (passkeyElement) {
           passkeyElement.innerHTML = `<span class="passkey">${newPasskey}</span>`;
         }
         
-        // Update channels array
+        // 4) channels 배열 업데이트
         const channelIndex = channels.findIndex(ch => ch.code === currentModalChannel.code);
         if (channelIndex !== -1) {
           channels[channelIndex].passkey = newPasskey;
         }
+        
+        showToast('패스키가 변경되었습니다', 'success');
+        document.getElementById('modalNewPasskey').value = '';
+      } catch (error) {
+        showToast(error.message || '변경 실패', 'error');
       }
-      
-      showToast('패스키가 변경되었습니다', 'success');
-      document.getElementById('modalNewPasskey').value = '';
     }
     
     // Extend channel
-    function extendChannel(hours) {
+    async function extendChannel(hours) {
       if (!currentModalChannel) return;
       
-      // Here you would call API to extend channel
-      showToast(`채널이 ${hours}시간 연장되었습니다`, 'success');
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/channel/${currentModalChannel.code}/extend`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ hours })
+        });
+        
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.message || '연장 실패');
+        }
+        
+        showToast(`채널이 ${hours}시간 연장되었습니다`, 'success');
+        
+        // 필요시 채널 목록 재로드
+        // await loadChannelList();
+      } catch (error) {
+        showToast(error.message || '연장 실패', 'error');
+      }
     }
     
     // Export modal channel subtitles
@@ -1496,27 +2085,38 @@
     }
     
     // Export channel data
-    function exportChannelData() {
+    async function exportChannelData() {
       if (!currentModalChannel) return;
       
-      const data = {
-        channel: currentModalChannel.code,
-        type: currentModalChannel.type,
-        passkey: currentModalChannel.passkey,
-        created: currentModalChannel.createdAt,
-        event: currentModalChannel.eventName,
-        autoClose: currentModalChannel.autoClose,
-        // Add accumulated text data here when available
-      };
-      
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `channel_${currentModalChannel.code}_${Date.now()}.json`;
-      a.click();
-      
-      showToast('데이터가 내보내졌습니다', 'success');
+      try {
+        // TODO: 서버에서 전체 채널 데이터 가져오기
+        // const response = await fetch(`${API_BASE_URL}/api/channel/${currentModalChannel.code}/full`, {
+        //   headers: authHeaders()
+        // });
+        // const fullData = await response.json();
+        
+        const data = {
+          channel: currentModalChannel.code,
+          type: currentModalChannel.type,
+          passkey: currentModalChannel.passkey,
+          created: currentModalChannel.createdAt,
+          event: currentModalChannel.eventName,
+          autoClose: currentModalChannel.autoClose,
+          // 실제 자막 데이터는 서버에서 가져와야 함
+          // accumulatedText: fullData.accumulatedText
+        };
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `channel_${currentModalChannel.code}_${Date.now()}.json`;
+        a.click();
+        
+        showToast('데이터가 내보내졌습니다', 'success');
+      } catch (error) {
+        showToast('데이터 내보내기 실패', 'error');
+      }
     }
     
     // Export all data
@@ -1537,9 +2137,7 @@
         try {
           const response = await fetch(`${API_BASE_URL}/api/channel/${code}`, {
             method: 'DELETE',
-            headers: {
-              'ngrok-skip-browser-warning': 'true'
-            }
+            headers: authHeaders()
           });
           
           if (response.ok) {
