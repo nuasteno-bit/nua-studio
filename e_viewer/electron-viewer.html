@@ -467,10 +467,16 @@ function connectToSocket() {
                     console.log('[Socket] 누적 텍스트 동기화:', data);
                     
                     if (data.accumulatedText !== undefined) {
+                        const oldAccumulated = accumulatedText;
                         accumulatedText = data.accumulatedText;
-                        currentActiveInput = '';
-                        updateViewerDisplay(accumulatedText, true);
-                        console.log('[동기화] 누적 텍스트 설정:', accumulatedText);
+                        
+                        // 현재 입력 중인 텍스트는 유지하면서 화면 업데이트
+                        const fullText = accumulatedText + currentActiveInput;
+                        updateViewerDisplay(fullText, true);
+                        
+                        console.log('[동기화] 누적 텍스트 설정:', 
+                            oldAccumulated.length, '→', accumulatedText.length, '자',
+                            '(입력 중:', currentActiveInput.length, '자 유지)');
                     }
                     
                     if (!data.activeStenographer) {
@@ -490,9 +496,15 @@ function connectToSocket() {
                             console.log('[상태] 활성 속기사:', activeStenographer);
                         }
                         if (data.state.accumulatedText !== undefined) {
+                            const oldAccumulated = accumulatedText;
                             accumulatedText = data.state.accumulatedText;
-                            currentActiveInput = '';
-                            updateViewerDisplay(accumulatedText, true);
+                            
+                            // 현재 입력 중인 텍스트는 유지하면서 화면 업데이트
+                            const fullText = accumulatedText + currentActiveInput;
+                            updateViewerDisplay(fullText, true);
+                            
+                            console.log('[상태 갱신] 누적:', 
+                                oldAccumulated.length, '→', accumulatedText.length, '자');
                         }
                     }
                 });
@@ -527,23 +539,32 @@ function connectToSocket() {
                 socket.on('switch_role', (data) => {
                     console.log('[Socket] 역할 전환:', data);
                     
+                    // 활성 속기사 전환
                     if (data.newActive === 'steno1' || data.newActive === '1') {
                         activeStenographer = '1';
                     } else if (data.newActive === 'steno2' || data.newActive === '2') {
                         activeStenographer = '2';
                     }
                     
+                    // 누적 텍스트 업데이트 (있는 경우에만)
                     if (data.accumulatedText !== undefined) {
+                        const oldAccumulated = accumulatedText;
                         accumulatedText = data.accumulatedText;
-                        currentActiveInput = '';
-                        updateViewerDisplay(accumulatedText, true);
+                        
+                        // 현재 입력 중인 텍스트는 유지하면서 화면 업데이트
+                        const fullText = accumulatedText + currentActiveInput;
+                        updateViewerDisplay(fullText, true);
+                        
+                        console.log('[역할 전환] 누적 텍스트 갱신:', 
+                            oldAccumulated.length, '→', accumulatedText.length, '자');
                     }
                     
                     showNotification(`속기사 ${activeStenographer} 활성화`);
                 });
                 
                 socket.on('clear_text', () => {
-                    console.log('[Socket] 텍스트 클리어');
+                    console.log('[Socket] 텍스트 클리어 (명시적 초기화)');
+                    // clear_text는 명시적인 초기화 명령이므로 모두 비움
                     accumulatedText = '';
                     currentActiveInput = '';
                     updateViewerDisplay('', true);
@@ -551,11 +572,16 @@ function connectToSocket() {
                 });
                 
                 socket.on('viewer_text_update', (data) => {
-                    console.log('[Socket] viewer_text_update 이벤트:', data);
+                    console.log('[Socket] viewer_text_update 이벤트 수신 (무시됨):', data);
+                    // ⚠️ 전체 덮어쓰기 방지: 이 이벤트는 로컬 누적 상태를 깨뜨릴 수 있어 비활성화
+                    // 서버가 엔터 시점에 이 이벤트를 보내면 초기화된 것처럼 보일 수 있음
+                    // 필요시 서버 동작 확인 후 조건부로 재활성화 가능
+                    /*
                     if (data.text !== undefined) {
                         viewerText.textContent = data.text || '자막 대기 중...';
                         viewerText.scrollTop = viewerText.scrollHeight;
                     }
+                    */
                 });
                 
                 socket.onAny((eventName, ...args) => {
