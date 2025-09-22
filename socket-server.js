@@ -1,5 +1,5 @@
 // socket-server.js - 관리자 API 포함 완전판
-// NUA STUDIO 실시간 협업 속기 서버 v2.0
+// NUA STUDIO 실시간 협업 속기 서버 v2.0 - 수정판
 
 const express = require('express');
 const http = require('http');
@@ -48,6 +48,10 @@ const recentMessages = new Map();
 const channelBackups = {};
 const connectionStats = new Map();
 
+// 교대 쿨다운 관리 (서버에서 관리)
+const channelSwitchCooldowns = {};
+const SWITCH_COOLDOWN_MS = 600; // 0.6초 쿨다운 (실사용 최적화)
+
 // =========================
 // Helper 함수들
 // =========================
@@ -65,7 +69,8 @@ function ensureActiveConsistent(channel) {
       activeStenographer: 'steno1', 
       accumulatedText: '', 
       lastSwitchText: '',
-      lastActivity: Date.now()
+      lastActivity: Date.now(),
+      lastSwitchTime: 0  // 교대 시간 추가
     };
   }
   
@@ -90,6 +95,19 @@ function broadcastActiveRole(io, channel) {
   const active = ensureActiveConsistent(channel);
   io.to(channel).emit('active_role', { active });
   return active;
+}
+
+// 교대 쿨다운 체크 함수 추가
+function canSwitch(channel) {
+  if (!channelSwitchCooldowns[channel]) {
+    return true;
+  }
+  const now = Date.now();
+  return (now - channelSwitchCooldowns[channel]) >= SWITCH_COOLDOWN_MS;
+}
+
+function updateSwitchCooldown(channel) {
+  channelSwitchCooldowns[channel] = Date.now();
 }
 
 function backupChannelState(channel) {
@@ -130,6 +148,7 @@ function cleanupInactiveChannels() {
       delete stenoChannels[channel];
       delete channelEditStates[channel];
       delete channelBackups[channel];
+      delete channelSwitchCooldowns[channel];
       channelDatabase.delete(channel);
       cleanedCount++;
     }
@@ -477,6 +496,7 @@ app.delete('/api/admin/channel/:code', requireAuth, (req, res) => {
     delete stenoChannels[code];
     delete channelEditStates[code];
     delete channelBackups[code];
+    delete channelSwitchCooldowns[code];
     channelDatabase.delete(code);
     
     // 연결된 사용자들 강제 퇴장
@@ -508,6 +528,7 @@ app.post('/api/admin/reset-all', requireAuth, (req, res) => {
     Object.keys(stenoChannels).forEach(key => delete stenoChannels[key]);
     Object.keys(channelEditStates).forEach(key => delete channelEditStates[key]);
     Object.keys(channelBackups).forEach(key => delete channelBackups[key]);
+    Object.keys(channelSwitchCooldowns).forEach(key => delete channelSwitchCooldowns[key]);
     
     console.log(`[관리자] 전체 초기화 - ${channelCount}개 채널 삭제됨`);
     res.json({ 
@@ -895,7 +916,8 @@ io.on('connection', (socket) => {
             activeStenographer: 'steno1',
             accumulatedText: '',
             lastSwitchText: '',
-            lastActivity: Date.now()
+            lastActivity: Date.now(),
+            lastSwitchTime: 0
           };
         }
       }
@@ -1036,17 +1058,24 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 역할 전환
+  // 역할 전환 - 핵심 수정 부분
   socket.on('switch_role', ({ channel, newActive, matchedText, manual, reason, matchStartIndex, matchWordCount }) => {
     try {
       const ch = channel || socket.data.channel;
+      
+      // 쿨다운 체크
+      if (!manual && !canSwitch(ch)) {
+        console.log(`[${ch}] Switch denied - cooldown active`);
+        return;
+      }
       
       if (!channelStates[ch]) {
         channelStates[ch] = {
           activeStenographer: 'steno1',
           accumulatedText: '',
           lastSwitchText: '',
-          lastActivity: Date.now()
+          lastActivity: Date.now(),
+          lastSwitchTime: 0
         };
       }
       
@@ -1057,38 +1086,52 @@ io.on('connection', (socket) => {
         return;
       }
       
+      // 중요: 이전 권한자를 변경 전에 저장
+      const previousActive = channelStates[ch].activeStenographer;
       const currentActive = ensureActiveConsistent(ch);
+      
       if (currentActive === newActive) {
         console.log(`[${ch}] Switch aborted - ${newActive} already active`);
         return;
       }
       
-      const previousActive = currentActive;
+      // 상태 업데이트 (emit 전에)
       channelStates[ch].activeStenographer = newActive;
       channelStates[ch].lastActivity = Date.now();
+      channelStates[ch].lastSwitchTime = Date.now();
       
+      // 이전 권한자 관련 임시값 초기화 (확장성)
+      channelStates[ch].lastSwitchText = '';
+      
+      // 쿨다운 업데이트
+      updateSwitchCooldown(ch);
+      
+      // 중요: matchedText로 누적 텍스트를 덮어쓰지 않음!
+      // 누적 텍스트 관리는 text_sent 이벤트에서만 처리
       if (matchedText && matchedText.trim()) {
-        const before = channelStates[ch].accumulatedText.length;
-        channelStates[ch].accumulatedText = matchedText;
-        const after = channelStates[ch].accumulatedText.length;
-        
+        // 로그만 남기고 누적 텍스트는 건드리지 않음
+        console.log(`[${ch}] Switch with matchedText(len=${matchedText.length})`);
+        // 필요시 백업만
         backupChannelState(ch);
-        console.log(`[${ch}] Text accumulated: ${before} -> ${after} chars`);
       }
       
-      broadcastActiveRole(io, ch);
-      
+      // 중요: switch_role을 먼저 emit (previousActive 포함)
       io.to(ch).emit('switch_role', {
         newActive,
-        matchedText,
-        accumulatedText: channelStates[ch].accumulatedText,
-        previousActive,
+        previousActive,  // 이전 권한자 정보 추가!
+        matchedText,  // 클라이언트가 참고용으로 사용
+        accumulatedText: channelStates[ch].accumulatedText,  // 현재 누적 텍스트 (변경 안 함)
         manual: !!manual,
         matchStartIndex,
-        matchWordCount
+        matchWordCount,
+        ts: Date.now()  // 디버깅용 타임스탬프
       });
       
+      // 그 다음에 active_role emit (순서 중요!)
+      broadcastActiveRole(io, ch);
+      
       console.log(`[${ch}] ${manual ? 'Manual' : 'Auto'} switch: ${previousActive} -> ${newActive}`);
+      
     } catch (error) {
       console.error('[switch_role] Error:', error);
     }
@@ -1104,7 +1147,8 @@ io.on('connection', (socket) => {
           activeStenographer: 'steno1',
           accumulatedText: '',
           lastSwitchText: '',
-          lastActivity: Date.now()
+          lastActivity: Date.now(),
+          lastSwitchTime: 0
         };
       }
       
@@ -1118,8 +1162,13 @@ io.on('connection', (socket) => {
       const previousActive = channelStates[ch].activeStenographer;
       channelStates[ch].activeStenographer = newActive;
       channelStates[ch].lastActivity = Date.now();
+      channelStates[ch].lastSwitchTime = Date.now();
+      updateSwitchCooldown(ch);
       
-      io.to(ch).emit('force_role_switch', { newActive, previousActive });
+      io.to(ch).emit('force_role_switch', { 
+        newActive, 
+        previousActive  // 강제 전환시에도 이전 권한자 정보 추가
+      });
       console.log(`[${ch}] Force switch: ${previousActive} -> ${newActive} (${reason})`);
     } catch (error) {
       console.error('[force_role_switch] Error:', error);
