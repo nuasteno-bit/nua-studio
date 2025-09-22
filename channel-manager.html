@@ -11,11 +11,7 @@
       const token = localStorage.getItem('adminToken');
       const role = localStorage.getItem('adminRole');
       
-      // 토큰이 없거나 system_admin 역할이 아니면 즉시 리다이렉트
-      // ⚠️ 중요: 백엔드의 역할 문자열과 정확히 일치해야 함
-      // 예시: 'system_admin', 'admin', 'super', 'owner' 등
-      // 실제 백엔드에서 사용하는 값으로 변경 필요
-      const REQUIRED_ROLE = 'system_admin';  // TODO: 실제 백엔드 역할 문자열로 변경
+      const REQUIRED_ROLE = 'system_admin';
       
       if (!token || role !== REQUIRED_ROLE) {
         window.location.replace('index.html');
@@ -24,14 +20,12 @@
     })();
   </script>
   
-  <!-- 변경: Contact/About과 동일한 폰트 추가 -->
   <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css?family=Poppins:100,100italic,200,200italic,300,300italic,regular,italic,500,500italic,600,600italic,700,700italic,800,800italic,900,900italic" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css?family=Ubuntu:300,300italic,regular,italic,500,500italic,700,700italic" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xeicon@2.3.3/xeicon.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
   
-  <!-- 변경: GSAP 추가 (About/Contact 애니메이션용) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
   
@@ -43,646 +37,417 @@
     }
     
     :root {
-      --black: #000000;
-      --white: #ffffff;
-      --gray: #666666;
-      --light-gray: #f5f5f5;
-      --neon-blue: #00f0ff;
-      --neon-purple: #a259ff;
-      --accent-gradient: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
-      --ease: cubic-bezier(0.19, 1, 0.22, 1);
+      --primary: #2563eb;
+      --primary-dark: #1e40af;
+      --secondary: #64748b;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --dark: #0f172a;
+      --gray-50: #f8fafc;
+      --gray-100: #f1f5f9;
+      --gray-200: #e2e8f0;
+      --gray-300: #cbd5e1;
+      --gray-400: #94a3b8;
+      --gray-500: #64748b;
+      --gray-600: #475569;
+      --gray-700: #334155;
+      --gray-800: #1e293b;
+      --gray-900: #0f172a;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+      --radius: 8px;
+      --radius-lg: 12px;
     }
     
-    /* 변경: About/Contact 스타일 적용 */
     body {
-      background: #fff;
-      color: #000;
+      background: var(--gray-50);
+      color: var(--gray-900);
       font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
       margin: 0;
       padding: 0;
       min-height: 100vh;
-      line-height: 1;
+      line-height: 1.5;
     }
     
-    /* Scroll styles */
-    html::-webkit-scrollbar {width: 8px;}
-    html::-webkit-scrollbar-thumb {background-color: #2f3542; border-radius: 10px;}
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
     
-    /* General wrapper styles */
-    .wrap {margin: 0 auto; width: 95%;}
-    .wrap[max='1708'] {max-width: 1708px;}
-    .wrap[max='1440'] {max-width: 1440px;}
+    ::-webkit-scrollbar-thumb {
+      background-color: var(--gray-300);
+      border-radius: 4px;
+    }
     
-    /* Header - About/Contact 스타일 적용 */
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: var(--gray-400);
+    }
+    
+    /* Header */
     .header {
       position: fixed;
       top: 0;
       left: 0;
-      width: 100%;
-      background: transparent;
+      right: 0;
+      background: white;
       z-index: 1000;
-      padding: 2rem 0;
-      transition: all 0.3s ease;
+      border-bottom: 1px solid var(--gray-200);
+      height: 64px;
     }
     
-    .header.scrolled {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      box-shadow: 0 2px 20px rgba(0,0,0,0.05);
-      padding: 1rem 0;
-    }
-    
-    .header .wrap {
+    .header-content {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
     
-    .header .logo {
-      width: 122px;
-      flex-shrink: 0;
-      position: relative;
-      z-index: 101;
+    .logo {
+      width: 100px;
     }
     
-    .header .logo svg {
+    .logo svg {
       width: 100%;
       height: auto;
     }
     
-    .header .logo svg path {
-      fill: #000;
+    .logo svg path {
+      fill: var(--primary);
     }
     
-    .header .logo svg text {
-      fill: #fff;
+    .logo svg text {
+      fill: white;
     }
     
-    .header .menu {
-      font-size: 20px;
+    .nav-menu {
       display: flex;
       align-items: center;
-    }
-    
-    .header .menu ul {
-      display: flex;
-      align-items: center;
-      gap: 3rem;
+      gap: 8px;
       list-style: none;
     }
     
-    .header .menu li {
-      font-size: inherit;
-      font-weight: 700;
-      letter-spacing: 0.025em;
-      font-family: 'Ubuntu', sans-serif;
-      position: relative;
-      transition: .4s;
-      color: #000;
-    }
-    
-    .header .menu li.active {
-      color: var(--neon-blue);
-    }
-    
-    .header .menu li a {
-      position: relative;
-      z-index: 1;
-      padding: 5px;
-      color: inherit;
+    .nav-menu li a {
+      padding: 8px 16px;
+      color: var(--gray-600);
       text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: var(--radius);
+      transition: all 0.2s;
     }
     
-    .header .menu li::before {
-      content: '';
-      z-index: -1;
-      position: absolute;
-      top: 0;
-      left: 0;
-      display: block;
-      width: 0%;
-      height: 100%;
-      background: var(--neon-blue);
-      transition: .4s;
+    .nav-menu li a:hover {
+      background: var(--gray-100);
+      color: var(--gray-900);
     }
     
-    .header .menu li:hover::before {
-      width: 100%;
+    .nav-menu li.active a {
+      background: var(--primary);
+      color: white;
     }
     
-    /* 변경: Hero Section 추가 (About/Contact 스타일) */
-    .cm-hero {
-      position: relative;
+    /* Main Layout */
+    .main-container {
+      padding-top: 64px;
       min-height: 100vh;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      background: #000;
+      flex-direction: column;
     }
     
-    .cm-hero-title {
-      position: relative;
-      z-index: 2;
-      text-align: center;
-      opacity: 0;
-      transform: translateY(30px);
+    .page-header {
+      background: white;
+      border-bottom: 1px solid var(--gray-200);
+      padding: 24px;
     }
     
-    .cm-hero-title h1 {
-      font-family: 'Poppins', sans-serif;
-      font-size: clamp(80px, 10vw, 160px);
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      color: transparent;
-      -webkit-text-stroke: 2px var(--neon-blue);
-      margin-bottom: 2rem;
-      position: relative;
-      display: inline-block;
-    }
-    
-    .cm-hero-title h1::after {
-      content: 'CHANNEL';
-      position: absolute;
-      left: 10px;
-      top: 10px;
-      z-index: -1;
-      background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-      -webkit-text-stroke: 0;
-    }
-    
-    .cm-hero-subtitle {
-      font-family: 'Poppins', sans-serif;
-      font-size: 1.5rem;
-      color: #fff;
-      opacity: 0.8;
-      margin-bottom: 1rem;
-    }
-    
-    .cm-hero-desc {
-      font-family: 'Pretendard', sans-serif;
-      font-size: 1.1rem;
-      color: #fff;
-      opacity: 0.6;
-    }
-    
-    /* 변경: Floating objects (About/Contact 스타일) */
-    .cm-objects {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: 0;
-      filter: url(#gooey);
-      opacity: 0;
-    }
-    
-    .cm-obj {
-      position: absolute;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
-      opacity: 0.3;
-    }
-    
-    .cm-obj:nth-child(1) {
-      width: 200px;
-      height: 200px;
-      top: 10%;
-      left: 10%;
-      animation: float1 8s ease-in-out infinite;
-    }
-    
-    .cm-obj:nth-child(2) {
-      width: 150px;
-      height: 150px;
-      top: 60%;
-      right: 15%;
-      animation: float2 10s ease-in-out infinite;
-    }
-    
-    .cm-obj:nth-child(3) {
-      width: 100px;
-      height: 100px;
-      bottom: 20%;
-      left: 30%;
-      animation: float3 6s ease-in-out infinite;
-    }
-    
-    @keyframes float1 {
-      0%, 100% { transform: translate(0, 0) scale(1); }
-      50% { transform: translate(30px, -50px) scale(0.9); }
-    }
-    
-    @keyframes float2 {
-      0%, 100% { transform: translate(0, 0) scale(1); }
-      50% { transform: translate(-40px, 30px) scale(1.1); }
-    }
-    
-    @keyframes float3 {
-      0%, 100% { transform: translate(0, 0) scale(1); }
-      50% { transform: translate(20px, -30px) scale(0.95); }
-    }
-    
-    /* Container 조정 */
-    .container {
+    .page-header-content {
       max-width: 1440px;
       margin: 0 auto;
-      padding: 2rem;
-      position: relative;
-      z-index: 1;
     }
     
-    /* 변경: Section Title (About/Contact 스타일) */
-    .cm-section-title {
-      text-align: center;
-      margin: 6rem 0 4rem;
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    
-    .cm-section-title span {
-      font-family: 'Poppins', sans-serif;
-      font-size: 1rem;
-      font-weight: 500;
-      color: var(--neon-blue);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      display: block;
-      margin-bottom: 1rem;
-    }
-    
-    .cm-section-title h2 {
-      font-family: 'Poppins', sans-serif;
-      font-size: 3rem;
+    .page-title {
+      font-size: 24px;
       font-weight: 700;
-      color: #000;
-      letter-spacing: -0.02em;
-      position: relative;
-      display: inline-block;
+      color: var(--gray-900);
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
     }
     
-    .cm-section-title h2 b {
-      background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
+    .page-subtitle {
+      font-size: 14px;
+      color: var(--gray-500);
+      margin-top: 4px;
     }
     
-    /* Stats Dashboard - 리디자인 */
-    .stats-dashboard {
+    .content-wrapper {
+      flex: 1;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 24px;
+      width: 100%;
+    }
+    
+    /* Dashboard Grid */
+    .dashboard-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 2rem;
-      margin: 4rem 0;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    
+    /* Stats Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
     }
     
     .stat-card {
-      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-      border: 2px solid transparent;
-      background-clip: padding-box;
-      border-radius: 20px;
-      padding: 2rem;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-      transition: all 0.3s ease;
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    
-    .stat-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: var(--accent-gradient);
-      border-radius: 20px;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      z-index: -1;
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      padding: 16px;
+      transition: all 0.2s;
     }
     
     .stat-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 40px rgba(0, 240, 255, 0.2);
-      border-color: var(--neon-blue);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
     }
     
-    .stat-card:hover::before {
-      opacity: 0.05;
-    }
-    
-    .stat-number {
-      font-size: 3rem;
+    .stat-value {
+      font-size: 28px;
       font-weight: 700;
-      background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 0.5rem;
-      font-family: 'Poppins', sans-serif;
+      color: var(--primary);
+      line-height: 1;
+      margin-bottom: 4px;
     }
     
     .stat-label {
-      font-size: 0.9rem;
-      color: #666;
+      font-size: 12px;
+      color: var(--gray-500);
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      font-family: 'Pretendard', sans-serif;
-      font-weight: 500;
+      letter-spacing: 0.025em;
     }
     
-    /* Create Channel Section - 리디자인 */
-    .create-section {
-      background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
-      border: 2px solid transparent;
-      background-clip: padding-box;
-      border-radius: 30px;
-      padding: 3rem;
-      margin: 4rem 0;
-      position: relative;
-      overflow: hidden;
-      opacity: 0;
-      transform: translateY(30px);
+    /* Create Channel Panel */
+    .create-panel {
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 20px;
     }
     
-    .create-section::before {
-      content: '';
-      position: absolute;
-      top: -2px;
-      left: -2px;
-      right: -2px;
-      bottom: -2px;
-      background: var(--accent-gradient);
-      border-radius: 30px;
-      z-index: -1;
-    }
-    
-    .section-title {
-      font-size: 2rem;
-      font-weight: 700;
-      margin-bottom: 2rem;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      font-family: 'Poppins', sans-serif;
-      letter-spacing: -0.02em;
-    }
-    
-    .create-form {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 2rem;
+    .panel-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--gray-900);
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--gray-200);
     }
     
     .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.8rem;
+      margin-bottom: 16px;
     }
     
     .form-label {
-      font-size: 0.9rem;
-      color: var(--neon-blue);
-      font-family: 'Poppins', sans-serif;
+      display: block;
+      font-size: 12px;
       font-weight: 500;
-      letter-spacing: 0.05em;
+      color: var(--gray-600);
+      margin-bottom: 6px;
       text-transform: uppercase;
+      letter-spacing: 0.025em;
     }
     
-    input[type="text"], input[type="number"], input[type="datetime-local"], select {
-      padding: 1rem 1.2rem;
-      border-radius: 12px;
-      border: 2px solid rgba(255,255,255,0.1);
-      background: rgba(255,255,255,0.05);
-      color: #fff;
-      font-family: 'Pretendard', sans-serif;
-      font-size: 1rem;
-      letter-spacing: 0.02em;
-      transition: all 0.3s ease;
+    .input-group {
+      display: flex;
+      gap: 8px;
+    }
+    
+    input[type="text"],
+    input[type="number"],
+    input[type="datetime-local"],
+    select {
       width: 100%;
-      height: 50px;
+      padding: 8px 12px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      font-size: 14px;
+      color: var(--gray-900);
+      background: white;
+      transition: all 0.2s;
     }
     
-    input:focus, select:focus {
+    input:focus,
+    select:focus {
       outline: none;
-      border-color: var(--neon-blue);
-      background: rgba(0, 240, 255, 0.05);
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgb(37 99 235 / 0.1);
     }
     
     input::placeholder {
-      color: rgba(255,255,255,0.3);
+      color: var(--gray-400);
     }
     
-    /* Quick Actions - 리디자인 */
-    .quick-actions {
+    /* Channel Type Radio */
+    .radio-group {
       display: flex;
-      gap: 1.5rem;
-      margin: 2rem 0;
-      justify-content: center;
-      flex-wrap: wrap;
+      gap: 8px;
     }
     
-    .quick-btn {
-      padding: 1.2rem 2rem;
-      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-      border: 2px solid #e0e0e0;
-      border-radius: 15px;
-      color: #000;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-size: 1rem;
-      font-family: 'Pretendard', sans-serif;
-      font-weight: 600;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .quick-btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 0;
-      height: 100%;
-      background: var(--accent-gradient);
-      transition: width 0.4s ease;
-      z-index: -1;
-    }
-    
-    .quick-btn:hover {
-      color: #fff;
-      border-color: var(--neon-blue);
-      transform: translateY(-3px);
-      box-shadow: 0 10px 30px rgba(0, 240, 255, 0.3);
-    }
-    
-    .quick-btn:hover::before {
-      width: 100%;
-    }
-    
-    /* Channel Type Radio - 리디자인 */
-    .channel-types {
-      display: flex;
-      gap: 1rem;
-    }
-    
-    .type-option {
+    .radio-option {
       flex: 1;
       position: relative;
     }
     
-    .type-option input[type="radio"] {
+    .radio-option input {
       position: absolute;
       opacity: 0;
     }
     
-    .type-label {
+    .radio-label {
       display: block;
-      padding: 1rem;
-      background: rgba(255,255,255,0.05);
-      border: 2px solid rgba(255,255,255,0.1);
-      border-radius: 12px;
+      padding: 8px;
+      background: var(--gray-50);
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
       text-align: center;
       cursor: pointer;
-      transition: all 0.3s ease;
-      color: rgba(255,255,255,0.6);
-      font-family: 'Pretendard', sans-serif;
+      font-size: 13px;
       font-weight: 500;
+      color: var(--gray-600);
+      transition: all 0.2s;
     }
     
-    .type-label:hover {
-      background: rgba(0, 240, 255, 0.1);
-      border-color: var(--neon-blue);
-      color: #fff;
+    .radio-label:hover {
+      background: var(--gray-100);
     }
     
-    .type-option input[type="radio"]:checked + .type-label {
-      background: var(--accent-gradient);
-      border-color: transparent;
-      color: #fff;
-      font-weight: 600;
+    .radio-option input:checked + .radio-label {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
     }
     
-    .passkey-group {
-      display: flex;
-      gap: 0.8rem;
-      align-items: flex-end;
-    }
-    
-    .passkey-group input {
-      flex: 1;
-    }
-    
-    .dice-button {
-      background: rgba(255,255,255,0.1);
-      border: 2px solid rgba(255,255,255,0.2);
-      border-radius: 12px;
-      padding: 0;
+    /* Buttons */
+    .btn {
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 500;
       cursor: pointer;
-      color: #fff;
-      font-size: 1.5rem;
-      transition: all 0.3s ease;
-      height: 50px;
-      width: 50px;
-      display: flex;
+      transition: all 0.2s;
+      border: none;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-    }
-    
-    .dice-button:hover {
-      color: var(--neon-blue);
-      background: rgba(0, 240, 255, 0.1);
-      border-color: var(--neon-blue);
-      transform: rotate(180deg) scale(1.1);
+      gap: 6px;
     }
     
     .btn-primary {
-      background: var(--accent-gradient);
-      color: #fff;
-      padding: 1rem 3rem;
-      border: none;
-      border-radius: 50px;
-      cursor: pointer;
-      font-size: 1.1rem;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      font-family: 'Poppins', sans-serif;
-      letter-spacing: 0.02em;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .btn-primary::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 0;
-      height: 0;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.3);
-      transform: translate(-50%, -50%);
-      transition: width 0.6s, height 0.6s;
+      background: var(--primary);
+      color: white;
     }
     
     .btn-primary:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 40px rgba(0, 240, 255, 0.4);
+      background: var(--primary-dark);
     }
     
-    .btn-primary:hover::before {
-      width: 300px;
-      height: 300px;
+    .btn-secondary {
+      background: var(--gray-100);
+      color: var(--gray-700);
+      border: 1px solid var(--gray-300);
     }
     
-    /* Channel List Table - 리디자인 */
-    .channel-list {
-      background: #fff;
-      border: 2px solid #f0f0f0;
-      border-radius: 30px;
+    .btn-secondary:hover {
+      background: var(--gray-200);
+    }
+    
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+    
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+    
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      font-size: 18px;
+    }
+    
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+    
+    .btn-block {
+      width: 100%;
+    }
+    
+    /* Quick Actions */
+    .quick-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--gray-200);
+    }
+    
+    /* Channel Table */
+    .table-panel {
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
       overflow: hidden;
-      margin: 4rem 0;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.05);
-      opacity: 0;
-      transform: translateY(30px);
     }
     
-    .list-header {
-      padding: 2rem;
-      border-bottom: 2px solid #f0f0f0;
+    .table-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--gray-200);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+      background: var(--gray-50);
+    }
+    
+    .table-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--gray-900);
     }
     
     .search-box {
       display: flex;
-      gap: 1rem;
-      align-items: center;
+      gap: 8px;
     }
     
     .search-box input {
-      width: 300px;
-      padding: 0.8rem 1.2rem;
-      font-size: 0.95rem;
-      border: 2px solid #e0e0e0;
-      border-radius: 12px;
-      transition: all 0.3s ease;
-      font-family: 'Pretendard', sans-serif;
+      width: 200px;
+      padding: 6px 12px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      font-size: 13px;
     }
     
-    .search-box input:focus {
-      border-color: var(--neon-blue);
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
+    .table-wrapper {
+      overflow-x: auto;
     }
     
     table {
@@ -691,158 +456,95 @@
     }
     
     thead {
-      background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
-      border-bottom: 2px solid #f0f0f0;
+      background: var(--gray-50);
+      border-bottom: 1px solid var(--gray-200);
     }
     
     th {
-      padding: 1.5rem 1rem;
+      padding: 12px;
       text-align: left;
-      font-size: 0.85rem;
-      color: #666;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      font-family: 'Poppins', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gray-600);
       text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
     
     td {
-      padding: 1.2rem 1rem;
-      border-bottom: 1px solid #f0f0f0;
-      font-size: 0.95rem;
-      font-family: 'Pretendard', sans-serif;
-    }
-    
-    tbody tr {
-      transition: all 0.3s ease;
-      background: #fff;
+      padding: 12px;
+      border-bottom: 1px solid var(--gray-100);
+      font-size: 14px;
+      color: var(--gray-700);
     }
     
     tbody tr:hover {
-      background: linear-gradient(135deg, rgba(0,240,255,0.03) 0%, rgba(162,89,255,0.03) 100%);
-      transform: translateX(5px);
+      background: var(--gray-50);
     }
     
     .channel-code {
       font-family: 'Poppins', sans-serif;
-      font-weight: 700;
-      color: #000;
-      letter-spacing: 0.05em;
+      font-weight: 600;
+      color: var(--primary);
       cursor: pointer;
-      font-size: 1.1rem;
-      transition: color 0.3s ease;
     }
     
     .channel-code:hover {
-      color: var(--neon-blue);
+      text-decoration: underline;
     }
     
     .badge {
-      padding: 0.4rem 0.8rem;
-      border-radius: 20px;
-      font-size: 0.75rem;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
       font-weight: 600;
       display: inline-block;
-      font-family: 'Poppins', sans-serif;
-      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
     }
     
     .badge.public {
-      background: linear-gradient(135deg, #4ecdc4, #44a3aa);
-      color: #fff;
-      border: none;
+      background: var(--success);
+      color: white;
     }
     
     .badge.secured {
-      background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
-      color: #fff;
-      border: none;
+      background: var(--gray-600);
+      color: white;
     }
     
     .passkey {
-      font-family: 'Poppins', sans-serif;
-      background: #f5f5f5;
-      padding: 0.3rem 0.6rem;
-      border-radius: 8px;
-      border: 1px solid #e0e0e0;
-      font-weight: 600;
-      letter-spacing: 0.1em;
+      font-family: monospace;
+      background: var(--gray-100);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
     }
     
-    .active-count {
-      display: flex;
+    .user-count {
+      display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 6px;
     }
     
-    .count-dot {
-      width: 10px;
-      height: 10px;
-      background: #4ecdc4;
+    .status-dot {
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
+      background: var(--success);
       animation: pulse 2s infinite;
     }
     
     @keyframes pulse {
-      0% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.6; transform: scale(1.2); }
-      100% { opacity: 1; transform: scale(1); }
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
     }
     
-    .actions {
+    .table-actions {
       display: flex;
-      gap: 0.5rem;
+      gap: 4px;
     }
     
-    .btn-small {
-      padding: 0.5rem 1rem;
-      border: 2px solid #e0e0e0;
-      background: #fff;
-      color: #666;
-      border-radius: 8px;
-      font-size: 0.8rem;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-family: 'Pretendard', sans-serif;
-      font-weight: 600;
-    }
-    
-    .btn-small:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    
-    .btn-small.manage {
-      border-color: var(--neon-blue);
-      color: var(--neon-blue);
-    }
-    
-    .btn-small.manage:hover {
-      background: var(--neon-blue);
-      color: #fff;
-    }
-    
-    .btn-small.copy {
-      border-color: #4ecdc4;
-      color: #4ecdc4;
-    }
-    
-    .btn-small.copy:hover {
-      background: #4ecdc4;
-      color: #fff;
-    }
-    
-    .btn-small.delete {
-      border-color: #e06c75;
-      color: #e06c75;
-    }
-    
-    .btn-small.delete:hover {
-      background: #e06c75;
-      color: #fff;
-    }
-    
-    /* Modal - 리디자인 */
+    /* Modal */
     .modal {
       display: none;
       position: fixed;
@@ -850,8 +552,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      backdrop-filter: blur(10px);
+      background: rgba(0, 0, 0, 0.5);
       z-index: 2000;
       align-items: center;
       justify-content: center;
@@ -862,223 +563,139 @@
     }
     
     .modal-content {
-      background: #fff;
-      border: 2px solid var(--neon-blue);
-      border-radius: 30px;
-      padding: 2.5rem;
-      max-width: 650px;
+      background: white;
+      border-radius: var(--radius-lg);
       width: 90%;
-      max-height: 80vh;
+      max-width: 600px;
+      max-height: 90vh;
       overflow-y: auto;
-      position: relative;
-    }
-    
-    .modal-content::before {
-      content: '';
-      position: absolute;
-      top: -10px;
-      left: -10px;
-      right: -10px;
-      bottom: -10px;
-      background: var(--accent-gradient);
-      border-radius: 30px;
-      z-index: -1;
-      opacity: 0.3;
-      filter: blur(20px);
+      box-shadow: var(--shadow-xl);
     }
     
     .modal-header {
-      margin-bottom: 2rem;
-      padding-bottom: 1.5rem;
-      border-bottom: 2px solid #f0f0f0;
+      padding: 20px;
+      border-bottom: 1px solid var(--gray-200);
     }
     
     .modal-title {
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: #000;
-      font-family: 'Poppins', sans-serif;
-      letter-spacing: -0.02em;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--gray-900);
     }
     
-    .modal-title span {
-      color: var(--neon-blue);
+    .modal-body {
+      padding: 20px;
     }
     
     .modal-section {
-      margin-bottom: 2rem;
+      margin-bottom: 20px;
     }
     
     .modal-section h4 {
-      color: var(--neon-purple);
-      font-size: 0.9rem;
-      margin-bottom: 1rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      font-family: 'Poppins', sans-serif;
+      font-size: 12px;
       font-weight: 600;
+      color: var(--gray-600);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
     }
     
     .url-group {
       display: flex;
-      gap: 0.8rem;
-      margin-bottom: 1rem;
+      gap: 8px;
+      margin-bottom: 8px;
     }
     
     .url-input {
       flex: 1;
-      padding: 0.8rem;
-      background: #f5f5f5;
-      border: 2px solid #e0e0e0;
-      border-radius: 10px;
-      color: #666;
-      font-family: 'Pretendard', sans-serif;
-      font-size: 0.9rem;
+      padding: 8px 12px;
+      background: var(--gray-50);
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-family: monospace;
     }
     
-    .copy-btn {
-      padding: 0.8rem 1.5rem;
-      background: var(--accent-gradient);
-      border: none;
-      border-radius: 10px;
-      color: #fff;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-family: 'Pretendard', sans-serif;
-      font-weight: 600;
-    }
-    
-    .copy-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 20px rgba(0, 240, 255, 0.3);
-    }
-    
-    .type-toggle {
-      display: flex;
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-    
-    .type-toggle-btn {
-      flex: 1;
-      padding: 1rem;
-      background: #f5f5f5;
-      border: 2px solid #e0e0e0;
-      border-radius: 12px;
-      color: #666;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-size: 0.95rem;
-      font-family: 'Pretendard', sans-serif;
-      font-weight: 600;
-    }
-    
-    .type-toggle-btn.active {
-      background: var(--accent-gradient);
-      color: #fff;
-      border-color: transparent;
-    }
-    
-    .type-toggle-btn:hover:not(.active) {
-      background: #fff;
-      border-color: var(--neon-blue);
-      color: var(--neon-blue);
-    }
-    
-    .status-info {
+    .status-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 1.5rem;
-      padding: 1.5rem;
-      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-      border-radius: 15px;
-      border: 2px solid #f0f0f0;
+      gap: 16px;
+      padding: 16px;
+      background: var(--gray-50);
+      border-radius: var(--radius);
     }
     
     .status-item {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 4px;
     }
     
     .status-label {
-      font-size: 0.8rem;
-      color: #888;
-      font-family: 'Poppins', sans-serif;
+      font-size: 11px;
+      color: var(--gray-500);
       text-transform: uppercase;
-      letter-spacing: 0.05em;
     }
     
     .status-value {
-      font-size: 1.3rem;
-      color: #000;
-      font-weight: 700;
-      font-family: 'Poppins', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--gray-900);
     }
     
     .modal-footer {
-      margin-top: 2rem;
-      padding-top: 1.5rem;
-      border-top: 2px solid #f0f0f0;
+      padding: 16px 20px;
+      border-top: 1px solid var(--gray-200);
       display: flex;
-      gap: 1rem;
+      gap: 8px;
       justify-content: flex-end;
+      background: var(--gray-50);
     }
     
-    /* Footer - 리디자인 */
-    footer {
-      background: #000;
-      text-align: center;
-      padding: 3rem;
-      font-size: 0.9rem;
-      color: #666;
-      margin-top: 6rem;
-      font-family: 'Pretendard', sans-serif;
-      position: relative;
+    .type-toggle {
+      display: flex;
+      gap: 8px;
     }
     
-    footer::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: var(--accent-gradient);
+    .type-toggle-btn {
+      flex: 1;
+      padding: 8px;
+      background: white;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      color: var(--gray-600);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
     }
     
-    /* Loading */
-    .loading {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid #e0e0e0;
-      border-radius: 50%;
-      border-top-color: var(--neon-blue);
-      animation: spin 1s ease-in-out infinite;
+    .type-toggle-btn:hover {
+      background: var(--gray-50);
     }
     
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    .type-toggle-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
     }
     
-    /* Toast Notification - 리디자인 */
+    /* Toast */
     .toast {
       position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      background: #fff;
-      border: 2px solid var(--neon-blue);
-      border-radius: 15px;
-      padding: 1.2rem 2rem;
-      color: #000;
+      bottom: 24px;
+      right: 24px;
+      background: white;
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      box-shadow: var(--shadow-lg);
       z-index: 3000;
       opacity: 0;
       transform: translateY(20px);
-      transition: all 0.3s ease;
-      font-family: 'Pretendard', sans-serif;
-      font-weight: 600;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      transition: all 0.3s;
+      font-size: 14px;
+      font-weight: 500;
+      border-left: 4px solid var(--primary);
     }
     
     .toast.show {
@@ -1087,354 +704,346 @@
     }
     
     .toast.success {
-      border-color: #4ecdc4;
-      background: linear-gradient(135deg, #e8fffe 0%, #ffffff 100%);
+      border-left-color: var(--success);
     }
     
     .toast.error {
-      border-color: #e06c75;
-      background: linear-gradient(135deg, #ffe8e8 0%, #ffffff 100%);
+      border-left-color: var(--danger);
     }
     
-    /* SVG Filter for Gooey effect */
-    svg {
-      display: none;
+    /* Loading */
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--gray-300);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 0.8s linear infinite;
     }
     
-    /* Responsive */
-    @media (max-width: 768px) {
-      .container {
-        padding: 1rem;
-      }
-      
-      .header .menu ul {
-        gap: 1rem;
-        font-size: 16px;
-      }
-      
-      .create-form {
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Footer */
+    footer {
+      background: white;
+      border-top: 1px solid var(--gray-200);
+      text-align: center;
+      padding: 16px;
+      font-size: 12px;
+      color: var(--gray-500);
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 1024px) {
+      .dashboard-grid {
         grid-template-columns: 1fr;
+      }
+      
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    @media (max-width: 640px) {
+      .header-content,
+      .content-wrapper {
+        padding: 0 16px;
+      }
+      
+      .nav-menu {
+        gap: 4px;
+      }
+      
+      .nav-menu li a {
+        padding: 6px 12px;
+        font-size: 13px;
       }
       
       .search-box input {
-        width: 150px;
+        width: 120px;
       }
       
-      table {
-        font-size: 0.8rem;
-      }
-      
-      th, td {
-        padding: 0.8rem 0.5rem;
-      }
-      
-      .actions {
+      .table-actions {
         flex-direction: column;
       }
       
-      .stats-dashboard {
-        grid-template-columns: repeat(2, 1fr);
+      .quick-actions {
+        grid-template-columns: 1fr;
       }
       
-      .cm-hero-title h1 {
-        font-size: clamp(60px, 8vw, 100px);
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .stats-dashboard {
+      .stats-grid {
         grid-template-columns: 1fr;
+      }
+      
+      td {
+        padding: 8px;
+        font-size: 13px;
       }
     }
   </style>
 </head>
 <body>
-  <!-- SVG Filter for Gooey Effect -->
-  <svg>
-    <filter id="gooey">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="10" />
-      <feColorMatrix values="
-        1 0 0 0 0
-        0 1 0 0 0
-        0 0 1 0 0
-        0 0 0 20 -10" />
-    </filter>
-  </svg>
-
-  <!-- Header - 구조 유지, 스타일만 변경 -->
-  <header class="header" id="header">
-    <div class="wrap" max="1708">
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
       <div class="logo">
         <a href="index.html">
           <svg viewBox="0 0 122 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 25C0 11.193 11.193 0 25 0h72c13.807 0 25 11.193 25 25s-11.193 25-25 25H25C11.193 50 0 38.807 0 25z" fill="#000"/>
-            <text x="61" y="32" text-anchor="middle" fill="white" font-family="Poppins" font-size="20" font-weight="700">NUA</text>
+            <path d="M0 25C0 11.193 11.193 0 25 0h72c13.807 0 25 11.193 25 25s-11.193 25-25 25H25C11.193 50 0 38.807 0 25z"/>
+            <text x="61" y="32" text-anchor="middle" font-family="Poppins" font-size="20" font-weight="700">NUA</text>
           </svg>
         </a>
       </div>
-      <div class="menu">
-        <ul>
+      <nav>
+        <ul class="nav-menu">
           <li><a href="index.html">HOME</a></li>
           <li class="active"><a href="#">ADMIN</a></li>
           <li><a href="#" onclick="showStats()">STATS</a></li>
           <li><a href="#" onclick="logout()">LOGOUT</a></li>
         </ul>
-      </div>
+      </nav>
     </div>
   </header>
 
-  <!-- 변경: Hero Section 추가 -->
-  <section class="cm-hero">
-    <div class="cm-objects">
-      <div class="cm-obj"></div>
-      <div class="cm-obj"></div>
-      <div class="cm-obj"></div>
-    </div>
-    
-    <div class="cm-hero-title">
-      <h1>CHANNEL</h1>
-      <p class="cm-hero-subtitle">Real-time Caption Management</p>
-      <p class="cm-hero-desc">NUA STUDIO</p>
-    </div>
-  </section>
-
-  <div class="container">
-    <!-- 변경: Section Title 추가 -->
-    <div class="cm-section-title">
-      <span>Dashboard</span>
-      <h2>Channel <b>Statistics</b></h2>
-    </div>
-
-    <!-- Statistics Dashboard - 구조 유지, 스타일만 변경 -->
-    <div class="stats-dashboard">
-      <div class="stat-card">
-        <div class="stat-number" id="totalChannels">0</div>
-        <div class="stat-label">활성 채널</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number" id="totalUsers">0</div>
-        <div class="stat-label">전체 사용자</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number" id="todayChannels">0</div>
-        <div class="stat-label">오늘 생성</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number" id="avgDuration">0</div>
-        <div class="stat-label">평균 사용시간(분)</div>
+  <!-- Main Container -->
+  <div class="main-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header-content">
+        <h1 class="page-title">Channel Management</h1>
+        <p class="page-subtitle">실시간 자막 채널 관리 시스템</p>
       </div>
     </div>
 
-    <!-- Quick Actions - 구조 유지 -->
-    <div class="quick-actions">
-      <button class="quick-btn" onclick="exportAllData()">
-        📊 전체 데이터 내보내기
-      </button>
-      <button class="quick-btn" onclick="exportAllSubtitles()">
-        📝 전체 자막 내보내기
-      </button>
-    </div>
-
-    <!-- 변경: Section Title 추가 -->
-    <div class="cm-section-title">
-      <span>Create</span>
-      <h2>New <b>Channel</b></h2>
-    </div>
-
-    <!-- Create New Channel - 구조 유지 -->
-    <div class="create-section">
-      <h2 class="section-title">📡 Create New Channel</h2>
-      <form class="create-form" onsubmit="createChannel(event)">
-        <div class="form-group">
-          <label class="form-label">CHANNEL CODE</label>
-          <div class="passkey-group">
-            <input type="text" id="newChannelCode" placeholder="ABCD12" maxlength="6" required />
-            <button type="button" class="dice-button" onclick="generateChannelCode()" title="Generate random code">🎲</button>
-          </div>
+    <!-- Content -->
+    <div class="content-wrapper">
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="totalChannels">0</div>
+          <div class="stat-label">활성 채널</div>
         </div>
+        <div class="stat-card">
+          <div class="stat-value" id="totalUsers">0</div>
+          <div class="stat-label">전체 사용자</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="todayChannels">0</div>
+          <div class="stat-label">오늘 생성</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="avgDuration">0</div>
+          <div class="stat-label">평균 시간(분)</div>
+        </div>
+      </div>
 
-        <div class="form-group">
-          <label class="form-label">CHANNEL TYPE</label>
-          <div class="channel-types">
-            <div class="type-option">
-              <input type="radio" id="typePublic" name="channelType" value="public" />
-              <label class="type-label" for="typePublic">🌐 공개</label>
+      <!-- Dashboard Grid -->
+      <div class="dashboard-grid">
+        <!-- Create Channel Panel -->
+        <div class="create-panel">
+          <h2 class="panel-title">📡 새 채널 생성</h2>
+          <form onsubmit="createChannel(event)">
+            <div class="form-group">
+              <label class="form-label">채널 코드</label>
+              <div class="input-group">
+                <input type="text" id="newChannelCode" placeholder="ABCD12" maxlength="6" required />
+                <button type="button" class="btn btn-secondary btn-icon" onclick="generateChannelCode()" title="Generate">🎲</button>
+              </div>
             </div>
-            <div class="type-option">
-              <input type="radio" id="typeSecured" name="channelType" value="secured" checked />
-              <label class="type-label" for="typeSecured">🔒 비공개</label>
+
+            <div class="form-group">
+              <label class="form-label">채널 타입</label>
+              <div class="radio-group">
+                <div class="radio-option">
+                  <input type="radio" id="typePublic" name="channelType" value="public" />
+                  <label class="radio-label" for="typePublic">🌐 공개</label>
+                </div>
+                <div class="radio-option">
+                  <input type="radio" id="typeSecured" name="channelType" value="secured" checked />
+                  <label class="radio-label" for="typeSecured">🔒 비공개</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group" id="passkeyField">
+              <label class="form-label">패스키 (4자리)</label>
+              <div class="input-group">
+                <input type="text" id="newPasskey" placeholder="1234" maxlength="4" pattern="[0-9]{4}" />
+                <button type="button" class="btn btn-secondary btn-icon" onclick="generatePasskey()" title="Generate">🔐</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">행사명</label>
+              <input type="text" id="eventName" placeholder="예: 2025 신년 세미나" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">행사 일시</label>
+              <input type="datetime-local" id="eventDateTime" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">자동 종료</label>
+              <select id="autoCloseType" onchange="toggleAutoCloseInput()">
+                <option value="none">설정 안함</option>
+                <option value="hours" selected>시간 후</option>
+                <option value="datetime">특정 시간</option>
+              </select>
+              <select id="autoCloseHours" style="margin-top: 8px;">
+                <option value="1">1시간</option>
+                <option value="2" selected>2시간</option>
+                <option value="3">3시간</option>
+                <option value="4">4시간</option>
+                <option value="6">6시간</option>
+                <option value="12">12시간</option>
+                <option value="24">24시간</option>
+              </select>
+              <input type="datetime-local" id="autoCloseDateTime" style="margin-top: 8px; display: none;" />
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" id="createBtn">
+              채널 생성
+            </button>
+          </form>
+
+          <div class="quick-actions">
+            <button class="btn btn-secondary btn-sm" onclick="exportAllData()">
+              📊 데이터 내보내기
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="exportAllSubtitles()">
+              📝 자막 내보내기
+            </button>
+          </div>
+        </div>
+
+        <!-- Channel List Table -->
+        <div class="table-panel">
+          <div class="table-header">
+            <h2 class="table-title">📋 활성 채널 목록</h2>
+            <div class="search-box">
+              <input type="text" placeholder="채널 검색..." onkeyup="searchChannels(this.value)" />
+              <button class="btn btn-secondary btn-sm" onclick="searchChannels(document.querySelector('.search-box input').value)">검색</button>
             </div>
           </div>
-        </div>
-
-        <div class="form-group" id="passkeyField">
-          <label class="form-label">PASSKEY (4 DIGITS)</label>
-          <div class="passkey-group">
-            <input type="text" id="newPasskey" placeholder="1234" maxlength="4" pattern="[0-9]{4}" />
-            <button type="button" class="dice-button" onclick="generatePasskey()" title="Generate random passkey">🔐</button>
+          
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>채널</th>
+                  <th>타입</th>
+                  <th>패스키</th>
+                  <th>사용자</th>
+                  <th>상태</th>
+                  <th>생성시간</th>
+                  <th width="200">관리</th>
+                </tr>
+              </thead>
+              <tbody id="channelTableBody">
+                <tr>
+                  <td colspan="7" style="text-align: center; padding: 32px;">
+                    <div class="loading"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">EVENT NAME</label>
-          <input type="text" id="eventName" placeholder="예: 2025 신년 세미나" />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">EVENT DATE & TIME</label>
-          <input type="datetime-local" id="eventDateTime" />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">AUTO CLOSE</label>
-          <div style="display: flex; gap: 0.5rem;">
-            <select id="autoCloseType" onchange="toggleAutoCloseInput()" style="flex: 1;">
-              <option value="none">자동 종료 안함</option>
-              <option value="hours" selected>시간 후 종료</option>
-              <option value="datetime">특정 시간 종료</option>
-            </select>
-            <select id="autoCloseHours" style="flex: 1;">
-              <option value="1">1시간 후</option>
-              <option value="2" selected>2시간 후</option>
-              <option value="3">3시간 후</option>
-              <option value="4">4시간 후</option>
-              <option value="6">6시간 후</option>
-              <option value="12">12시간 후</option>
-              <option value="24">24시간 후</option>
-            </select>
-            <input type="datetime-local" id="autoCloseDateTime" style="flex: 1; display: none;" />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <button type="submit" class="btn-primary" id="createBtn">CREATE CHANNEL</button>
-        </div>
-      </form>
-    </div>
-
-    <!-- 변경: Section Title 추가 -->
-    <div class="cm-section-title">
-      <span>Manage</span>
-      <h2>Active <b>Channels</b></h2>
-    </div>
-
-    <!-- Channel List - 구조 유지 -->
-    <div class="channel-list">
-      <div class="list-header">
-        <h2 class="section-title">📋 Active Channels</h2>
-        <div class="search-box">
-          <input type="text" placeholder="Search channels..." onkeyup="searchChannels(this.value)" />
-          <button class="btn-small" onclick="searchChannels(document.querySelector('.search-box input').value)">Search</button>
         </div>
       </div>
-      
-      <table>
-        <thead>
-          <tr>
-            <th>CHANNEL</th>
-            <th>TYPE</th>
-            <th>PASSKEY</th>
-            <th>USERS</th>
-            <th>STATUS</th>
-            <th>CREATED</th>
-            <th style="width: 300px;">ACTIONS</th>
-          </tr>
-        </thead>
-        <tbody id="channelTableBody">
-          <tr>
-            <td colspan="7" style="text-align: center; padding: 2rem;">
-              <div class="loading"></div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
     </div>
+
+    <!-- Footer -->
+    <footer>
+      © 2025 NUA STUDIO · Channel Management System
+    </footer>
   </div>
 
-  <!-- Channel Management Modal - 구조 유지 -->
+  <!-- Channel Management Modal -->
   <div class="modal" id="channelModal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">채널 관리: <span id="modalChannelCode"></span></h3>
+        <h3 class="modal-title">채널 관리: <span id="modalChannelCode" style="color: var(--primary);"></span></h3>
       </div>
       
-      <div class="modal-section">
-        <h4>접속 URL</h4>
-        <div class="url-group">
-          <input type="text" class="url-input" id="viewerURL" readonly>
-          <button class="copy-btn" onclick="copyURL('viewerURL')">복사</button>
-        </div>
-        <div class="url-group">
-          <input type="text" class="url-input" id="stenoURL" readonly>
-          <button class="copy-btn" onclick="copyURL('stenoURL')">복사</button>
-        </div>
-      </div>
-      
-      <div class="modal-section">
-        <h4>채널 상태</h4>
-        <div class="status-info">
-          <div class="status-item">
-            <span class="status-label">현재 접속자</span>
-            <span class="status-value" id="modalViewers">0명</span>
+      <div class="modal-body">
+        <div class="modal-section">
+          <h4>접속 URL</h4>
+          <div class="url-group">
+            <input type="text" class="url-input" id="viewerURL" readonly>
+            <button class="btn btn-primary btn-sm" onclick="copyURL('viewerURL')">복사</button>
           </div>
-          <div class="status-item">
-            <span class="status-label">생성 시간</span>
-            <span class="status-value" id="modalCreated">-</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">경과 시간</span>
-            <span class="status-value" id="modalDuration">0분</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">자동 종료</span>
-            <span class="status-value" id="modalAutoClose">-</span>
+          <div class="url-group">
+            <input type="text" class="url-input" id="stenoURL" readonly>
+            <button class="btn btn-primary btn-sm" onclick="copyURL('stenoURL')">복사</button>
           </div>
         </div>
-      </div>
-      
-      <div class="modal-section">
-        <h4>채널 타입 변경</h4>
-        <div class="type-toggle">
-          <button class="type-toggle-btn" id="publicToggle" onclick="changeChannelType('public')">
-            🌐 공개로 변경
-          </button>
-          <button class="type-toggle-btn" id="securedToggle" onclick="changeChannelType('secured')">
-            🔒 비공개로 변경
-          </button>
+        
+        <div class="modal-section">
+          <h4>채널 상태</h4>
+          <div class="status-grid">
+            <div class="status-item">
+              <span class="status-label">현재 접속자</span>
+              <span class="status-value" id="modalViewers">0명</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">생성 시간</span>
+              <span class="status-value" id="modalCreated">-</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">경과 시간</span>
+              <span class="status-value" id="modalDuration">0분</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">자동 종료</span>
+              <span class="status-value" id="modalAutoClose">-</span>
+            </div>
+          </div>
         </div>
-      </div>
-      
-      <div class="modal-section" id="passkeySection">
-        <h4>패스키 변경</h4>
-        <div class="url-group">
-          <input type="text" id="modalNewPasskey" placeholder="새 패스키 (4자리)" maxlength="4">
-          <button class="copy-btn" onclick="updatePasskey()">변경</button>
+        
+        <div class="modal-section">
+          <h4>채널 타입 변경</h4>
+          <div class="type-toggle">
+            <button class="type-toggle-btn" id="publicToggle" onclick="changeChannelType('public')">
+              🌐 공개로 변경
+            </button>
+            <button class="type-toggle-btn" id="securedToggle" onclick="changeChannelType('secured')">
+              🔒 비공개로 변경
+            </button>
+          </div>
         </div>
-      </div>
-      
-      <div class="modal-section">
-        <h4>채널 연장</h4>
-        <div class="quick-actions">
-          <button class="quick-btn" onclick="extendChannel(1)">+1시간</button>
-          <button class="quick-btn" onclick="extendChannel(2)">+2시간</button>
-          <button class="quick-btn" onclick="extendChannel(3)">+3시간</button>
+        
+        <div class="modal-section" id="passkeySection">
+          <h4>패스키 변경</h4>
+          <div class="url-group">
+            <input type="text" id="modalNewPasskey" placeholder="새 패스키 (4자리)" maxlength="4">
+            <button class="btn btn-primary btn-sm" onclick="updatePasskey()">변경</button>
+          </div>
+        </div>
+        
+        <div class="modal-section">
+          <h4>채널 연장</h4>
+          <div class="type-toggle">
+            <button class="btn btn-secondary btn-sm" onclick="extendChannel(1)">+1시간</button>
+            <button class="btn btn-secondary btn-sm" onclick="extendChannel(2)">+2시간</button>
+            <button class="btn btn-secondary btn-sm" onclick="extendChannel(3)">+3시간</button>
+          </div>
         </div>
       </div>
       
       <div class="modal-footer">
-        <button class="btn-primary" onclick="exportChannelData()">데이터 내보내기</button>
-        <button class="btn-small delete" onclick="deleteChannelFromModal()">채널 삭제</button>
-        <button class="btn-small" onclick="closeModal()">닫기</button>
+        <button class="btn btn-secondary" onclick="closeModal()">닫기</button>
+        <button class="btn btn-primary" onclick="exportChannelData()">데이터 내보내기</button>
+        <button class="btn btn-danger" onclick="deleteChannelFromModal()">채널 삭제</button>
       </div>
     </div>
   </div>
 
   <!-- Toast Notification -->
   <div class="toast" id="toast"></div>
-
-  <footer>
-    &copy; 2025 NUA STUDIO · Channel Management System
-  </footer>
 
   <script src="config.js"></script>
   <script>
@@ -1482,82 +1091,30 @@
         updateStats();
       }, 30000);
       
-      // 변경: GSAP 애니메이션 추가
+      // Simple animations
       initAnimations();
     });
     
-    // 변경: 애니메이션 초기화
+    // Simple fade in animations
     function initAnimations() {
-      // Hero animation
-      gsap.timeline()
-        .to('.cm-hero-title', {opacity: 1, y: 0, duration: 1, delay: 0.5})
-        .to('.cm-objects', {opacity: 1, duration: 1}, '-=0.5');
-      
-      // Scroll animations
-      gsap.registerPlugin(ScrollTrigger);
-      
-      // Section titles
-      gsap.utils.toArray('.cm-section-title').forEach(el => {
-        gsap.to(el, {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          scrollTrigger: {
-            trigger: el,
-            start: 'top 80%',
-            once: true
-          }
-        });
-      });
-      
-      // Stats cards
+      // Fade in stats cards
       gsap.utils.toArray('.stat-card').forEach((el, i) => {
-        gsap.to(el, {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          delay: i * 0.1,
-          scrollTrigger: {
-            trigger: '.stats-dashboard',
-            start: 'top 70%',
-            once: true
-          }
-        });
+        gsap.fromTo(el, 
+          {opacity: 0, y: 20},
+          {opacity: 1, y: 0, duration: 0.5, delay: i * 0.1}
+        );
       });
       
-      // Create section
-      gsap.to('.create-section', {
-        opacity: 1,
-        y: 0,
-        duration: 0.8,
-        scrollTrigger: {
-          trigger: '.create-section',
-          start: 'top 70%',
-          once: true
-        }
-      });
+      // Fade in panels
+      gsap.fromTo('.create-panel', 
+        {opacity: 0, x: -20},
+        {opacity: 1, x: 0, duration: 0.6, delay: 0.2}
+      );
       
-      // Channel list
-      gsap.to('.channel-list', {
-        opacity: 1,
-        y: 0,
-        duration: 0.8,
-        scrollTrigger: {
-          trigger: '.channel-list',
-          start: 'top 70%',
-          once: true
-        }
-      });
-      
-      // Header scroll effect
-      window.addEventListener('scroll', () => {
-        const header = document.getElementById('header');
-        if (window.scrollY > 100) {
-          header.classList.add('scrolled');
-        } else {
-          header.classList.remove('scrolled');
-        }
-      });
+      gsap.fromTo('.table-panel', 
+        {opacity: 0, x: 20},
+        {opacity: 1, x: 0, duration: 0.6, delay: 0.3}
+      );
     }
     
     // Logout
@@ -1676,26 +1233,12 @@
         code += characters.charAt(Math.floor(Math.random() * characters.length));
       }
       document.getElementById('newChannelCode').value = code;
-      animateInput('newChannelCode');
     }
     
     // Generate random passkey
     function generatePasskey() {
       const passkey = Math.floor(1000 + Math.random() * 9000).toString();
       document.getElementById('newPasskey').value = passkey;
-      animateInput('newPasskey');
-    }
-    
-    // Input animation
-    function animateInput(inputId) {
-      const input = document.getElementById(inputId);
-      gsap.to(input, {
-        scale: 1.05,
-        duration: 0.2,
-        onComplete: () => {
-          gsap.to(input, {scale: 1, duration: 0.2});
-        }
-      });
     }
     
     // Create channel
@@ -1705,7 +1248,7 @@
       const createBtn = document.getElementById('createBtn');
       const originalText = createBtn.textContent;
       createBtn.disabled = true;
-      createBtn.innerHTML = '<span class="loading" style="width: 16px; height: 16px;"></span>';
+      createBtn.innerHTML = '<span class="loading"></span> 생성 중...';
       
       // Get auto close settings
       let autoCloseValue = null;
@@ -1743,7 +1286,7 @@
         
         if (response.ok) {
           showToast(`채널 ${channelData.code}가 생성되었습니다`, 'success');
-          document.querySelector('.create-form').reset();
+          document.querySelector('form').reset();
           document.getElementById('typeSecured').checked = true;
           document.getElementById('autoCloseType').value = 'hours';
           document.getElementById('autoCloseHours').value = '2';
@@ -1782,8 +1325,8 @@
         if (channels.length === 0) {
           tbody.innerHTML = `
             <tr>
-              <td colspan="7" style="text-align: center; padding: 2rem; color: #888;">
-                No channels created yet
+              <td colspan="7" style="text-align: center; padding: 32px; color: var(--gray-500);">
+                생성된 채널이 없습니다
               </td>
             </tr>
           `;
@@ -1795,6 +1338,16 @@
           const now = new Date();
           const duration = Math.floor((now - createdDate) / 60000); // minutes
           
+          let statusColor = '--success';
+          let statusText = '활성';
+          if (duration >= 180) {
+            statusColor = '--danger';
+            statusText = '장시간';
+          } else if (duration >= 60) {
+            statusColor = '--warning';
+            statusText = '진행중';
+          }
+          
           return `
             <tr>
               <td>
@@ -1803,14 +1356,14 @@
               <td><span class="badge ${ch.type}" id="type-${ch.code}">${ch.type === 'public' ? '공개' : '비공개'}</span></td>
               <td><span id="passkey-${ch.code}">${ch.passkey ? `<span class="passkey">${ch.passkey}</span>` : '-'}</span></td>
               <td>
-                <div class="active-count">
-                  ${ch.activeUsers > 0 ? '<span class="count-dot"></span>' : ''}
+                <div class="user-count">
+                  ${ch.activeUsers > 0 ? '<span class="status-dot"></span>' : ''}
                   <span>${ch.activeUsers || 0}</span>
                 </div>
               </td>
               <td>
-                <span style="color: ${duration < 60 ? '#4ecdc4' : duration < 180 ? '#f0c674' : '#e06c75'}">
-                  ${duration < 60 ? '활성' : duration < 180 ? '진행중' : '장시간'}
+                <span style="color: var(${statusColor}); font-weight: 500;">
+                  ${statusText}
                 </span>
               </td>
               <td>${createdDate.toLocaleString('ko-KR', { 
@@ -1820,10 +1373,10 @@
                 minute: '2-digit'
               })}</td>
               <td>
-                <div class="actions">
-                  <button class="btn-small manage" onclick="showChannelModal('${ch.code}')">관리</button>
-                  <button class="btn-small copy" onclick="copyChannelURL('${ch.code}')">URL복사</button>
-                  <button class="btn-small delete" onclick="deleteChannel('${ch.code}')">삭제</button>
+                <div class="table-actions">
+                  <button class="btn btn-primary btn-sm" onclick="showChannelModal('${ch.code}')">관리</button>
+                  <button class="btn btn-secondary btn-sm" onclick="copyChannelURL('${ch.code}')">URL</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteChannel('${ch.code}')">삭제</button>
                 </div>
               </td>
             </tr>
@@ -1836,8 +1389,8 @@
         const tbody = document.getElementById('channelTableBody');
         tbody.innerHTML = `
           <tr>
-            <td colspan="7" style="text-align: center; padding: 2rem; color: #e06c75;">
-              Failed to load channels. Please check your connection.
+            <td colspan="7" style="text-align: center; padding: 32px; color: var(--danger);">
+              채널 목록을 불러올 수 없습니다
             </td>
           </tr>
         `;
