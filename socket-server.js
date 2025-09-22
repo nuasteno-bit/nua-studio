@@ -1,5 +1,5 @@
 // socket-server.js - 관리자 API 포함 완전판
-// NUA STUDIO 실시간 협업 속기 서버 v2.0 - 수정판
+// NUA STUDIO 실시간 협업 속기 서버 v2.0 - 패치판
 
 const express = require('express');
 const http = require('http');
@@ -51,6 +51,10 @@ const connectionStats = new Map();
 // 교대 쿨다운 관리 (서버에서 관리)
 const channelSwitchCooldowns = {};
 const SWITCH_COOLDOWN_MS = 600; // 0.6초 쿨다운 (실사용 최적화)
+
+// 커밋 시각 관리 (패치 추가)
+const lastCommitAt = new Map();
+const COMMIT_NOISE_FILTER_MS = 100; // 커밋 직후 100ms 노이즈 필터
 
 // =========================
 // Helper 함수들
@@ -150,6 +154,7 @@ function cleanupInactiveChannels() {
       delete channelBackups[channel];
       delete channelSwitchCooldowns[channel];
       channelDatabase.delete(channel);
+      lastCommitAt.delete(channel);  // 커밋 시각도 정리
       cleanedCount++;
     }
   }
@@ -497,6 +502,7 @@ app.delete('/api/admin/channel/:code', requireAuth, (req, res) => {
     delete channelEditStates[code];
     delete channelBackups[code];
     delete channelSwitchCooldowns[code];
+    lastCommitAt.delete(code);  // 커밋 시각도 삭제
     channelDatabase.delete(code);
     
     // 연결된 사용자들 강제 퇴장
@@ -529,6 +535,7 @@ app.post('/api/admin/reset-all', requireAuth, (req, res) => {
     Object.keys(channelEditStates).forEach(key => delete channelEditStates[key]);
     Object.keys(channelBackups).forEach(key => delete channelBackups[key]);
     Object.keys(channelSwitchCooldowns).forEach(key => delete channelSwitchCooldowns[key]);
+    lastCommitAt.clear();  // 커밋 시각도 초기화
     
     console.log(`[관리자] 전체 초기화 - ${channelCount}개 채널 삭제됨`);
     res.json({ 
@@ -1004,9 +1011,20 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 입력 처리
+  // 입력 처리 (커밋 직후 노이즈 필터 추가)
   socket.on('steno_input', ({ channel, role, text, isSync }) => {
     try {
+      const ch = channel || socket.data.channel;
+      
+      // 커밋 직후 노이즈 필터 (빈 입력만 차단)
+      const lastCommit = lastCommitAt.get(ch);
+      if (lastCommit && Date.now() - lastCommit < COMMIT_NOISE_FILTER_MS) {
+        if (!text || text.trim() === '') {
+          console.log(`[${ch}] 커밋 직후 빈 입력 무시`);
+          return;
+        }
+      }
+      
       socket.data.messageCount++;
       
       const statKey = `${clientIP}_${new Date().toDateString()}`;
@@ -1025,7 +1043,6 @@ io.on('connection', (socket) => {
       
       socket.data.lastActivity = Date.now();
       
-      const ch = channel || socket.data.channel;
       const serverRole = socket.data.role || role || 'viewer';
       const active = ensureActiveConsistent(ch);
       
@@ -1058,7 +1075,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 역할 전환 - 핵심 수정 부분
+  // 역할 전환
   socket.on('switch_role', ({ channel, newActive, matchedText, manual, reason, matchStartIndex, matchWordCount }) => {
     try {
       const ch = channel || socket.data.channel;
@@ -1175,21 +1192,94 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 텍스트 전송 확정
+  // ========== 패치: text_sent 수정 ==========
   socket.on('text_sent', ({ channel, accumulatedText, sender }) => {
     try {
       const ch = channel || socket.data.channel;
-      console.log(`[${ch}] Text sent by ${sender}`);
+      console.log(`[${ch}] Text sent by ${sender} - 원본 길이: ${accumulatedText?.length || 0}자`);
       
+      // 1) 개행 정규화 (CRLF, CR → LF)
+      let normalized = (accumulatedText || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      
+      // 2) 확정 시 반드시 줄바꿈 추가 (중복 방지)
+      if (normalized && !normalized.endsWith('\n')) {
+        normalized += '\n';
+        console.log(`[${ch}] 줄바꿈 추가 → 최종 길이: ${normalized.length}자`);
+      }
+      
+      // 3) 상태 저장
       if (channelStates[ch]) {
-        channelStates[ch].accumulatedText = accumulatedText;
+        channelStates[ch].accumulatedText = normalized;
         channelStates[ch].lastActivity = Date.now();
+        lastCommitAt.set(ch, Date.now());  // 커밋 시각 기록
         backupChannelState(ch);
       }
       
-      socket.broadcast.to(ch).emit('text_sent', { accumulatedText, sender });
+      // 4) 정규화된 내용으로 방송 (자신 제외)
+      socket.broadcast.to(ch).emit('text_sent', { 
+        accumulatedText: normalized, 
+        sender 
+      });
+      
+      // 5) 전체 동기화 이벤트도 발송 (뷰어 호환성)
+      io.to(ch).emit('sync_accumulated', { 
+        accumulatedText: normalized,
+        source: 'commit'
+      });
+      
+      console.log(`[${ch}] 텍스트 커밋 완료 및 동기화`);
+      
     } catch (error) {
       console.error('[text_sent] Error:', error);
+    }
+  });
+
+  // ========== 추가: text_commit 이벤트 (선택적) ==========
+  socket.on('text_commit', ({ channel, commitText, accumulatedText }) => {
+    try {
+      const ch = channel || socket.data.channel;
+      console.log(`[${ch}] Text commit: ${commitText?.length || 0}자`);
+      
+      if (channelStates[ch]) {
+        // 기존 누적 텍스트 가져오기
+        let currentAccumulated = channelStates[ch].accumulatedText || '';
+        
+        // 커밋 텍스트가 있으면 추가
+        if (commitText) {
+          // 줄바꿈 자동 추가
+          if (currentAccumulated && !currentAccumulated.endsWith('\n')) {
+            currentAccumulated += '\n';
+          }
+          currentAccumulated += commitText;
+        } else if (accumulatedText) {
+          // 전체 누적 텍스트가 제공된 경우
+          currentAccumulated = accumulatedText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+          if (currentAccumulated && !currentAccumulated.endsWith('\n')) {
+            currentAccumulated += '\n';
+          }
+        }
+        
+        // 상태 업데이트
+        channelStates[ch].accumulatedText = currentAccumulated;
+        channelStates[ch].lastActivity = Date.now();
+        lastCommitAt.set(ch, Date.now());  // 커밋 시각 기록
+        backupChannelState(ch);
+        
+        // 모든 클라이언트에 브로드캐스트
+        io.to(ch).emit('text_committed', {
+          accumulatedText: currentAccumulated,
+          commitText: commitText,
+          timestamp: Date.now()
+        });
+        
+        // sync_accumulated도 함께 발송
+        io.to(ch).emit('sync_accumulated', {
+          accumulatedText: currentAccumulated,
+          source: 'commit'
+        });
+      }
+    } catch (error) {
+      console.error('[text_commit] Error:', error);
     }
   });
 
