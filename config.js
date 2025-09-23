@@ -1,63 +1,50 @@
 // config.js - Smart environment detection for NUA STUDIO
 (function() {
-    // Detect current environment
     const hostname = window.location.hostname;
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
     const isRender = hostname.includes('.onrender.com');
-    const isElectron = typeof process !== 'undefined' && 
-                      process.versions && 
-                      process.versions.electron;
-    
-    // Configure socket URL based on environment
+    const isElectron = typeof process !== 'undefined' &&
+                       process.versions && process.versions.electron;
+    const isGithubPages = hostname.endsWith('.github.io');
+    const isNuastudioDomain =
+        hostname === 'nuastudio.kr' ||
+        hostname === 'www.nuastudio.kr' ||
+        hostname === 'nuastudio.co.kr' ||
+        hostname === 'www.nuastudio.co.kr';
+
     let SOCKET_URL;
-    
+
     if (isElectron) {
-        // Electron app - check for custom server first
         const customServer = localStorage.getItem('customSocketServer');
-        
-        if (customServer) {
-            SOCKET_URL = customServer;
-            console.log('[Config] Using custom server:', customServer);
-        } else {
-            // Default to production server
-            SOCKET_URL = 'https://nuastudio.kr';  // UPDATE THIS after deployment
-            console.log('[Config] Using production server');
-        }
-        
+        SOCKET_URL = customServer || 'https://<YOUR-RENDER>.onrender.com';
+        console.log('[Config] Electron ->', SOCKET_URL);
     } else if (isRender) {
-        // Running on Render.com - use same origin
         SOCKET_URL = window.location.origin;
-        console.log('[Config] Render.com deployment detected');
-        
+        console.log('[Config] Front on Render ->', SOCKET_URL);
     } else if (isLocalhost) {
-        // Local development - connect to local server
-        SOCKET_URL = window.location.origin;
-        console.log('[Config] Local development mode');
-        
+        SOCKET_URL = 'https://<YOUR-RENDER>.onrender.com';
+        console.log('[Config] Localhost ->', SOCKET_URL);
+    } else if (isGithubPages || isNuastudioDomain) {
+        SOCKET_URL = 'https://<YOUR-RENDER>.onrender.com';
+        console.log('[Config] Static hosting ->', SOCKET_URL);
     } else {
-        // Other environments - use current origin
-        SOCKET_URL = window.location.origin;
-        console.log('[Config] Using current origin:', SOCKET_URL);
+        SOCKET_URL = 'https://<YOUR-RENDER>.onrender.com';
+        console.log('[Config] Fallback ->', SOCKET_URL);
     }
-    
-    // Global configuration object
+
     window.CONFIG = {
-        SOCKET_URL: SOCKET_URL,
-        
-        // Development mode flag
+        SOCKET_URL,
         isDevelopment: isLocalhost && !isElectron,
-        
-        // Environment info
         environment: {
-            isLocalhost: isLocalhost,
-            isElectron: isElectron,
-            isRender: isRender,
-            hostname: hostname,
+            isLocalhost,
+            isElectron,
+            isRender,
+            isGithubPages,
+            isNuastudioDomain,
+            hostname,
             protocol: window.location.protocol,
             origin: window.location.origin
         },
-        
-        // Socket.IO options
         socketOptions: {
             transports: ['websocket', 'polling'],
             reconnection: true,
@@ -67,11 +54,9 @@
             timeout: 20000
         }
     };
-    
-    // Debug output
+
     console.log('=== NUA STUDIO CONFIG ===');
     console.log('Socket URL:', SOCKET_URL);
     console.log('Environment:', window.CONFIG.environment);
     console.log('========================');
-
 })();
