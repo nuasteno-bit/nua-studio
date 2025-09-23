@@ -12,19 +12,6 @@
     <!-- Config.js 로드 -->
     <script src="config.js"></script>
     
-    <!-- 프로덕션 환경에서 API_BASE 오버라이드 -->
-    <script>
-        // 프로덕션 환경 감지 및 API URL 매핑
-        const h = window.location.hostname;
-        const isGithub = h.endsWith('.github.io');
-        const isNuastudio = h === 'nuastudio.co.kr' || h === 'www.nuastudio.co.kr';
-        
-        if (window.CONFIG && (isGithub || isNuastudio)) {
-            // ✅ 실제 API 베이스 도메인으로 교체 (TODO: 실제 API 도메인으로 변경)
-            window.CONFIG.SOCKET_URL = 'https://nua-api.onrender.com'; // 예시: 실제 API 도메인으로 교체 필요
-        }
-    </script>
-    
     <style>
         * {
             margin: 0;
