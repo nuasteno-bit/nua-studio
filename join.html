@@ -629,14 +629,330 @@
                 width: 100%;
             }
         }
+
+        /* 관리자 로그인 모달 */
+        .admin-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        .admin-modal.show {
+            display: flex;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .admin-modal-content {
+            background: #fff;
+            width: 100%;
+            max-width: 450px;
+            border: 2px solid #000;
+            position: relative;
+            animation: modalSlideUp 0.4s ease;
+        }
+
+        @keyframes modalSlideUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .admin-modal-header {
+            padding: 30px 40px;
+            border-bottom: 1px solid #e0e0e0;
+            position: relative;
+        }
+
+        .admin-modal-title {
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            color: #a5a4a4;
+            text-transform: uppercase;
+            font-family: 'Poppins', sans-serif;
+            margin-bottom: 10px;
+        }
+
+        .admin-channel-code {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            font-family: 'Poppins', sans-serif;
+            color: #000;
+        }
+
+        .admin-modal-close {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+        }
+
+        .admin-modal-close:hover {
+            transform: rotate(90deg);
+        }
+
+        .admin-modal-close::before,
+        .admin-modal-close::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 2px;
+            background: #000;
+        }
+
+        .admin-modal-close::before {
+            transform: rotate(45deg);
+        }
+
+        .admin-modal-close::after {
+            transform: rotate(-45deg);
+        }
+
+        .admin-modal-body {
+            padding: 40px;
+        }
+
+        .admin-form-group {
+            margin-bottom: 25px;
+        }
+
+        .admin-form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 10px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .admin-form-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 16px;
+            font-family: 'Pretendard', sans-serif;
+            border: 1px solid #313131;
+            border-radius: 12px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .admin-form-input::placeholder {
+            color: #b1b1b1;
+        }
+
+        .admin-form-input:focus {
+            border-color: #000;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .admin-form-input.error {
+            border-color: #ff3838;
+        }
+
+        .admin-error {
+            color: #ff3838;
+            font-size: 12px;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .admin-error.show {
+            display: block;
+        }
+
+        .admin-alert {
+            padding: 15px 20px;
+            background: #000;
+            color: #fff;
+            font-size: 14px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .admin-alert.show {
+            display: block;
+        }
+
+        .admin-alert.error {
+            background: #ff3838;
+        }
+
+        .admin-alert.success {
+            background: #000;
+        }
+
+        .admin-submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: #000;
+            color: #fff;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .admin-submit-btn:hover {
+            background: #222;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .admin-submit-btn.loading {
+            color: transparent;
+            pointer-events: none;
+        }
+
+        .admin-submit-btn.loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            margin-left: -10px;
+            margin-top: -10px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spinner 0.8s linear infinite;
+        }
+
+        @keyframes spinner {
+            to { transform: rotate(360deg); }
+        }
+
+        @media screen and (max-width: 480px) {
+            .admin-modal-header {
+                padding: 25px;
+            }
+
+            .admin-modal-body {
+                padding: 25px;
+            }
+
+            .admin-modal-close {
+                top: 25px;
+                right: 25px;
+            }
+
+            .admin-channel-code {
+                font-size: 24px;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- 경로 및 API 설정 스크립트 -->
+    <script>
+        // GitHub Pages 서브패스 대비: 현재 디렉토리 경로
+        const BASE = window.location.pathname.replace(/[^/]+$/, '');
+        // 백엔드 API 베이스 (Render/서버 URL). 전역 주입 가능하면 window.NUA_API_BASE 사용
+        const API_BASE = window.NUA_API_BASE || 'https://your-render-domain.onrender.com'; // TODO: 실제 값으로 교체
+        
+        // 채널 검증 함수
+        async function validateChannel(code, password) {
+            try {
+                const url = `${API_BASE}/api/channels/validate?code=${encodeURIComponent(code)}`;
+                const res = await fetch(url, { 
+                    method: 'GET', 
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!res.ok) return false;
+                
+                const data = await res.json();
+                // 서버 응답에서 valid 필드 확인
+                // password 검증이 서버에서 필요한 경우 추가 로직 구현
+                return !!data?.valid;
+            } catch (e) {
+                console.error('validateChannel error:', e);
+                return false;
+            }
+        }
+
+        // 관리자 로그인 함수
+        async function adminLogin(channelCode, adminId, password) {
+            try {
+                const url = `${API_BASE}/api/admin/login`;
+                const res = await fetch(url, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        channel: channelCode,
+                        username: adminId,
+                        password: password
+                    })
+                });
+
+                if (!res.ok) {
+                    const error = await res.json();
+                    return { success: false, message: error.message || '로그인 실패' };
+                }
+
+                const data = await res.json();
+                return { success: true, data };
+            } catch (e) {
+                console.error('adminLogin error:', e);
+                return { success: false, message: '서버 연결 오류' };
+            }
+        }
+    </script>
+
     <!-- 헤더 -->
     <header class="header">
         <div class="wrap">
             <div class="logo">
-                <a href="/">
+                <a href="index.html">
                     <svg viewBox="0 0 122 50" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M0 25C0 11.193 11.193 0 25 0h72c13.807 0 25 11.193 25 25s-11.193 25-25 25H25C11.193 50 0 38.807 0 25z" fill="#000"/>
                         <text x="61" y="32" text-anchor="middle" fill="white" font-family="Poppins" font-size="20" font-weight="700">NUA</text>
@@ -671,6 +987,47 @@
             </div>
         </div>
     </header>
+
+    <!-- 관리자 로그인 모달 -->
+    <div class="admin-modal" id="adminModal">
+        <div class="admin-modal-content">
+            <div class="admin-modal-header">
+                <div class="admin-modal-title">Admin Login</div>
+                <div class="admin-channel-code" id="adminChannelDisplay">-</div>
+                <button class="admin-modal-close" id="adminModalClose"></button>
+            </div>
+            <div class="admin-modal-body">
+                <div class="admin-alert" id="adminAlert"></div>
+                <form id="adminLoginForm">
+                    <div class="admin-form-group">
+                        <label class="admin-form-label" for="adminId">관리자 아이디</label>
+                        <input 
+                            type="text" 
+                            class="admin-form-input" 
+                            id="adminId" 
+                            placeholder="관리자 아이디 입력"
+                            autocomplete="username"
+                        >
+                        <div class="admin-error" id="adminIdError">아이디를 입력해주세요</div>
+                    </div>
+                    <div class="admin-form-group">
+                        <label class="admin-form-label" for="adminPassword">비밀번호</label>
+                        <input 
+                            type="password" 
+                            class="admin-form-input" 
+                            id="adminPassword" 
+                            placeholder="비밀번호 입력"
+                            autocomplete="current-password"
+                        >
+                        <div class="admin-error" id="adminPasswordError">비밀번호를 입력해주세요</div>
+                    </div>
+                    <button type="submit" class="admin-submit-btn" id="adminSubmitBtn">
+                        LOGIN →
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- 히어로 섹션 -->
     <section id="hero" class="hero">
@@ -919,9 +1276,10 @@
 
         // 전용뷰어 버튼 클릭 처리
         if (nativeViewerBtn) {
-            nativeViewerBtn.addEventListener('click', (e) => {
+            nativeViewerBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 const channelCode = channelInput?.value;
+                const password = document.getElementById('channelPassword')?.value || '';
                 
                 if (!channelCode) {
                     alert('채널 코드를 입력해주세요');
@@ -930,6 +1288,13 @@
                 
                 if (channelCode.length !== 6) {
                     alert('채널 코드는 6자리여야 합니다');
+                    return;
+                }
+                
+                // 채널 검증
+                const isValid = await validateChannel(channelCode, password);
+                if (!isValid) {
+                    alert('존재하지 않거나 비활성화된 채널입니다.');
                     return;
                 }
                 
@@ -946,7 +1311,7 @@
                         );
                         
                         if (userConfirm) {
-                            window.location.href = '/download/nuaviewer.html';
+                            window.location.href = BASE + 'download/nuaviewer.html';
                         }
                     }
                 }, 3000);
@@ -954,11 +1319,15 @@
         }
 
         // 폼 제출 (Web 버튼)
-        document.getElementById('channelForm')?.addEventListener('submit', (e) => {
+        document.getElementById('channelForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const channel = document.getElementById('channelCode').value;
-            const password = document.getElementById('channelPassword').value;
             
+            // 입력값 취득
+            const channel = (document.getElementById('channelCode')?.value || '').trim();
+            const password = (document.getElementById('channelPassword')?.value || '').trim();
+            const role = selectedRole.toUpperCase();
+            
+            // 기본 유효성 검사
             if (!channel) {
                 alert('채널 코드를 입력해주세요');
                 return;
@@ -969,19 +1338,168 @@
                 return;
             }
             
-            // Role에 따른 페이지 이동
-            if (selectedRole === 'guest') {
-                window.location.href = `/viewer.html?channel=${channel}`;
-            } else if (selectedRole === 'steno') {
-                window.location.href = `/editor.html?channel=${channel}`;
-            } else if (selectedRole === 'admin') {
-                // 특별한 채널 코드 체크
-                if (['SYSTEM', 'MASTER', 'ADMIN0'].includes(channel)) {
-                    alert('시스템 관리자 로그인이 필요합니다');
-                } else {
-                    window.location.href = `/admin.html?channel=${channel}&role=admin`;
-                }
+            // 채널 검증
+            const isValid = await validateChannel(channel, password);
+            if (!isValid) {
+                alert('존재하지 않거나 비활성화된 채널입니다.');
+                return;
             }
+            
+            // ADMIN 역할인 경우 모달 표시
+            if (role === 'ADMIN') {
+                const adminModal = document.getElementById('adminModal');
+                const adminChannelDisplay = document.getElementById('adminChannelDisplay');
+                
+                // 채널 코드 표시
+                adminChannelDisplay.textContent = channel;
+                
+                // 모달 표시
+                adminModal.classList.add('show');
+                
+                // 첫 번째 입력 필드에 포커스
+                setTimeout(() => {
+                    document.getElementById('adminId').focus();
+                }, 100);
+                
+                return; // 모달에서 처리하므로 여기서 종료
+            }
+            
+            // 쿼리 스트링 생성
+            const qs = `?channel=${encodeURIComponent(channel)}${password ? `&password=${encodeURIComponent(password)}` : ''}`;
+            
+            // 역할별 페이지 라우팅 (상대경로 사용)
+            if (role === 'GUEST') {
+                window.location.href = BASE + 'viewer.html' + qs;
+            } else if (role === 'STENO') {
+                window.location.href = BASE + 'editor.html' + qs;
+            } else {
+                // 기본값: 뷰어로 이동
+                window.location.href = BASE + 'viewer.html' + qs;
+            }
+        });
+
+        // 관리자 모달 관련 이벤트
+        const adminModal = document.getElementById('adminModal');
+        const adminModalClose = document.getElementById('adminModalClose');
+        const adminLoginForm = document.getElementById('adminLoginForm');
+        
+        // 모달 닫기 버튼
+        adminModalClose?.addEventListener('click', () => {
+            adminModal.classList.remove('show');
+            // 입력 필드 초기화
+            document.getElementById('adminId').value = '';
+            document.getElementById('adminPassword').value = '';
+            document.getElementById('adminAlert').classList.remove('show');
+            document.querySelectorAll('.admin-form-input').forEach(input => {
+                input.classList.remove('error');
+            });
+            document.querySelectorAll('.admin-error').forEach(error => {
+                error.classList.remove('show');
+            });
+        });
+
+        // 모달 배경 클릭 시 닫기
+        adminModal?.addEventListener('click', (e) => {
+            if (e.target === adminModal) {
+                adminModalClose.click();
+            }
+        });
+
+        // ESC 키로 모달 닫기
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && adminModal?.classList.contains('show')) {
+                adminModalClose.click();
+            }
+        });
+
+        // 관리자 로그인 폼 제출
+        adminLoginForm?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // 초기화
+            document.querySelectorAll('.admin-form-input').forEach(input => {
+                input.classList.remove('error');
+            });
+            document.querySelectorAll('.admin-error').forEach(error => {
+                error.classList.remove('show');
+            });
+            
+            // 입력값 가져오기
+            const adminId = document.getElementById('adminId').value.trim();
+            const adminPassword = document.getElementById('adminPassword').value;
+            const channelCode = document.getElementById('channelCode').value.trim();
+            
+            let hasError = false;
+            
+            // 유효성 검사
+            if (!adminId) {
+                document.getElementById('adminId').classList.add('error');
+                document.getElementById('adminIdError').classList.add('show');
+                hasError = true;
+            }
+            
+            if (!adminPassword) {
+                document.getElementById('adminPassword').classList.add('error');
+                document.getElementById('adminPasswordError').classList.add('show');
+                hasError = true;
+            }
+            
+            if (hasError) return;
+            
+            // 로딩 상태
+            const submitBtn = document.getElementById('adminSubmitBtn');
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+            
+            // 로그인 시도
+            const result = await adminLogin(channelCode, adminId, adminPassword);
+            
+            // 로딩 상태 해제
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+            
+            const alertBox = document.getElementById('adminAlert');
+            
+            if (result.success) {
+                // 성공
+                alertBox.textContent = '로그인 성공! 관리 페이지로 이동합니다...';
+                alertBox.className = 'admin-alert success show';
+                
+                // 토큰 저장 (선택사항)
+                if (result.data?.token) {
+                    localStorage.setItem('adminToken', result.data.token);
+                }
+                
+                // 관리 대시보드로 이동
+                setTimeout(() => {
+                    window.location.href = BASE + `admin-dashboard.html?channel=${encodeURIComponent(channelCode)}`;
+                }, 1500);
+            } else {
+                // 실패
+                alertBox.textContent = result.message || '로그인에 실패했습니다.';
+                alertBox.className = 'admin-alert error show';
+                
+                // 비밀번호 필드 포커스
+                document.getElementById('adminPassword').focus();
+                document.getElementById('adminPassword').select();
+            }
+        });
+
+        // 관리자 입력 필드 에러 상태 제거
+        document.querySelectorAll('.admin-form-input').forEach(input => {
+            input.addEventListener('input', () => {
+                input.classList.remove('error');
+                const errorMsg = input.parentElement.querySelector('.admin-error');
+                if (errorMsg) {
+                    errorMsg.classList.remove('show');
+                }
+                
+                // 알림 메시지 숨기기
+                const alertBox = document.getElementById('adminAlert');
+                if (alertBox) {
+                    alertBox.classList.remove('show');
+                }
+            });
         });
     </script>
 </body>
