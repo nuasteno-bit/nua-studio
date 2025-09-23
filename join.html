@@ -904,11 +904,9 @@
                     // 쿠키 인증 쓰면 여기만 credentials:'include' 추가
                 });
                 if (!res.ok) {
-                    console.log('채널 검증 실패: HTTP', res.status);
                     return false;
                 }
                 const data = await res.json();
-                console.log('채널 검증 응답:', data);
                 
                 // ✅ success는 참고용, 최종 판정은 존재/활성 플래그로만
                 const verdict = (data?.exists === true) || (data?.active === true) || (data?.valid === true);
@@ -1006,7 +1004,7 @@
                             type="text" 
                             class="admin-form-input" 
                             id="adminId" 
-                            placeholder="admin (소문자)"
+                            placeholder="관리자 아이디 입력"
                             autocomplete="username"
                         >
                         <div class="admin-error" id="adminIdError">아이디를 입력해주세요</div>
@@ -1403,8 +1401,6 @@
         adminLoginForm?.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            console.log('관리자 로그인 폼 제출');
-            
             // 초기화
             document.querySelectorAll('.admin-form-input').forEach(input => {
                 input.classList.remove('error');
@@ -1416,8 +1412,6 @@
             // 입력값 가져오기
             const adminId = document.getElementById('adminId').value.trim();
             const adminPassword = document.getElementById('adminPassword').value;
-            
-            console.log('로그인 시도:', { adminId, hasPassword: !!adminPassword });
             
             let hasError = false;
             
@@ -1435,7 +1429,6 @@
             }
             
             if (hasError) {
-                console.log('유효성 검사 실패');
                 return;
             }
             
@@ -1446,7 +1439,6 @@
             
             // 로그인 시도
             const result = await adminLogin(adminId, adminPassword);
-            console.log('로그인 결과:', result);
             
             // 로딩 상태 해제
             submitBtn.classList.remove('loading');
@@ -1463,10 +1455,6 @@
                 if (result.token) {
                     localStorage.setItem('adminToken', result.token);
                     localStorage.setItem('adminRole', result.role || 'system_admin');
-                    console.log('토큰 저장 완료:', { 
-                        token: result.token.substring(0, 10) + '...', 
-                        role: result.role 
-                    });
                 }
                 
                 // 관리 대시보드로 이동
@@ -1500,11 +1488,6 @@
                 }
             });
         });
-
-        // 디버깅용 콘솔 로그
-        console.log('Join page loaded');
-        console.log('API:', API);
-        console.log('BASE:', BASE);
     </script>
 </body>
 </html>
