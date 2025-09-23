@@ -12,23 +12,25 @@
         hostname === 'nuastudio.co.kr' ||
         hostname === 'www.nuastudio.co.kr';
 
+    const RENDER_API = 'https://nua-studio.onrender.com';
+
     let SOCKET_URL;
 
     if (isElectron) {
         const customServer = localStorage.getItem('customSocketServer');
-        SOCKET_URL = customServer || 'https://<YOUR-RENDER>.onrender.com';
+        SOCKET_URL = customServer || RENDER_API;
         console.log('[Config] Electron ->', SOCKET_URL);
     } else if (isRender) {
         SOCKET_URL = window.location.origin;
         console.log('[Config] Front on Render ->', SOCKET_URL);
     } else if (isLocalhost) {
-        SOCKET_URL = 'https://<YOUR-RENDER>.onrender.com';
+        SOCKET_URL = RENDER_API;
         console.log('[Config] Localhost ->', SOCKET_URL);
     } else if (isGithubPages || isNuastudioDomain) {
-        SOCKET_URL = 'https://<YOUR-RENDER>.onrender.com';
+        SOCKET_URL = RENDER_API;
         console.log('[Config] Static hosting ->', SOCKET_URL);
     } else {
-        SOCKET_URL = 'https://<YOUR-RENDER>.onrender.com';
+        SOCKET_URL = RENDER_API;
         console.log('[Config] Fallback ->', SOCKET_URL);
     }
 
@@ -41,12 +43,12 @@
             isRender,
             isGithubPages,
             isNuastudioDomain,
-            hostname,
+            hostname: hostname,
             protocol: window.location.protocol,
             origin: window.location.origin
         },
         socketOptions: {
-            transports: ['websocket', 'polling'],
+            transports: ['websocket','polling'],
             reconnection: true,
             reconnectionAttempts: Infinity,
             reconnectionDelay: 1000,
