@@ -9,6 +9,14 @@
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xeicon@2.3.3/xeicon.min.css">
     
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/TextPlugin.min.js"></script>
+    
+    <!-- ADD: Lottie Animation Library -->
+    <script src="https://unpkg.com/lottie-web/build/player/lottie.min.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -51,6 +59,48 @@
             position: relative;
         }
 
+        /* Custom Cursor */
+        .cursor {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--neon-blue);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            transition: all 0.1s ease;
+            z-index: 10000;
+            mix-blend-mode: difference;
+        }
+
+        .cursor-follower {
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 240, 255, 0.1);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            z-index: 9999;
+        }
+
+        .cursor.active {
+            transform: scale(0.5);
+            background: var(--neon-blue);
+        }
+
+        /* Mouse Glow Effect */
+        .mouse-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(0, 240, 255, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+            filter: blur(40px);
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s ease;
+            z-index: 1;
+        }
+
         /* Noise Overlay */
         .noise-overlay {
             position: fixed;
@@ -66,13 +116,7 @@
                 repeating-linear-gradient(-45deg, transparent, transparent 35px, rgba(255,255,255,.01) 35px, rgba(255,255,255,.01) 70px);
         }
 
-        /* Magnetic Elements */
-        [data-magnetic] {
-            display: inline-block;
-            transition: transform 0.3s var(--ease);
-        }
-
-        /* Header styles */
+        /* Header */
         .header {
             position: fixed; 
             top: 0; 
@@ -161,6 +205,25 @@
             color: inherit;
             text-decoration: none;
         }
+
+        .header .menu li.menu-join a {
+            background: linear-gradient(var(--white), var(--white)) padding-box,
+                        linear-gradient(90deg, var(--neon-blue), var(--neon-purple)) border-box;
+            border: 1px solid transparent;
+            padding: 8px 20px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .header.on-dark .menu li.menu-join a {
+            background: linear-gradient(rgba(255,255,255,0.1), rgba(255,255,255,0.1)) padding-box,
+                        linear-gradient(90deg, var(--neon-blue), var(--neon-purple)) border-box;
+        }
+
+        .header .menu li.menu-join:hover a {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 240, 255, 0.3);
+        }
         
         .header .menu li::before {
             content: ''; 
@@ -175,7 +238,7 @@
             transition: .4s;
         }
         
-        .header .menu li:hover::before {
+        .header .menu li:not(.menu-join):hover::before {
             width: 100%;
         }
         
@@ -274,81 +337,6 @@
             transform: rotate(-45deg);
         }
 
-        /* Scroll Indicator */
-        .scroll-indicator {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
-            opacity: 0;
-            animation: fadeInUp 1s 2s forwards;
-            transition: opacity 0.5s ease;
-            cursor: pointer;
-        }
-
-        .scroll-indicator.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateX(-50%) translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0);
-            }
-        }
-
-        .mouse-wheel {
-            width: 26px;
-            height: 42px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 15px;
-            position: relative;
-            margin: 0 auto;
-        }
-
-        .mouse-wheel::before {
-            content: '';
-            position: absolute;
-            left: 50%;
-            top: 8px;
-            width: 4px;
-            height: 8px;
-            background: var(--neon-blue);
-            border-radius: 2px;
-            transform: translateX(-50%);
-            animation: scroll-down 1.5s infinite;
-        }
-
-        @keyframes scroll-down {
-            0% {
-                opacity: 0;
-                transform: translateX(-50%) translateY(0);
-            }
-            50% {
-                opacity: 1;
-            }
-            100% {
-                opacity: 0;
-                transform: translateX(-50%) translateY(12px);
-            }
-        }
-
-        .scroll-text {
-            margin-top: 8px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.4);
-            font-family: 'Poppins', sans-serif;
-        }
-
         /* Chat button */
         aside.chat {
             cursor: pointer; 
@@ -370,6 +358,12 @@
             align-items: center; 
             justify-content: center; 
             border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
         
         aside.chat .logo::before, 
@@ -411,469 +405,391 @@
             z-index: 10;
         }
 
-        /* Enhanced Hero Section with Neon */
+        /* Hero Section with Advanced Animation */
         .hero {
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
-            background: var(--black);
+            background: linear-gradient(180deg, #e8e8e8 0%, #ffffff 100%);
             overflow: hidden;
         }
 
-        .hero-bg {
+        /* Animated Background Particles */
+        #particles-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Floating Color Bars */
+        .floating-bars {
             position: absolute;
             inset: 0;
-            opacity: 0.1;
-            background: radial-gradient(circle at 50% 50%, 
-                        var(--neon-blue) 0%, 
-                        transparent 40%),
-                        radial-gradient(circle at 80% 20%, 
-                        var(--neon-purple) 0%, 
-                        transparent 45%),
-                        radial-gradient(circle at 20% 80%, 
-                        var(--neon-blue) 0%, 
-                        transparent 45%);
-            filter: blur(80px);
-            animation: gradient-shift 20s ease infinite;
+            pointer-events: none;
         }
 
-        @keyframes gradient-shift {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            33% { transform: rotate(120deg) scale(1.1); }
-            66% { transform: rotate(240deg) scale(0.95); }
+        .color-bar {
+            position: absolute;
+            border-radius: 2px;
+            animation: float-infinite 20s infinite ease-in-out;
         }
 
+        .color-bar-1 {
+            width: 100px;
+            height: 8px;
+            background: #FFD93D;
+            top: 20%;
+            right: 15%;
+            transform: rotate(45deg);
+        }
+
+        .color-bar-2 {
+            width: 60px;
+            height: 8px;
+            background: #FF6BCB;
+            top: 60%;
+            right: 30%;
+            transform: rotate(-30deg);
+            animation-delay: -5s;
+        }
+
+        .color-bar-3 {
+            width: 80px;
+            height: 8px;
+            background: #4FC3F7;
+            bottom: 30%;
+            right: 10%;
+            transform: rotate(60deg);
+            animation-delay: -10s;
+        }
+
+        .color-bar-4 {
+            width: 120px;
+            height: 8px;
+            background: #81C784;
+            bottom: 15%;
+            left: 10%;
+            transform: rotate(-45deg);
+            animation-delay: -15s;
+        }
+
+        .color-bar-5 {
+            width: 70px;
+            height: 8px;
+            background: #fff;
+            top: 40%;
+            left: 20%;
+            transform: rotate(30deg);
+            animation-delay: -7s;
+        }
+
+        @keyframes float-infinite {
+            0%, 100% {
+                transform: translateY(0) translateX(0) rotate(var(--rotation, 0deg));
+            }
+            25% {
+                transform: translateY(-30px) translateX(20px) rotate(calc(var(--rotation, 0deg) + 10deg));
+            }
+            50% {
+                transform: translateY(20px) translateX(-10px) rotate(calc(var(--rotation, 0deg) - 5deg));
+            }
+            75% {
+                transform: translateY(-10px) translateX(30px) rotate(calc(var(--rotation, 0deg) + 15deg));
+            }
+        }
+
+        /* Hero Content */
         .hero-content {
             position: relative;
             z-index: 2;
-            text-align: center;
             max-width: 90vw;
             width: 100%;
-            display: flex;
-            flex-direction: column;
+            padding: 0 4vw;
+        }
+
+        .hero-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* ADD: Hero Grid Layout for 2 Columns */
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 60px;
             align-items: center;
+        }
+
+        .hero-copy {
+            /* Left column for tabs and text */
+        }
+
+        .hero-visual {
+            display: flex;
             justify-content: center;
-        }
-
-        .hero-title-wrapper {
-            position: relative;
-            margin-bottom: 3rem;
-        }
-
-        .hero-title {
-            font-size: clamp(3rem, 10vw, 8rem);
-            font-weight: 900;
-            line-height: 0.9;
-            letter-spacing: -0.04em;
-            color: var(--white);
-            font-family: 'Poppins', 'Space Grotesk', sans-serif;
-            text-transform: uppercase;
-        }
-
-        .title-line {
-            display: block;
-            padding: 0.1em 0;
-            min-height: 1.2em;
-            height: 1.2em;
-            position: relative;
-        }
-
-        /* Enhanced Typing Effect */
-        .typing-char {
-            display: inline-block;
-            transition: all 0.3s ease;
-        }
-        
-        .typing-char.random-number {
-            opacity: 0.2;
-            color: var(--neon-blue);
-            text-shadow: 0 0 10px var(--neon-blue);
-        }
-        
-        .typing-char.revealed {
-            opacity: 1;
-            color: var(--white);
-            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
-            animation: reveal-glow 0.5s ease;
-        }
-
-        @keyframes reveal-glow {
-            0% { 
-                filter: brightness(2) drop-shadow(0 0 20px var(--neon-blue));
-                transform: scale(1.2);
-            }
-            100% { 
-                filter: brightness(1) drop-shadow(0 0 0px transparent);
-                transform: scale(1);
-            }
-        }
-
-        .typing-cursor {
-            display: inline-block;
-            width: 3px;
-            height: 1em;
-            background: var(--accent-gradient);
-            margin-left: 2px;
-            animation: blink 1s infinite;
-            border-radius: 2px;
-            transition: opacity 0.5s ease;
-        }
-
-        .typing-cursor.hidden {
-            opacity: 0;
-        }
-
-        @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0; }
-        }
-
-        .hero-subtitle {
-            font-size: clamp(1rem, 2vw, 1.5rem);
-            font-weight: 300;
-            color: var(--white);
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 1s var(--ease);
-            margin-bottom: 3rem;
-            font-family: 'Pretendard', sans-serif;
-        }
-
-        .hero-subtitle.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Enhanced Channel Form with Neon */
-        .channel-form-container {
-            opacity: 0;
-            transform: translateY(30px) scale(0.95);
-            transition: all 1s var(--ease);
-        }
-
-        .channel-form-container.visible {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-
-        .channel-form {
-            display: inline-block;
-            background: rgba(0, 0, 0, 0.6);
-            border: 1px solid rgba(0, 240, 255, 0.3);
-            backdrop-filter: blur(10px);
-            padding: 0;
-            position: relative;
-            overflow: visible;
-            transition: all 0.4s var(--ease);
-            box-shadow: 0 0 40px rgba(0, 240, 255, 0.1);
-        }
-
-        .channel-form:hover {
-            transform: translateY(-5px);
-            border-color: var(--neon-purple);
-            box-shadow: 0 10px 60px rgba(162, 89, 255, 0.3);
-        }
-
-        .form-row {
-            display: flex;
-        }
-
-        .form-row:first-child {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .form-row:last-child {
-            background: rgba(0, 0, 0, 0.8);
-            border-top: 1px solid rgba(0, 240, 255, 0.2);
-        }
-
-        .input-wrapper {
-            position: relative;
-            display: flex;
             align-items: center;
-            width: 50%;
         }
 
-        .input-wrapper:first-child::after {
-            content: '';
-            position: absolute;
-            right: 0;
-            top: 15%;
-            height: 70%;
-            width: 1px;
-            background-image: repeating-linear-gradient(
-                to bottom,
-                var(--neon-blue) 0,
-                var(--neon-blue) 4px,
-                transparent 4px,
-                transparent 8px
-            );
-            opacity: 0.3;
-            transition: all 0.3s ease;
-        }
-
-        .form-row:first-child .form-input {
-            background: transparent;
-            border: none;
-            color: var(--white);
-            font-family: 'Poppins', 'Space Grotesk', sans-serif;
-            font-size: 1rem;
-            font-weight: 600;
-            padding: 1.5rem 2rem;
-            outline: none;
-            transition: all 0.3s ease;
-            letter-spacing: 0.1em;
+        #heroLottie {
             width: 100%;
-            text-transform: uppercase;
+            max-width: 520px;
+            aspect-ratio: 1 / 1;
         }
 
-        .form-row:first-child .form-input::placeholder {
-            color: rgba(0, 240, 255, 0.3);
-            font-weight: 400;
-            font-size: 0.85rem;
-            letter-spacing: 0.15em;
-        }
-
-        .form-row:first-child .form-input:focus {
-            background: rgba(0, 240, 255, 0.03);
-            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
-        }
-
-        .role-section {
+        /* Tab Navigation */
+        .tab-nav {
             display: flex;
-            align-items: stretch;
-            flex: 0 0 60%;
-            background: rgba(0, 240, 255, 0.02);
-            border-right: 1px solid rgba(0, 240, 255, 0.2);
+            gap: 12px;
+            margin-bottom: 60px;
         }
 
-        .role-label {
-            padding: 1rem 1.2rem;
-            font-size: 0.7rem;
-            font-weight: 700;
-            letter-spacing: 0.2em;
-            color: var(--neon-blue);
-            border-right: 1px solid rgba(0, 240, 255, 0.2);
-            display: flex;
-            align-items: center;
-            text-transform: uppercase;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .role-selector {
-            display: flex;
-            flex: 1;
-        }
-
-        .role-btn {
-            flex: 1;
-            padding: 1rem;
-            background: transparent;
-            border: none;
-            border-right: 1px solid rgba(0, 240, 255, 0.1);
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 0.1em;
+        .tab-indicator {
+            width: 40px;
+            height: 3px;
+            background: #d0d0d0;
+            border-radius: 1.5px;
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
-            text-transform: uppercase;
-            font-family: 'Poppins', sans-serif;
         }
 
-        .role-btn:last-child {
-            border-right: none;
-        }
-
-        .role-btn:hover {
-            color: var(--neon-blue);
-            text-shadow: 0 0 10px var(--neon-blue);
-        }
-
-        .role-btn.active {
-            color: var(--white);
-            background: rgba(0, 240, 255, 0.1);
-            text-shadow: 0 0 15px var(--neon-blue);
-        }
-
-        /* Enter buttons section */
-        .enter-buttons {
-            flex: 0 0 40%;
-            display: flex;
-            gap: 2px;
-        }
-
-        .enter-btn {
-            padding: 1rem 1.5rem;
-            background: var(--accent-gradient);
-            border: none;
-            color: var(--black);
-            font-weight: 700;
-            font-size: 0.9rem;
-            letter-spacing: 0.15em;
-            cursor: pointer;
-            text-transform: uppercase;
-            position: relative;
-            transition: all 0.3s ease;
-            font-family: 'Poppins', sans-serif;
-            flex: 1;
-        }
-
-        #webEnterBtn {
-            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
-        }
-
-        #nativeViewerBtn {
-            background: linear-gradient(135deg, #a259ff 0%, #7b3ff2 100%);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-
-        .enter-btn .btn-icon {
-            font-size: 1.1em;
-        }
-
-        .enter-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 30px rgba(0, 240, 255, 0.5);
-        }
-
-        #nativeViewerBtn:hover {
-            box-shadow: 0 0 30px rgba(162, 89, 255, 0.5);
-        }
-
-        /* Show native viewer button only for GUEST */
-        .role-btn[data-role="guest"].active ~ .enter-buttons #nativeViewerBtn {
-            display: flex !important;
-        }
-
-        .role-btn[data-role="guest"].active ~ .enter-buttons #webEnterBtn {
-            flex: 0.55;
-        }
-
-        /* Admin Login Modal */
-        .admin-login-modal {
-            position: fixed;
+        .tab-indicator::before {
+            content: '';
+            position: absolute;
             top: 0;
-            left: 0;
+            left: -100%;
             width: 100%;
             height: 100%;
-            z-index: 9999;
-            display: none;
+            background: var(--black);
+            transition: left 0.3s ease;
         }
 
-        .admin-login-modal.show {
-            display: block;
+        .tab-indicator.active::before {
+            left: 0;
         }
 
-        .modal-backdrop {
+        /* Tab Content */
+        .tab-content {
+            position: relative;
+            min-height: 400px;
+        }
+
+        .tab-panel {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            backdrop-filter: blur(10px);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
         }
 
-        .modal-content {
+        .tab-panel.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+            position: relative;
+        }
+
+        .tab-label {
+            display: inline-block;
+            color: #4FC3F7;
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            font-family: 'Poppins', sans-serif;
+            opacity: 0;
+            animation: fadeInUp 0.8s 0.2s forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tab-title {
+            font-size: clamp(3rem, 8vw, 5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.04em;
+            color: var(--black);
+            font-family: 'Pretendard', sans-serif;
+            margin-bottom: 30px;
+        }
+
+        .tab-title .word {
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(40px);
+            animation: wordReveal 0.8s forwards;
+        }
+
+        .tab-title .word:nth-child(1) { animation-delay: 0.1s; }
+        .tab-title .word:nth-child(2) { animation-delay: 0.2s; }
+        .tab-title .word:nth-child(3) { animation-delay: 0.3s; }
+        .tab-title .word:nth-child(4) { animation-delay: 0.4s; }
+
+        @keyframes wordReveal {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tab-desc {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #666;
+            margin-bottom: 40px;
+            max-width: 500px;
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        /* CTA Buttons */
+        .hero-cta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .cta-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 18px 36px;
+            background: var(--black);
+            color: var(--white);
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-primary::before {
+            content: '';
             position: absolute;
             top: 50%;
             left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: var(--neon-blue);
             transform: translate(-50%, -50%);
-            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-            border: 1px solid var(--neon-blue);
-            border-radius: 12px;
-            padding: 3rem 2rem;
-            min-width: 400px;
-            box-shadow: 0 0 60px rgba(0, 240, 255, 0.4);
+            transition: width 0.6s, height 0.6s;
         }
 
-        .modal-content h3 {
-            color: var(--neon-blue);
-            margin-bottom: 2rem;
-            text-align: center;
+        .cta-primary:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .cta-primary span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .cta-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 18px 36px;
+            background: transparent;
+            color: var(--black);
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+            border: 2px solid var(--black);
+            border-radius: 30px;
+            transition: all 0.3s ease;
             font-family: 'Poppins', sans-serif;
+        }
+
+        .cta-secondary:hover {
+            background: var(--black);
+            color: var(--white);
+        }
+
+        /* Scroll Indicator */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            opacity: 1;
+            animation: bounce 2s infinite;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-10px); }
+        }
+
+        .scroll-text {
+            font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.2em;
-            font-size: 1.5rem;
-        }
-
-        .modal-content input {
-            width: 100%;
-            padding: 1rem;
-            margin-bottom: 1.2rem;
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(0, 240, 255, 0.3);
-            border-radius: 6px;
-            color: white;
-            font-family: 'Courier New', monospace;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .modal-content input:focus {
-            outline: none;
-            border-color: var(--neon-blue);
-            box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
-        }
-
-        .modal-content input::placeholder {
-            color: rgba(0, 240, 255, 0.4);
-        }
-
-        .modal-buttons {
-            display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .modal-buttons button {
-            flex: 1;
-            padding: 1rem;
-            border: 1px solid var(--neon-blue);
-            background: transparent;
-            color: var(--neon-blue);
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            color: #999;
+            font-weight: 500;
             font-family: 'Poppins', sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            font-weight: 600;
         }
 
-        .modal-buttons button[type="submit"] {
-            background: var(--accent-gradient);
-            color: black;
-            border: none;
+        .mouse-icon {
+            width: 20px;
+            height: 30px;
+            border: 2px solid #999;
+            border-radius: 10px;
+            position: relative;
         }
 
-        .modal-buttons button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(0, 240, 255, 0.3);
+        .mouse-icon::before {
+            content: '';
+            position: absolute;
+            top: 6px;
+            left: 50%;
+            width: 3px;
+            height: 8px;
+            background: #999;
+            border-radius: 2px;
+            transform: translateX(-50%);
+            animation: scroll-down 1.5s infinite;
         }
 
-        .error-message {
-            color: #ff4444;
-            font-size: 0.9rem;
-            margin-top: -0.5rem;
-            margin-bottom: 1rem;
-            display: none;
-            text-align: center;
+        @keyframes scroll-down {
+            0% {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateX(-50%) translateY(10px);
+            }
         }
 
-        .error-message.show {
-            display: block;
-        }
-
-        /* Original About Section */
+        /* About Section */
         .about {
             padding: 10vh 4vw;
             background: var(--white);
@@ -912,24 +828,6 @@
             font-family: 'Pretendard', sans-serif;
         }
 
-        /* Split Text Animation */
-        .split-text {
-            display: inline-block;
-            overflow: hidden;
-        }
-
-        .split-char {
-            display: inline-block;
-            transform: translateY(100%);
-            opacity: 0;
-            transition: all 0.6s var(--ease);
-        }
-
-        .split-text.reveal .split-char {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
         /* Feature Cards */
         .features {
             display: grid;
@@ -945,6 +843,7 @@
             overflow: hidden;
             cursor: pointer;
             transition: transform 0.3s var(--ease);
+            transform-style: preserve-3d;
         }
 
         .feature-card::before {
@@ -957,6 +856,10 @@
             background: var(--black);
             transform: translateY(100%);
             transition: transform 0.5s var(--ease);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px) rotateX(5deg);
         }
 
         .feature-card:hover::before {
@@ -979,6 +882,22 @@
 
         .feature-card:hover .feature-number {
             color: var(--white);
+            animation: glitch 0.3s infinite;
+        }
+
+        @keyframes glitch {
+            0%, 100% {
+                text-shadow: 
+                    0.05em 0 0 rgba(255, 0, 0, 0.75),
+                    -0.05em -0.025em 0 rgba(0, 255, 0, 0.75),
+                    0.025em 0.05em 0 rgba(0, 0, 255, 0.75);
+            }
+            15% {
+                text-shadow: 
+                    0.05em 0 0 rgba(255, 0, 0, 0.75),
+                    -0.05em -0.025em 0 rgba(0, 255, 0, 0.75),
+                    0.025em 0.05em 0 rgba(0, 0, 255, 0.75);
+            }
         }
 
         .feature-title {
@@ -1004,7 +923,7 @@
             color: rgba(255, 255, 255, 0.8);
         }
 
-        /* Services Section */
+        /* Services Section with Simplified Hover */
         .services {
             padding: 10vh 4vw;
             background: var(--black);
@@ -1067,6 +986,82 @@
             transition: transform 0.3s var(--ease);
         }
 
+        /* Service Keywords - New Simplified Hover Effect */
+        .service-keywords {
+            position: absolute;
+            right: 100px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0;
+            transition: all 0.4s var(--ease);
+            pointer-events: none;
+        }
+
+        .service-item:hover .service-keywords {
+            opacity: 1;
+            right: 120px;
+        }
+
+        .keyword-list {
+            display: grid;
+            grid-template-columns: repeat(4, auto);
+            gap: 8px 10px;
+            justify-content: end;
+            max-width: 450px;
+        }
+
+        .keyword-tag {
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-family: 'Poppins', sans-serif;
+            animation: fadeInKeyword 0.5s forwards;
+            opacity: 0;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            letter-spacing: 0.01em;
+            font-weight: 400;
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        /* Unified color scheme - subtle cyan glow */
+        .keyword-tag {
+            color: rgba(0, 240, 255, 0.8);
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.05), rgba(0, 240, 255, 0.02));
+            border-color: rgba(0, 240, 255, 0.2);
+        }
+
+        .keyword-tag:hover {
+            transform: translateY(-2px) scale(1.05);
+            color: rgba(0, 240, 255, 1);
+            border-color: rgba(0, 240, 255, 0.4);
+            box-shadow: 0 4px 12px rgba(0, 240, 255, 0.15);
+        }
+
+        /* Staggered animation */
+        @keyframes fadeInKeyword {
+            from {
+                opacity: 0;
+                transform: translateY(10px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .service-item .keyword-tag:nth-child(1) { animation-delay: 0.05s; }
+        .service-item .keyword-tag:nth-child(2) { animation-delay: 0.08s; }
+        .service-item .keyword-tag:nth-child(3) { animation-delay: 0.11s; }
+        .service-item .keyword-tag:nth-child(4) { animation-delay: 0.14s; }
+        .service-item .keyword-tag:nth-child(5) { animation-delay: 0.17s; }
+        .service-item .keyword-tag:nth-child(6) { animation-delay: 0.20s; }
+        .service-item .keyword-tag:nth-child(7) { animation-delay: 0.23s; }
+        .service-item .keyword-tag:nth-child(8) { animation-delay: 0.26s; }
+
         .service-item:hover .service-title {
             transform: translateX(2rem);
         }
@@ -1081,81 +1076,13 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: var(--accent);
+            background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.05));
             transition: left 0.5s var(--ease);
             z-index: 0;
         }
 
         .service-item:hover .service-bg {
             left: 0;
-        }
-
-        /* Service Expander Overlay */
-        .svc-expander {
-            position: absolute;
-            top: 0;
-            right: -50%;
-            width: 50%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            border-left: 1px solid var(--accent);
-            backdrop-filter: blur(10px);
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s var(--ease);
-            z-index: 10;
-            overflow: hidden;
-            pointer-events: none;
-        }
-
-        .svc-expander.active {
-            right: 0;
-            opacity: 1;
-            visibility: visible;
-            pointer-events: auto;
-        }
-
-        .expander-inner {
-            padding: 3rem 2.5rem;
-            color: var(--white);
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .exp-title {
-            font-size: 2rem;
-            font-weight: 800;
-            margin-bottom: 2rem;
-            color: var(--accent);
-            letter-spacing: -0.02em;
-            font-family: 'Pretendard', sans-serif;
-        }
-
-        .exp-body {
-            line-height: 1.6;
-            font-family: 'Pretendard', sans-serif;
-        }
-
-        .exp-body ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        .exp-body li {
-            padding: 0.4rem 0;
-            padding-left: 1.5rem;
-            position: relative;
-            color: rgba(255, 255, 255, 0.85);
-            font-size: 0.9rem;
-        }
-
-        .exp-body li:before {
-            content: '→';
-            position: absolute;
-            left: 0;
-            color: var(--accent);
         }
 
         /* Work Section */
@@ -1248,6 +1175,12 @@
             letter-spacing: -0.04em;
             margin-bottom: 3rem;
             font-family: 'Poppins', sans-serif;
+        }
+
+        .contact-title span {
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(50px);
         }
 
         .contact-email {
@@ -1355,6 +1288,32 @@
             transform: scale(1.5);
         }
 
+        /* ADD: Responsive Design for Hero Grid */
+        @media (max-width: 1024px) {
+            .hero-grid {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .hero-visual {
+                order: 2;
+                margin-top: 20px;
+            }
+
+            .hero-copy {
+                order: 1;
+            }
+
+            #heroLottie {
+                max-width: 400px;
+                margin: 0 auto;
+            }
+
+            .tab-title {
+                font-size: clamp(2.5rem, 6vw, 4rem);
+            }
+        }
+
         /* Responsive */
         @media (max-width: 820px) {
             .header .menu {
@@ -1417,22 +1376,6 @@
                 bottom: 100%;
             }
             
-            .scroll-indicator {
-                bottom: 20px;
-                right: 20px;
-            }
-
-            .enter-buttons {
-                flex-direction: column;
-                width: 100%;
-            }
-
-            .enter-btn {
-                width: 100%;
-            }
-        }
-        
-        @media (max-width: 768px) {
             .work-grid {
                 grid-template-columns: 1fr;
             }
@@ -1444,85 +1387,52 @@
             .service-title {
                 font-size: 1.5rem;
             }
+
+            .service-keywords {
+                display: none;
+            }
             
             .section-nav {
                 display: none;
             }
 
-            .channel-form {
-                width: 100%;
-                max-width: 320px;
-            }
-
-            .form-row {
-                flex-direction: column;
-            }
-
-            .input-wrapper::after {
+            .floating-bars {
                 display: none;
             }
 
-            .form-input {
-                width: 100% !important;
-            }
-
-            .role-section {
+            .hero-cta {
                 flex-direction: column;
+            }
+
+            .cta-primary,
+            .cta-secondary {
                 width: 100%;
+                justify-content: center;
             }
 
-            .role-label {
-                width: 100%;
-                text-align: center;
-                border-right: none;
-                border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+            .cursor,
+            .cursor-follower,
+            .mouse-glow {
+                display: none;
             }
 
-            .role-selector {
-                width: 100%;
+            * {
+                cursor: auto;
             }
 
-            .role-btn {
-                flex: 1;
-            }
-
-            .enter-buttons {
-                width: 100%;
-                flex-direction: row;
-            }
-
-            .enter-btn {
-                border-left: none;
-                border-top: 1px solid rgba(0, 240, 255, 0.15);
-            }
-
-            .svc-expander {
-                width: 100%;
-                right: -100%;
-            }
-            
-            .svc-expander.active {
-                right: 0;
-            }
-            
-            .scroll-indicator {
-                bottom: 80px;
-                right: 15px;
-            }
-            
-            .scroll-text {
-                writing-mode: horizontal-tb;
-                text-orientation: initial;
-            }
-
-            .modal-content {
-                min-width: 90%;
-                padding: 2rem 1.5rem;
+            /* ADD: Mobile specific hero adjustments */
+            #heroLottie {
+                max-width: 350px;
             }
         }
     </style>
 </head>
 <body>
+    <!-- Custom Cursor -->
+    <div class="cursor"></div>
+    <div class="cursor-follower"></div>
+    <div class="mouse-glow"></div>
+
     <!-- Noise Overlay -->
     <div class="noise-overlay"></div>
 
@@ -1551,6 +1461,7 @@
             </div>
             <div class="menu">
                 <ul>
+                    <li class="menu-join"><a href="join.html">채널 참가</a></li>
                     <li><a href="about.html">소개</a></li>
                     <li><a href="contact.html">접수</a></li>
                     <li><a href="recruit.html">모집</a></li>
@@ -1587,72 +1498,118 @@
         </a>
     </aside>
 
-    <!-- Admin Login Modal -->
-    <div class="admin-login-modal" id="adminLoginModal">
-        <div class="modal-backdrop" onclick="closeAdminLogin()"></div>
-        <div class="modal-content">
-            <h3>시스템 관리자 로그인</h3>
-            <form id="adminLoginForm">
-                <input type="text" id="adminUsername" placeholder="Username" required autocomplete="username">
-                <input type="password" id="adminPassword" placeholder="Password" required autocomplete="current-password">
-                <div class="error-message" id="loginError"></div>
-                <div class="modal-buttons">
-                    <button type="submit">로그인</button>
-                    <button type="button" onclick="closeAdminLogin()">취소</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- Main Container -->
     <div class="main-container">
-        <!-- Hero with Enhanced Design -->
-        <section class="hero" id="hero" data-bg="dark">
-            <div class="hero-bg"></div>
+        <!-- Hero Section -->
+        <section class="hero" id="hero" data-bg="light">
+            <!-- Animated Background -->
+            <canvas id="particles-canvas"></canvas>
+            
+            <!-- Floating Color Bars -->
+            <div class="floating-bars">
+                <div class="color-bar color-bar-1" style="--rotation: 45deg;"></div>
+                <div class="color-bar color-bar-2" style="--rotation: -30deg;"></div>
+                <div class="color-bar color-bar-3" style="--rotation: 60deg;"></div>
+                <div class="color-bar color-bar-4" style="--rotation: -45deg;"></div>
+                <div class="color-bar color-bar-5" style="--rotation: 30deg;"></div>
+            </div>
+
             <div class="hero-content">
-                <div class="hero-title-wrapper">
-                    <h1 class="hero-title" id="heroTitle">
-                        <div class="title-line" id="line1"></div>
-                        <div class="title-line" id="line2"></div>
-                        <div class="title-line" id="line3"></div>
-                    </h1>
-                </div>
-                <p class="hero-subtitle" id="heroSubtitle">실시간 자막으로 모두를 위한 접근성을 실현합니다</p>
-                <!-- Enhanced Channel Entry Form -->
-                <div class="channel-form-container" id="channelFormContainer">
-                    <form class="channel-form" id="channelForm">
-                        <div class="form-row">
-                            <div class="input-wrapper">
-                                <input type="text" class="form-input" id="channelCode" placeholder="CHANNEL" maxlength="6" required />
+                <div class="hero-inner">
+                    <!-- WRAP START: Hero Grid for 2 Columns -->
+                    <div class="hero-grid">
+                        <!-- Left Column: Tabs and Text -->
+                        <div class="hero-copy">
+                            <!-- Tab Navigation -->
+                            <div class="tab-nav">
+                                <div class="tab-indicator active" data-tab="0"></div>
+                                <div class="tab-indicator" data-tab="1"></div>
+                                <div class="tab-indicator" data-tab="2"></div>
                             </div>
-                            <div class="input-wrapper">
-                                <input type="password" class="form-input" id="channelPassword" placeholder="PASSWORD" />
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="role-section">
-                                <span class="role-label">ROLE</span>
-                                <div class="role-selector">
-                                    <button type="button" class="role-btn active" data-role="guest">GUEST</button>
-                                    <button type="button" class="role-btn" data-role="steno">STENO</button>
-                                    <button type="button" class="role-btn" data-role="admin">ADMIN</button>
+
+                            <!-- Tab Content -->
+                            <div class="tab-content">
+                                <!-- Tab 1 -->
+                                <div class="tab-panel active" data-panel="0">
+                                    <span class="tab-label">&lt;accessibility/&gt;</span>
+                                    <h1 class="tab-title" id="heroTitle1">
+                                        <span class="word">모든</span> <span class="word">순간</span><br>
+                                        <span class="word">모두를</span> <span class="word">위한</span><br>
+                                        <span class="word">실시간</span> <span class="word">자막</span>
+                                    </h1>
+                                    <p class="tab-desc">
+                                        청각 장애인, 외국인, 그리고 더 나은 이해를 원하는<br>
+                                        모든 사람이 참여할 수 있는 포용적인 디지털 경험을 만듭니다.
+                                    </p>
+                                    <div class="hero-cta">
+                                        <a href="join.html" class="cta-primary">
+                                            <span>채널 참가하기 →</span>
+                                        </a>
+                                        <a href="#about" class="cta-secondary">
+                                            서비스 알아보기
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- Tab 2 -->
+                                <div class="tab-panel" data-panel="1">
+                                    <span class="tab-label">&lt;technology/&gt;</span>
+                                    <h1 class="tab-title">
+                                        <span class="word">AI와</span> <span class="word">전문가가</span><br>
+                                        <span class="word">만드는</span><br>
+                                        <span class="word">99%</span> <span class="word">정확도</span>
+                                    </h1>
+                                    <p class="tab-desc">
+                                        최첨단 AI 기술과 전문 속기사의 협업으로<br>
+                                        업계 최고 수준의 정확도를 실현합니다.
+                                    </p>
+                                    <div class="hero-cta">
+                                        <a href="join.html" class="cta-primary">
+                                            <span>지금 시작하기 →</span>
+                                        </a>
+                                        <a href="#services" class="cta-secondary">
+                                            기술 살펴보기
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- Tab 3 -->
+                                <div class="tab-panel" data-panel="2">
+                                    <span class="tab-label">&lt;impact/&gt;</span>
+                                    <h1 class="tab-title">
+                                        <span class="word">250개</span> <span class="word">기업이</span><br>
+                                        <span class="word">선택한</span><br>
+                                        <span class="word">자막</span> <span class="word">솔루션</span>
+                                    </h1>
+                                    <p class="tab-desc">
+                                        대기업부터 스타트업까지, 수많은 기업과 기관이<br>
+                                        NUA STUDIO와 함께 소통의 장벽을 허물고 있습니다.
+                                    </p>
+                                    <div class="hero-cta">
+                                        <a href="contact.html" class="cta-primary">
+                                            <span>도입 문의하기 →</span>
+                                        </a>
+                                        <a href="#work" class="cta-secondary">
+                                            도입 사례 보기
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="enter-buttons" id="enterButtons">
-                                <button type="submit" class="enter-btn" id="webEnterBtn">WEB →</button>
-                                <button type="button" class="enter-btn" id="nativeViewerBtn">
-                                    <span class="btn-icon">🖥️</span>
-                                    <span>전용뷰어</span>
-                                </button>
-                            </div>
                         </div>
-                    </form>
+                        
+                        <!-- Right Column: Lottie Animation -->
+                        <div class="hero-visual">
+                            <div id="heroLottie" aria-label="Hero animation" role="img"></div>
+                        </div>
+                    </div>
+                    <!-- WRAP END: Hero Grid -->
                 </div>
             </div>
+
             <!-- Scroll Indicator -->
             <div class="scroll-indicator" id="scrollIndicator">
-                <div class="mouse-wheel"></div>
-                <div class="scroll-text">Scroll</div>
+                <span class="scroll-text">Scroll</span>
+                <div class="mouse-icon"></div>
             </div>
         </section>
 
@@ -1662,26 +1619,28 @@
                 <div class="section-header">
                     <p class="section-label">WHO WE ARE</p>
                     <h2 class="section-title">
-                        <span class="split-text" id="aboutText"></span>
+                        기술과 창의성을 결합하여<br>
+                        모든 사람이 참여할 수 있는<br>
+                        포용적인 디지털 경험을 만듭니다
                     </h2>
                 </div>
                 
                 <div class="features">
-                    <div class="feature-card" data-magnetic>
+                    <div class="feature-card">
                         <div class="feature-number">250+</div>
                         <h3 class="feature-title">프로젝트</h3>
                         <p class="feature-description">
                             다양한 산업 분야에서 성공적으로 완료한 실시간 자막 프로젝트
                         </p>
                     </div>
-                    <div class="feature-card" data-magnetic>
+                    <div class="feature-card">
                         <div class="feature-number">99%</div>
                         <h3 class="feature-title">정확도</h3>
                         <p class="feature-description">
                             AI와 전문가의 협업으로 달성한 업계 최고 수준의 자막 정확도
                         </p>
                     </div>
-                    <div class="feature-card" data-magnetic>
+                    <div class="feature-card">
                         <div class="feature-number">24/7</div>
                         <h3 class="feature-title">지원</h3>
                         <p class="feature-description">
@@ -1701,58 +1660,96 @@
                 </div>
                 
                 <div class="service-list">
-                    <div class="service-item" data-magnetic data-service="1">
+                    <div class="service-item">
                         <div class="service-bg"></div>
                         <div class="service-item-inner">
                             <div class="service-left">
                                 <span class="service-number">01</span>
                                 <h3 class="service-title">실시간 현장 자막</h3>
                             </div>
+                            <div class="service-keywords">
+                                <div class="keyword-list">
+                                    <span class="keyword-tag">국제회의</span>
+                                    <span class="keyword-tag">컨퍼런스</span>
+                                    <span class="keyword-tag">포럼</span>
+                                    <span class="keyword-tag">웨비나</span>
+                                    <span class="keyword-tag">학술대회</span>
+                                    <span class="keyword-tag">생방송</span>
+                                    <span class="keyword-tag">동시통역</span>
+                                </div>
+                            </div>
                             <span class="service-arrow">→</span>
                         </div>
                     </div>
                     
-                    <div class="service-item" data-magnetic data-service="2">
+                    <div class="service-item">
                         <div class="service-bg"></div>
                         <div class="service-item-inner">
                             <div class="service-left">
                                 <span class="service-number">02</span>
                                 <h3 class="service-title">영상 자막</h3>
                             </div>
+                            <div class="service-keywords">
+                                <div class="keyword-list">
+                                    <span class="keyword-tag">다국어</span>
+                                    <span class="keyword-tag">번역</span>
+                                    <span class="keyword-tag">편집</span>
+                                    <span class="keyword-tag">유튜브</span>
+                                    <span class="keyword-tag">넷플릭스</span>
+                                    <span class="keyword-tag">OTT</span>
+                                    <span class="keyword-tag">SRT/VTT</span>
+                                    <span class="keyword-tag">후반작업</span>
+                                </div>
+                            </div>
                             <span class="service-arrow">→</span>
                         </div>
                     </div>
                     
-                    <div class="service-item" data-magnetic data-service="3">
+                    <div class="service-item">
                         <div class="service-bg"></div>
                         <div class="service-item-inner">
                             <div class="service-left">
                                 <span class="service-number">03</span>
                                 <h3 class="service-title">배리어프리 공연 자막</h3>
                             </div>
+                            <div class="service-keywords">
+                                <div class="keyword-list">
+                                    <span class="keyword-tag">뮤지컬</span>
+                                    <span class="keyword-tag">연극</span>
+                                    <span class="keyword-tag">오페라</span>
+                                    <span class="keyword-tag">콘서트</span>
+                                    <span class="keyword-tag">무용</span>
+                                    <span class="keyword-tag">수어통역</span>
+                                    <span class="keyword-tag">음향설명</span>
+                                </div>
+                            </div>
                             <span class="service-arrow">→</span>
                         </div>
                     </div>
                     
-                    <div class="service-item" data-magnetic data-service="4">
+                    <div class="service-item">
                         <div class="service-bg"></div>
                         <div class="service-item-inner">
                             <div class="service-left">
                                 <span class="service-number">04</span>
                                 <h3 class="service-title">맞춤 솔루션</h3>
                             </div>
+                            <div class="service-keywords">
+                                <div class="keyword-list">
+                                    <span class="keyword-tag">API</span>
+                                    <span class="keyword-tag">SDK</span>
+                                    <span class="keyword-tag">플랫폼</span>
+                                    <span class="keyword-tag">클라우드</span>
+                                    <span class="keyword-tag">온프레미스</span>
+                                    <span class="keyword-tag">Zoom</span>
+                                    <span class="keyword-tag">Teams</span>
+                                    <span class="keyword-tag">커스터마이징</span>
+                                </div>
+                            </div>
                             <span class="service-arrow">→</span>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Service Expander Overlay -->
-                <aside class="svc-expander" aria-hidden="true">
-                    <div class="expander-inner">
-                        <h3 class="exp-title"></h3>
-                        <div class="exp-body"></div>
-                    </div>
-                </aside>
             </div>
         </section>
 
@@ -1765,7 +1762,7 @@
                 </div>
                 
                 <div class="work-grid">
-                    <div class="work-item" data-magnetic>
+                    <div class="work-item">
                         <img src="data:image/svg+xml,%3Csvg width='800' height='500' xmlns='http://www.w3.org/2000/svg'%3E%3Crect fill='%23222' width='800' height='500'/%3E%3Ctext x='50%25' y='50%25' font-size='24' fill='%23666' text-anchor='middle' dy='.3em'%3EKBS%3C/text%3E%3C/svg%3E" alt="KBS">
                         <div class="work-overlay">
                             <span class="work-category">Broadcasting</span>
@@ -1773,7 +1770,7 @@
                         </div>
                     </div>
                     
-                    <div class="work-item" data-magnetic>
+                    <div class="work-item">
                         <img src="data:image/svg+xml,%3Csvg width='800' height='500' xmlns='http://www.w3.org/2000/svg'%3E%3Crect fill='%23333' width='800' height='500'/%3E%3Ctext x='50%25' y='50%25' font-size='24' fill='%23777' text-anchor='middle' dy='.3em'%3ESamsung%3C/text%3E%3C/svg%3E" alt="Samsung">
                         <div class="work-overlay">
                             <span class="work-category">Conference</span>
@@ -1781,7 +1778,7 @@
                         </div>
                     </div>
                     
-                    <div class="work-item" data-magnetic>
+                    <div class="work-item">
                         <img src="data:image/svg+xml,%3Csvg width='800' height='500' xmlns='http://www.w3.org/2000/svg'%3E%3Crect fill='%23444' width='800' height='500'/%3E%3Ctext x='50%25' y='50%25' font-size='24' fill='%23888' text-anchor='middle' dy='.3em'%3ENaver%3C/text%3E%3C/svg%3E" alt="Naver">
                         <div class="work-overlay">
                             <span class="work-category">Platform</span>
@@ -1789,7 +1786,7 @@
                         </div>
                     </div>
                     
-                    <div class="work-item" data-magnetic>
+                    <div class="work-item">
                         <img src="data:image/svg+xml,%3Csvg width='800' height='500' xmlns='http://www.w3.org/2000/svg'%3E%3Crect fill='%23555' width='800' height='500'/%3E%3Ctext x='50%25' y='50%25' font-size='24' fill='%23999' text-anchor='middle' dy='.3em'%3ESeoul%3C/text%3E%3C/svg%3E" alt="Seoul">
                         <div class="work-overlay">
                             <span class="work-category">Government</span>
@@ -1806,8 +1803,8 @@
                 <h2 class="contact-title">
                     <span>Let's Work</span> <span>Together</span>
                 </h2>
-                <a href="mailto:contact@nua.studio" class="contact-email" data-magnetic>
-                    contact@nua.studio
+                <a href="mailto:nuastudio@gmail.com" class="contact-email">
+                    nuastudio@gmail.com
                 </a>
             </div>
         </section>
@@ -1825,216 +1822,129 @@
         </footer>
     </div>
 
-    <script src="config.js"></script>
     <script>
-        // Configuration constants
-        const CONFIG = {
-            API_BASE_URL: window.CONFIG?.SOCKET_URL || 'http://localhost:3000',
-            CHANNEL_REGEX: /^[A-Z0-9]{6}$/,
-            VIEWER_DOWNLOAD_URL: window.location.hostname === 'localhost' 
-                ? '/download/nuaviewer.html' 
-                : 'https://nuastudio.co.kr/download/nuaviewer.html',
-            DEEPLINK_TIMEOUT: 1400,
-            DEEPLINK_SCHEME: 'nuaviewer://',
-            SPECIAL_ADMIN_CODES: ['SYSTEM', 'MASTER', 'ADMIN']
-        };
+        // Initialize GSAP
+        gsap.registerPlugin(ScrollTrigger, TextPlugin);
 
-        // Safe DOM selector helper
-        function safeQuerySelector(selector, callback) {
-            const element = document.querySelector(selector);
-            if (element && callback) {
-                callback(element);
-            }
-            return element;
-        }
+        // Custom Cursor
+        const cursor = document.querySelector('.cursor');
+        const cursorFollower = document.querySelector('.cursor-follower');
+        const mouseGlow = document.querySelector('.mouse-glow');
 
-        // Safe event binding helper
-        function safeAddEventListener(selector, event, handler) {
-            const element = safeQuerySelector(selector);
-            if (element) {
-                element.addEventListener(event, handler);
-                return true;
-            }
-            return false;
-        }
-
-        // Channel validation function - 서버의 실제 엔드포인트 사용
-        async function validateChannel(channelCode) {
-            try {
-                const response = await fetch(`${CONFIG.API_BASE_URL}/api/channel/${channelCode}/verify`, {
-                    method: 'GET',
-                    headers: {
-                        'ngrok-skip-browser-warning': 'true'
-                    }
-                });
-                
-                const data = await response.json();
-                return data.exists === true;
-            } catch (error) {
-                console.error('Channel validation error:', error);
-                return false;
-            }
-        }
-
-        // Show loading state
-        function setFormLoading(isLoading) {
-            const submitBtn = document.getElementById('webEnterBtn');
-            const nativeBtn = document.getElementById('nativeViewerBtn');
-            const roleButtons = document.querySelectorAll('.role-btn');
-            const channelCodeInput = document.getElementById('channelCode');
-            const channelPasswordInput = document.getElementById('channelPassword');
-            
-            if (isLoading) {
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.style.opacity = '0.6';
-                    submitBtn.innerHTML = '검증 중...';
-                }
-                if (nativeBtn) {
-                    nativeBtn.disabled = true;
-                    nativeBtn.style.opacity = '0.6';
-                }
-                roleButtons.forEach(btn => btn.disabled = true);
-                if (channelCodeInput) channelCodeInput.disabled = true;
-                if (channelPasswordInput) channelPasswordInput.disabled = true;
-            } else {
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.style.opacity = '1';
-                    const selectedRole = document.querySelector('.role-btn.active')?.getAttribute('data-role');
-                    submitBtn.innerHTML = selectedRole === 'guest' ? 'WEB →' : 'ENTER →';
-                }
-                if (nativeBtn) {
-                    nativeBtn.disabled = false;
-                    nativeBtn.style.opacity = '1';
-                }
-                roleButtons.forEach(btn => btn.disabled = false);
-                if (channelCodeInput) channelCodeInput.disabled = false;
-                if (channelPasswordInput) channelPasswordInput.disabled = false;
-            }
-        }
-
-        // 1. Hero Matrix Typing Effect
-        function startHeroTyping() {
-            const lines = [
-                { element: document.getElementById('line1'), text: "Live Captions" },
-                { element: document.getElementById('line2'), text: "For" },
-                { element: document.getElementById('line3'), text: "Everyone" }
-            ];
-            
-            const subtitle = document.getElementById('heroSubtitle');
-            const channelForm = document.getElementById('channelFormContainer');
-            let globalCharIndex = 0;
-            const allChars = [];
-            
-            // Create all characters as random numbers first
-            lines.forEach((line, lineIndex) => {
-                if (!line.element) return;
-                
-                for (let i = 0; i < line.text.length; i++) {
-                    const char = document.createElement('span');
-                    char.className = 'typing-char random-number';
-                    char.textContent = line.text[i] === ' ' ? '\u00A0' : Math.floor(Math.random() * 10);
-                    line.element.appendChild(char);
-                    allChars.push({
-                        element: char,
-                        finalChar: line.text[i],
-                        lineIndex: lineIndex
-                    });
-                }
-            });
-            
-            // Single cursor at the beginning
-            const cursor = document.createElement('span');
-            cursor.className = 'typing-cursor';
-            cursor.id = 'mainCursor';
-            if (lines[0].element) {
-                lines[0].element.insertBefore(cursor, lines[0].element.firstChild);
-            }
-            
-            // Random number animation
-            const randomInterval = setInterval(() => {
-                allChars.forEach((char, index) => {
-                    if (index >= globalCharIndex && char.finalChar !== ' ' && char.element.classList.contains('random-number')) {
-                        char.element.textContent = Math.floor(Math.random() * 10);
-                    }
-                });
-            }, 30);
-            
-            // Reveal actual text character by character
-            const revealInterval = setInterval(() => {
-                if (globalCharIndex < allChars.length) {
-                    const currentChar = allChars[globalCharIndex];
-                    currentChar.element.textContent = currentChar.finalChar === ' ' ? '\u00A0' : currentChar.finalChar;
-                    currentChar.element.classList.remove('random-number');
-                    currentChar.element.classList.add('revealed');
-                    
-                    // Move cursor to next position
-                    if (globalCharIndex < allChars.length - 1) {
-                        const nextChar = allChars[globalCharIndex + 1];
-                        
-                        if (currentChar.lineIndex !== nextChar.lineIndex && lines[nextChar.lineIndex].element) {
-                            lines[nextChar.lineIndex].element.insertBefore(cursor, lines[nextChar.lineIndex].element.firstChild);
-                        } else {
-                            currentChar.element.parentNode.insertBefore(cursor, currentChar.element.nextSibling);
-                        }
-                    } else {
-                        currentChar.element.parentNode.appendChild(cursor);
-                    }
-                    
-                    globalCharIndex++;
-                } else {
-                    clearInterval(randomInterval);
-                    clearInterval(revealInterval);
-                    
-                    setTimeout(() => {
-                        cursor.classList.add('hidden');
-                    }, 500);
-                    
-                    setTimeout(() => {
-                        if (subtitle) subtitle.classList.add('visible');
-                        setTimeout(() => {
-                            if (channelForm) channelForm.classList.add('visible');
-                        }, 500);
-                    }, 800);
-                }
-            }, 45);
-        }
-
-        // Mouse tracking spotlight effect
-        function initMouseSpotlight() {
-            const hero = document.querySelector('.hero');
-            if (!hero) return;
-            
-            let mouseX = 50;
-            let mouseY = 50;
-            
+        if (window.innerWidth > 820) {
             document.addEventListener('mousemove', (e) => {
-                const heroRect = hero.getBoundingClientRect();
-                if (e.clientY >= heroRect.top && e.clientY <= heroRect.bottom) {
-                    mouseX = (e.clientX / window.innerWidth) * 100;
-                    mouseY = ((e.clientY - heroRect.top) / heroRect.height) * 100;
-                    
-                    hero.style.background = `
-                        radial-gradient(
-                            circle 600px at ${mouseX}% ${mouseY}%,
-                            rgba(255, 255, 255, 0.03),
-                            rgba(255, 255, 255, 0.01) 40%,
-                            transparent 70%
-                        ),
-                        var(--black)
-                    `;
-                }
+                cursor.style.left = e.clientX - 10 + 'px';
+                cursor.style.top = e.clientY - 10 + 'px';
+                
+                setTimeout(() => {
+                    cursorFollower.style.left = e.clientX - 20 + 'px';
+                    cursorFollower.style.top = e.clientY - 20 + 'px';
+                }, 100);
+                
+                mouseGlow.style.left = e.clientX + 'px';
+                mouseGlow.style.top = e.clientY + 'px';
             });
+
+            document.addEventListener('mousedown', () => cursor.classList.add('active'));
+            document.addEventListener('mouseup', () => cursor.classList.remove('active'));
         }
 
-        // Start typing effect on page load
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(startHeroTyping, 500);
-            initMouseSpotlight();
+        // Particle Animation
+        function initParticles() {
+            const canvas = document.getElementById('particles-canvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const particles = [];
+            const particleCount = 50;
+            
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.size = Math.random() * 2;
+                    this.speedX = Math.random() * 0.5 - 0.25;
+                    this.speedY = Math.random() * 0.5 - 0.25;
+                    this.opacity = Math.random() * 0.5 + 0.2;
+                }
+                
+                update() {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    
+                    if (this.x > canvas.width) this.x = 0;
+                    if (this.x < 0) this.x = canvas.width;
+                    if (this.y > canvas.height) this.y = 0;
+                    if (this.y < 0) this.y = canvas.height;
+                }
+                
+                draw() {
+                    ctx.fillStyle = `rgba(0, 240, 255, ${this.opacity})`;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+            
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(particle => {
+                    particle.update();
+                    particle.draw();
+                });
+                requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+
+        initParticles();
+
+        // Tab Switching
+        const tabIndicators = document.querySelectorAll('.tab-indicator');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+        let currentTab = 0;
+        let autoPlayInterval;
+
+        function switchTab(index) {
+            tabIndicators.forEach(indicator => indicator.classList.remove('active'));
+            tabPanels.forEach(panel => panel.classList.remove('active'));
+            
+            tabIndicators[index].classList.add('active');
+            tabPanels[index].classList.add('active');
+            
+            currentTab = index;
+        }
+
+        tabIndicators.forEach((indicator, index) => {
+            indicator.addEventListener('click', () => {
+                switchTab(index);
+                resetAutoPlay();
+            });
         });
 
-        // 2. Dynamic Header Color
+        function startAutoPlay() {
+            autoPlayInterval = setInterval(() => {
+                currentTab = (currentTab + 1) % tabIndicators.length;
+                switchTab(currentTab);
+            }, 5000);
+        }
+
+        function resetAutoPlay() {
+            clearInterval(autoPlayInterval);
+            startAutoPlay();
+        }
+
+        startAutoPlay();
+
+        // Dynamic Header Color
         function updateHeaderColor() {
             const header = document.getElementById('header');
             const sections = document.querySelectorAll('section[data-bg]');
@@ -2056,298 +1966,55 @@
         window.addEventListener('scroll', updateHeaderColor);
         window.addEventListener('load', updateHeaderColor);
 
+        // GSAP Scroll Animations
+        gsap.utils.toArray('.section-title').forEach(title => {
+            gsap.fromTo(title, 
+                { opacity: 0, y: 50 },
+                {
+                    opacity: 1,
+                    y: 0,
+                    duration: 1,
+                    scrollTrigger: {
+                        trigger: title,
+                        start: 'top 80%',
+                        end: 'bottom 20%',
+                        toggleActions: 'play none none reverse'
+                    }
+                }
+            );
+        });
+
+        // Contact Title Animation
+        gsap.fromTo('.contact-title span',
+            { opacity: 0, y: 50 },
+            {
+                opacity: 1,
+                y: 0,
+                duration: 0.8,
+                stagger: 0.2,
+                scrollTrigger: {
+                    trigger: '.contact-title',
+                    start: 'top 80%'
+                }
+            }
+        );
+
         // Hamburger menu toggle
-        safeAddEventListener('#hamburger', 'click', function() {
-            safeQuerySelector('.header', (header) => {
-                header.classList.toggle('HmActive');
-            });
+        document.getElementById('hamburger')?.addEventListener('click', function() {
+            document.querySelector('.header').classList.toggle('HmActive');
         });
 
         // Language dropdown toggle
-        safeAddEventListener('.lang_current', 'click', function() {
-            safeQuerySelector('.lang_list_wrap', (langList) => {
-                if (langList.style.display === 'block') {
-                    langList.style.display = 'none';
-                } else {
-                    langList.style.display = 'block';
-                }
-            });
-        });
-
-        // Close language dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.lang')) {
-                safeQuerySelector('.lang_list_wrap', (langList) => {
-                    langList.style.display = 'none';
-                });
+        document.querySelector('.lang_current')?.addEventListener('click', function() {
+            const langList = document.querySelector('.lang_list_wrap');
+            if (langList.style.display === 'block') {
+                langList.style.display = 'none';
+            } else {
+                langList.style.display = 'block';
             }
         });
 
-        // 3. Channel Form Functionality with Native Viewer Support
-        const channelForm = document.getElementById('channelForm');
-        const channelCodeInput = document.getElementById('channelCode');
-        const channelPasswordInput = document.getElementById('channelPassword');
-        const roleBtns = document.querySelectorAll('.role-btn');
-        const nativeViewerBtn = document.getElementById('nativeViewerBtn');
-        const webEnterBtn = document.getElementById('webEnterBtn');
-        let selectedRole = 'guest';
-
-        // Role selection with button visibility
-        roleBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                roleBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                selectedRole = btn.getAttribute('data-role');
-                
-                // Show/hide native viewer button based on role
-                if (nativeViewerBtn && webEnterBtn) {
-                    if (selectedRole === 'guest') {
-                        nativeViewerBtn.style.display = 'flex';
-                        webEnterBtn.textContent = 'WEB →';
-                    } else {
-                        nativeViewerBtn.style.display = 'none';
-                        webEnterBtn.textContent = 'ENTER →';
-                    }
-                }
-            });
-        });
-
-        // Auto uppercase for channel code
-        if (channelCodeInput) {
-            channelCodeInput.addEventListener('input', (e) => {
-                e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-            });
-        }
-
-        // Native Viewer Launch Function
-        function launchNativeViewer(channelCode) {
-            const deepLink = `${CONFIG.DEEPLINK_SCHEME}join?channel=${channelCode}`;
-            
-            // 브라우저 기본 딥링크 팝업 사용 (Zoom 방식)
-            window.location.href = deepLink;
-            
-            // 3초 후 앱이 실행되지 않았을 경우 안내
-            setTimeout(() => {
-                // 사용자가 아직 같은 페이지에 있다면 (앱이 안 열림)
-                if (document.visibilityState === 'visible') {
-                    const userConfirm = confirm(
-                        '전용 뷰어가 실행되지 않았나요?\n' +
-                        '다운로드 페이지로 이동하시겠습니까?'
-                    );
-                    
-                    if (userConfirm) {
-                        window.location.href = CONFIG.VIEWER_DOWNLOAD_URL;
-                    }
-                }
-            }, 3000);
-        }
-
-        // Native viewer button click handler - 채널 검증 추가
-        if (nativeViewerBtn) {
-            nativeViewerBtn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                const channelCode = channelCodeInput?.value;
-                
-                if (!channelCode) {
-                    alert('채널 코드를 입력해주세요');
-                    return;
-                }
-                
-                if (!CONFIG.CHANNEL_REGEX.test(channelCode)) {
-                    alert('채널 코드는 6자리 영문/숫자여야 합니다');
-                    return;
-                }
-                
-                // Validate channel exists before launching native viewer
-                setFormLoading(true);
-                const isValid = await validateChannel(channelCode);
-                setFormLoading(false);
-                
-                if (!isValid) {
-                    alert('존재하지 않는 채널입니다.\n채널 코드를 다시 확인해주세요.');
-                    return;
-                }
-                
-                launchNativeViewer(channelCode);
-            });
-        }
-
-        // Admin Login Functions
-        function showAdminLogin() {
-            const modal = document.getElementById('adminLoginModal');
-            if (modal) {
-                modal.classList.add('show');
-                safeQuerySelector('#adminUsername', (input) => input.focus());
-            }
-        }
-
-        function closeAdminLogin() {
-            const modal = document.getElementById('adminLoginModal');
-            if (modal) {
-                modal.classList.remove('show');
-                safeQuerySelector('#adminLoginForm', (form) => form.reset());
-                safeQuerySelector('#loginError', (error) => error.classList.remove('show'));
-            }
-        }
-
-        // Admin Login Form Handler
-        safeAddEventListener('#adminLoginForm', 'submit', async (e) => {
-            e.preventDefault();
-            
-            const username = document.getElementById('adminUsername')?.value;
-            const password = document.getElementById('adminPassword')?.value;
-            const errorElement = document.getElementById('loginError');
-            
-            if (!username || !password) return;
-            
-            try {
-                const response = await fetch(`${CONFIG.API_BASE_URL}/api/admin/login`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'ngrok-skip-browser-warning': 'true'
-                    },
-                    body: JSON.stringify({ username, password })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    localStorage.setItem('adminToken', data.token);
-                    localStorage.setItem('adminRole', data.role);
-                    window.location.href = 'channel-manager.html';
-                } else {
-                    if (errorElement) {
-                        errorElement.textContent = data.error || '로그인에 실패했습니다.';
-                        errorElement.classList.add('show');
-                    }
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                if (errorElement) {
-                    errorElement.textContent = '서버 연결에 실패했습니다.';
-                    errorElement.classList.add('show');
-                }
-            }
-        });
-
-        // Channel Form submission (Web viewer) - 채널 검증 추가
-        if (channelForm) {
-            channelForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const channelCode = channelCodeInput?.value;
-                const password = channelPasswordInput?.value;
-                
-                if (!channelCode) {
-                    alert('채널 코드를 입력해주세요');
-                    return;
-                }
-                
-                if (!CONFIG.CHANNEL_REGEX.test(channelCode)) {
-                    alert('채널 코드는 6자리 영문/숫자여야 합니다');
-                    return;
-                }
-                
-                // Check for system admin access
-                if (selectedRole === 'admin') {
-                    // Special channel codes for system admin
-                    if (CONFIG.SPECIAL_ADMIN_CODES.includes(channelCode)) {
-                        showAdminLogin();
-                    } else {
-                        // Regular channel admin - still needs validation
-                        setFormLoading(true);
-                        const isValid = await validateChannel(channelCode);
-                        setFormLoading(false);
-                        
-                        if (!isValid) {
-                            alert('존재하지 않는 채널입니다.\n채널 코드를 다시 확인해주세요.');
-                            return;
-                        }
-                        window.location.href = `admin.html?channel=${channelCode}&role=admin`;
-                    }
-                } else {
-                    // For guest and steno, validate channel exists
-                    setFormLoading(true);
-                    const isValid = await validateChannel(channelCode);
-                    setFormLoading(false);
-                    
-                    if (!isValid) {
-                        alert('존재하지 않는 채널입니다.\n채널 코드를 다시 확인해주세요.');
-                        return;
-                    }
-                    
-                    if (selectedRole === 'guest') {
-                        window.location.href = `viewer.html?channel=${channelCode}`;
-                    } else if (selectedRole === 'steno') {
-                        window.location.href = `/editor.html?channel=${channelCode}`;
-                    }
-                }
-            });
-        }
-
-        // Keyboard shortcut for admin access (Ctrl + Shift + A)
-        document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.shiftKey && e.key === 'A') {
-                e.preventDefault();
-                showAdminLogin();
-            }
-        });
-
-        // 4. About Text Split Animation
-        function initAboutTextAnimation() {
-            const textElement = document.getElementById('aboutText');
-            if (!textElement) return;
-            
-            const text = "기술과 창의성을 결합하여 모든 사람이 참여할 수 있는 포용적인 디지털 경험을 만듭니다";
-            
-            textElement.innerHTML = '';
-            
-            for (let i = 0; i < text.length; i++) {
-                const span = document.createElement('span');
-                span.className = 'split-char';
-                span.textContent = text[i] === ' ' ? '\u00A0' : text[i];
-                span.style.transitionDelay = `${i * 0.02}s`;
-                textElement.appendChild(span);
-            }
-            
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('reveal');
-                    } else {
-                        entry.target.classList.remove('reveal');
-                    }
-                });
-            }, { threshold: 0.1 });
-            
-            observer.observe(textElement);
-        }
-
-        initAboutTextAnimation();
-
-        // 5. Magnetic Effects
-        function initMagneticEffects() {
-            const magneticElements = document.querySelectorAll('[data-magnetic]');
-            
-            magneticElements.forEach(el => {
-                el.addEventListener('mousemove', (e) => {
-                    const rect = el.getBoundingClientRect();
-                    const x = e.clientX - rect.left - rect.width / 2;
-                    const y = e.clientY - rect.top - rect.height / 2;
-                    
-                    el.style.transform = `translate(${x * 0.15}px, ${y * 0.15}px)`;
-                });
-                
-                el.addEventListener('mouseleave', () => {
-                    el.style.transform = '';
-                });
-            });
-        }
-
-        initMagneticEffects();
-
-        // 6. Scroll Progress Bar
+        // Scroll Progress Bar
         function updateScrollProgress() {
             const scrollProgress = document.getElementById('scrollProgress');
             if (!scrollProgress) return;
@@ -2359,7 +2026,7 @@
 
         window.addEventListener('scroll', updateScrollProgress);
 
-        // 7. Section Navigator
+        // Section Navigator
         function initSectionNavigator() {
             const dots = document.querySelectorAll('.section-dot');
             const sections = document.querySelectorAll('section[id]');
@@ -2394,230 +2061,48 @@
 
         initSectionNavigator();
 
-        // 8. Scroll Triggered Animations
-        class ScrollAnimations {
-            constructor() {
-                this.elements = document.querySelectorAll('.section-label, .feature-card, .work-item');
-                this.init();
-            }
-            
-            init() {
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach((entry, index) => {
-                        if (entry.isIntersecting) {
-                            setTimeout(() => {
-                                entry.target.style.opacity = '1';
-                                entry.target.style.transform = 'translateY(0)';
-                            }, index * 100);
-                        }
-                    });
-                }, {
-                    threshold: 0.1,
-                    rootMargin: '0px 0px -50px 0px'
-                });
-                
-                this.elements.forEach(el => {
-                    el.style.opacity = '0';
-                    el.style.transform = 'translateY(30px)';
-                    el.style.transition = 'all 0.8s cubic-bezier(0.19, 1, 0.22, 1)';
-                    observer.observe(el);
-                });
-            }
-        }
-
-        new ScrollAnimations();
-
-        // 9. Service Hover Expander System
-        function initServiceExpander() {
-            const serviceItems = document.querySelectorAll('.service-item');
-            const expander = document.querySelector('.svc-expander');
-            const expanderTitle = expander?.querySelector('.exp-title');
-            const expanderBody = expander?.querySelector('.exp-body');
-            
-            if (!expander || !expanderTitle || !expanderBody) return;
-            
-            let currentService = null;
-            let isMobile = window.innerWidth <= 768;
-            let expanderTimeout = null;
-            
-            const serviceData = {
-                1: {
-                    title: '실시간 현장 자막',
-                    content: `
-                        <ul>
-                            <li>국제회의 / 학술대회 – 동시통역 부스와 함께 자막 제공</li>
-                            <li>세미나 / 공청회 / 포럼 – 발표자 발언을 즉시 화면에 자막 송출</li>
-                            <li>기업 행사 / 신제품 발표회 – 대형 스크린, 온라인 중계 병행 송출</li>
-                            <li>정부·지자체 공식 행사 – 행정 보고, 시민 설명회 등 공공기관 현장</li>
-                            <li>언론 중계 / 생방송 스튜디오 – 방송 자막과 병행 가능한 속기 송출</li>
-                            <li>교육 현장 – 대학 강연, 워크숍, 특강 등 학습 지원</li>
-                        </ul>
-                    `
-                },
-                2: {
-                    title: '영상 자막',
-                    content: `
-                        <ul>
-                            <li>영상 포맷 지원: MP4, MOV, AVI 등 일반 동영상 파일 전체 지원</li>
-                            <li>자막 포맷 산출: SRT, VTT, CAP, ASS 등 범용 자막 파일 제공</li>
-                            <li>내장형 자막(Burn-in): 영상 화면에 자막이 직접 합성된 완성본 납품</li>
-                            <li>외부 자막(파일 제공): 원본 영상은 그대로 두고, 자막 파일만 별도 전달</li>
-                            <li>다국어 번역 자막: 한국어 원본에 영어/중국어/일본어 등 다국어 자막 제작 가능</li>
-                            <li>방송 규격 맞춤: KBS/MBC/SBS 방송 송출용 표준 규격, OTT(넷플릭스, 유튜브 등) 최적화 지원</li>
-                            <li>브랜딩 맞춤 편집: 기업/기관 로고·폰트·컬러를 반영한 커스터마이즈 자막 디자인</li>
-                        </ul>
-                    `
-                },
-                3: {
-                    title: '배리어프리 공연 자막',
-                    content: `
-                        <ul>
-                            <li>연극 / 뮤지컬 – 대사 전체 및 배경 설명 자막 제공</li>
-                            <li>콘서트 / 페스티벌 – 가사 + 공연 중 멘트 자막 송출</li>
-                            <li>무용 / 오페라 – 동작 설명, 가사·대사 번역 자막 제공</li>
-                            <li>영화 상영회 / 시사회 – 음향 효과 + 대사 자막 함께 제공</li>
-                            <li>공공·문화예술기관 주최 행사 – 지자체, 극장, 예술의전당 등 배리어프리 인증 목적</li>
-                        </ul>
-                    `
-                },
-                4: {
-                    title: '맞춤 솔루션',
-                    content: `
-                        <ul>
-                            <li>실시간 뷰어 연동: 현장 스크린 + 원격 참가자에게 동시에 자막 송출</li>
-                            <li>회의록 자동 생성: 행사 종료 후 자막 데이터를 회의록 파일로 제공 (DOCX, PDF 등)</li>
-                            <li>플랫폼 호환성: Zoom, MS Teams, Webex, YouTube Live 등 주요 화상회의·스트리밍 플랫폼과 연동 지원</li>
-                            <li>브랜딩 커스터마이즈: 기관 로고, 지정 색상, 폰트 적용된 전용 자막 디자인</li>
-                            <li>보안/비공개 옵션: 민감한 내부 회의의 경우 암호화된 전용 뷰어 제공</li>
-                            <li>하드웨어 패키지: 투명 디스플레이, 전용 뷰어 PC, 네트워크 장비까지 일체형 제공 가능</li>
-                        </ul>
-                    `
-                }
-            };
-            
-            function showExpander(serviceId) {
-                const data = serviceData[serviceId];
-                if (!data) return;
-                
-                if (expanderTimeout) {
-                    clearTimeout(expanderTimeout);
-                    expanderTimeout = null;
-                }
-                
-                expanderTitle.textContent = data.title;
-                expanderBody.innerHTML = data.content;
-                expander.classList.add('active');
-                expander.setAttribute('aria-hidden', 'false');
-                currentService = serviceId;
-            }
-            
-            function hideExpander(immediate = false) {
-                if (immediate) {
-                    expander.classList.remove('active');
-                    expander.setAttribute('aria-hidden', 'true');
-                    currentService = null;
-                } else {
-                    expanderTimeout = setTimeout(() => {
-                        expander.classList.remove('active');
-                        expander.setAttribute('aria-hidden', 'true');
-                        currentService = null;
-                    }, 100);
-                }
-            }
-            
-            if (!isMobile) {
-                serviceItems.forEach(item => {
-                    item.addEventListener('mouseenter', () => {
-                        const serviceId = item.getAttribute('data-service');
-                        showExpander(serviceId);
-                    });
-                    
-                    item.addEventListener('mouseleave', (e) => {
-                        const relatedTarget = e.relatedTarget;
-                        if (!relatedTarget || !relatedTarget.closest('.svc-expander')) {
-                            hideExpander();
-                        }
-                    });
-                });
-                
-                expander.addEventListener('mouseenter', () => {
-                    if (expanderTimeout) {
-                        clearTimeout(expanderTimeout);
-                        expanderTimeout = null;
-                    }
-                });
-                
-                expander.addEventListener('mouseleave', (e) => {
-                    const relatedTarget = e.relatedTarget;
-                    if (!relatedTarget || !relatedTarget.closest('.service-item')) {
-                        hideExpander(true);
-                    }
-                });
-            }
-            
-            if (isMobile) {
-                serviceItems.forEach(item => {
-                    item.addEventListener('click', () => {
-                        const serviceId = item.getAttribute('data-service');
-                        
-                        if (currentService === serviceId) {
-                            hideExpander(true);
-                        } else {
-                            showExpander(serviceId);
-                        }
-                    });
-                });
-                
-                document.addEventListener('click', (e) => {
-                    if (!e.target.closest('.service-item') && !e.target.closest('.svc-expander')) {
-                        hideExpander(true);
-                    }
-                });
-            }
-            
-            window.addEventListener('resize', () => {
-                const wasMobile = isMobile;
-                isMobile = window.innerWidth <= 768;
-                
-                if (wasMobile !== isMobile) {
-                    hideExpander(true);
-                }
-            });
-        }
-        
-        initServiceExpander();
-
-        // 10. Scroll Indicator Visibility
-        function handleScrollIndicator() {
+        // Scroll Indicator visibility
+        window.addEventListener('scroll', () => {
             const scrollIndicator = document.getElementById('scrollIndicator');
-            const heroSection = document.getElementById('hero');
-            
-            if (!scrollIndicator || !heroSection) return;
-            
-            window.addEventListener('scroll', () => {
-                const heroRect = heroSection.getBoundingClientRect();
-                const scrolled = window.scrollY;
-                
-                if (scrolled > 100) {
-                    scrollIndicator.classList.add('hidden');
+            if (scrollIndicator) {
+                if (window.scrollY > 100) {
+                    scrollIndicator.style.opacity = '0';
                 } else {
-                    scrollIndicator.classList.remove('hidden');
+                    scrollIndicator.style.opacity = '1';
                 }
-                
-                if (heroRect.top >= -100 && heroRect.bottom >= window.innerHeight / 2) {
-                    scrollIndicator.classList.remove('hidden');
-                }
-            });
+            }
+        });
+
+        document.getElementById('scrollIndicator')?.addEventListener('click', () => {
+            const aboutSection = document.getElementById('about');
+            if (aboutSection) {
+                aboutSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+
+        // ADD: Lottie Animation Initialization
+        document.addEventListener('DOMContentLoaded', function () {
+            // Check for reduced motion preference
+            const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             
-            scrollIndicator.addEventListener('click', () => {
-                const aboutSection = document.getElementById('about');
-                if (aboutSection) {
-                    aboutSection.scrollIntoView({ behavior: 'smooth' });
-                }
+            // Initialize Lottie animation
+            const anim = lottie.loadAnimation({
+                container: document.getElementById('heroLottie'),
+                renderer: 'svg',
+                loop: !prefersReduced,
+                autoplay: !prefersReduced,
+                path: './Development.json' // GitHub/Render 배포용 경로
             });
-        }
-        
-        handleScrollIndicator();
+
+            // Optional: Replay animation on tab switch
+            document.querySelectorAll('.tab-indicator').forEach(el => {
+                el.addEventListener('click', () => {
+                    if (!prefersReduced) {
+                        anim.goToAndPlay(0, true);
+                    }
+                });
+            });
+        });
     </script>
 </body>
 </html>
