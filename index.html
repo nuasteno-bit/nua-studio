@@ -17,6 +17,12 @@
     <!-- ADD: Lottie Animation Library -->
     <script src="https://unpkg.com/lottie-web/build/player/lottie.min.js"></script>
     
+    <!-- 경로 설정 스크립트 -->
+    <script>
+        // GitHub Pages 서브패스 대비: 현재 디렉토리 경로
+        const BASE = window.location.pathname.replace(/[^/]+$/, '');
+    </script>
+    
     <style>
         * {
             margin: 0;
@@ -1356,6 +1362,7 @@
                 display: block; 
                 box-sizing: border-box; 
                 width: 100%;
+                color: #fff;
             }
             
             .header .hamburger {
@@ -1491,7 +1498,7 @@
 
     <!-- Chat button -->
     <aside class="chat">
-        <a href="/kor/contact/" class="logo">
+        <a href="contact.html" class="logo">
             <span>
                 <i class="xi-message"></i>
             </span>
