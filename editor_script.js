@@ -522,7 +522,7 @@ function startViewerEdit() {
   }
 }
 
-function completeViewerEdit() {function completeViewerEdit() {
+function completeViewerEdit() {
   if (!isViewerEditing) return;
 
   const viewerContent = document.getElementById('viewerContent');
@@ -2563,6 +2563,7 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault();
   }
 });
+
 
 
 
