@@ -1047,28 +1047,37 @@
 
   <script src="config.js"></script>
   <script>
-    // API Base URL - REST API 우선, SOCKET_URL은 백업
+    // API Base URL 정규화 - 끝 슬래시 제거
     const API_BASE_URL = 
-      (window.CONFIG && (window.CONFIG.API_BASE_URL || window.CONFIG.REST_URL)) ||
-      (window.CONFIG && window.CONFIG.SOCKET_URL) || // 백업
-      'http://localhost:3000';
+      (window.CONFIG?.API_BASE_URL || window.CONFIG?.REST_URL || window.CONFIG?.SOCKET_URL || 'http://localhost:3000')
+      .replace(/\/+$/, '');
     
     let currentModalChannel = null;
     let channels = [];
     
-    // 인증 헤더 공통 함수
-    function authHeaders(extra = {}) {
+    // ✅ CORS 문제 해결: 공통 헤더 유틸
+    function headersFor(method, extra = {}) {
       const token = localStorage.getItem('adminToken');
-      return {
-        'Content-Type': 'application/json',
-        'Authorization': token || '',
-        'ngrok-skip-browser-warning': 'true',
-        ...extra
-      };
+      const h = { Accept: 'application/json' };
+      
+      // 인증 토큰 부착
+      if (token) {
+        h.Authorization = token;
+        // h.Authorization = `Bearer ${token}`; // 서버가 Bearer 요구 시 이 라인으로 교체
+      }
+      
+      // 단순 요청 유지: GET/HEAD/DELETE에는 Content-Type 생략
+      const upper = (method || 'GET').toUpperCase();
+      if (!['GET', 'HEAD', 'DELETE'].includes(upper)) {
+        h['Content-Type'] = 'application/json';
+      }
+      
+      // ⚠️ 커스텀 헤더 금지: 'ngrok-skip-browser-warning' 등 넣지 말 것
+      return { ...h, ...extra };
     }
     
     // Auth check - 보안 강화: 토큰과 역할 재확인
-    const REQUIRED_ROLE = 'system_admin';  // TODO: 실제 백엔드 역할 문자열로 변경
+    const REQUIRED_ROLE = 'system_admin';
     
     window.addEventListener('DOMContentLoaded', () => {
       const token = localStorage.getItem('adminToken');
@@ -1123,7 +1132,7 @@
       if (token) {
         fetch(`${API_BASE_URL}/api/admin/logout`, {
           method: 'POST',
-          headers: authHeaders()
+          headers: headersFor('POST')
         });
       }
       localStorage.removeItem('adminToken');
@@ -1147,8 +1156,7 @@
       document.getElementById('totalUsers').textContent = channels.reduce((sum, ch) => sum + (ch.activeUsers || 0), 0);
       document.getElementById('todayChannels').textContent = todayChannels;
       
-      // TODO: 실제 평균 사용시간 계산 로직 구현 필요 (현재는 mock 데이터)
-      // 예: 각 채널의 createdAt과 현재 시간 차이를 계산하여 평균 산출
+      // TODO: 실제 평균 사용시간 계산 로직 구현 필요
       document.getElementById('avgDuration').textContent = Math.floor(Math.random() * 60 + 30);
     }
     
@@ -1200,12 +1208,6 @@
       
       // Collect subtitle data for each channel
       for (const channel of channels) {
-        // TODO: 실제 서버에서 자막 데이터 가져오기
-        // const response = await fetch(`${API_BASE_URL}/api/channel/${channel.code}/subtitles`, {
-        //   headers: authHeaders()
-        // });
-        // const data = await response.json();
-        
         subtitlesData[channel.code] = {
           channelCode: channel.code,
           eventName: channel.eventName || 'Untitled',
@@ -1278,7 +1280,7 @@
       try {
         const response = await fetch(`${API_BASE_URL}/api/channel/create`, {
           method: 'POST',
-          headers: authHeaders(),
+          headers: headersFor('POST'),
           body: JSON.stringify(channelData)
         });
         
@@ -1312,7 +1314,8 @@
     async function loadChannelList() {
       try {
         const response = await fetch(`${API_BASE_URL}/api/channels`, {
-          headers: authHeaders()
+          method: 'GET',
+          headers: headersFor('GET')
         });
         
         if (!response.ok) {
@@ -1460,10 +1463,10 @@
         // 1) 서버에 타입과 패스키 함께 반영
         const res = await fetch(`${API_BASE_URL}/api/channel/${currentModalChannel.code}/type`, {
           method: 'PATCH',
-          headers: authHeaders(),
+          headers: headersFor('PATCH'),
           body: JSON.stringify({ 
             type: newType, 
-            passkey: newPasskey  // 타입과 패스키 함께 전송
+            passkey: newPasskey
           })
         });
         
@@ -1519,7 +1522,7 @@
       currentModalChannel = null;
     }
     
-    // Copy URL - 최신 Clipboard API 우선, fallback 포함
+    // Copy URL
     async function copyURL(inputId) {
       const input = document.getElementById(inputId);
       const text = input.value;
@@ -1538,7 +1541,7 @@
       }
     }
     
-    // Copy channel URL directly - 최신 Clipboard API 우선, fallback 포함
+    // Copy channel URL directly
     async function copyChannelURL(code) {
       const url = `${window.location.origin}/viewer.html?channel=${code}`;
       
@@ -1574,7 +1577,7 @@
         // 1) 서버 반영
         const res = await fetch(`${API_BASE_URL}/api/channel/${currentModalChannel.code}/passkey`, {
           method: 'PATCH',
-          headers: authHeaders(),
+          headers: headersFor('PATCH'),
           body: JSON.stringify({ passkey: newPasskey })
         });
         
@@ -1612,7 +1615,7 @@
       try {
         const res = await fetch(`${API_BASE_URL}/api/channel/${currentModalChannel.code}/extend`, {
           method: 'POST',
-          headers: authHeaders(),
+          headers: headersFor('POST'),
           body: JSON.stringify({ hours })
         });
         
@@ -1622,18 +1625,8 @@
         }
         
         showToast(`채널이 ${hours}시간 연장되었습니다`, 'success');
-        
-        // 필요시 채널 목록 재로드
-        // await loadChannelList();
       } catch (error) {
         showToast(error.message || '연장 실패', 'error');
-      }
-    }
-    
-    // Export modal channel subtitles
-    function exportModalChannelSubtitles() {
-      if (currentModalChannel) {
-        exportChannelSubtitles(currentModalChannel.code);
       }
     }
     
@@ -1642,21 +1635,13 @@
       if (!currentModalChannel) return;
       
       try {
-        // TODO: 서버에서 전체 채널 데이터 가져오기
-        // const response = await fetch(`${API_BASE_URL}/api/channel/${currentModalChannel.code}/full`, {
-        //   headers: authHeaders()
-        // });
-        // const fullData = await response.json();
-        
         const data = {
           channel: currentModalChannel.code,
           type: currentModalChannel.type,
           passkey: currentModalChannel.passkey,
           created: currentModalChannel.createdAt,
           event: currentModalChannel.eventName,
-          autoClose: currentModalChannel.autoClose,
-          // 실제 자막 데이터는 서버에서 가져와야 함
-          // accumulatedText: fullData.accumulatedText
+          autoClose: currentModalChannel.autoClose
         };
         
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1690,7 +1675,7 @@
         try {
           const response = await fetch(`${API_BASE_URL}/api/channel/${code}`, {
             method: 'DELETE',
-            headers: authHeaders()
+            headers: headersFor('DELETE')
           });
           
           if (response.ok) {
