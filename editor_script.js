@@ -522,44 +522,46 @@ function startViewerEdit() {
   }
 }
 
-function completeViewerEdit() {
+function completeViewerEdit() {function completeViewerEdit() {
   if (!isViewerEditing) return;
+
   const viewerContent = document.getElementById('viewerContent');
   const viewer = document.getElementById('viewer');
   const editBtn = document.getElementById('viewerEditBtn');
-  
-  const editedLines = [];
-  viewerContent.childNodes.forEach(node => {
-    if (node.nodeName === 'DIV') {
-      editedLines.push(node.textContent);
-    } else if (node.nodeName === 'BR') {
-      editedLines.push('');
-    } else if (node.nodeType === Node.TEXT_NODE) {
-      editedLines.push(node.textContent);
-    } else if (node.nodeName === 'SPAN') {
-      editedLines.push(node.textContent || '');
-    }
-  });
-  const editedText = editedLines.join('\n');
+  if (!viewerContent) return;
+
+  // PATCH: 편집 완료 시 텍스트를 innerText로 수집 + 개행/공백 정규화 (이중 개행 방지)
+  const editedText = viewerContent.innerText
+    .replace(/\r\n?/g, '\n')   // CRLF/CR -> LF
+    .replace(/\u00A0/g, ' ');  // NBSP -> space
+
+  // 누적 본문 반영
   accumulatedText = editedText;
   fullTextStorage = editedText;
+
+  // 편집 모드 종료 UI/상태
   isViewerEditing = false;
-  viewer.classList.remove('editing');
+  if (viewer) viewer.classList.remove('editing');
   viewerContent.contentEditable = 'false';
-  editBtn.textContent = '편집';
-  editBtn.classList.remove('editing');
-  
+  if (editBtn) {
+    editBtn.textContent = '편집';
+    editBtn.classList.remove('editing');
+  }
+
+  // 변경사항 방송
   if (socket && socket.connected) {
-    socket.emit('viewer_edit_complete', { 
-      channel, 
+    socket.emit('viewer_edit_complete', {
+      channel,
       editedText,
       editorRole: `속기사${myRole}`
     });
   }
-  
+
+  // 재렌더 및 포커스 복구
   updateViewerContent();
   if (myEditor) myEditor.focus();
 }
+
 
 function cancelViewerEdit() {
   if (!isViewerEditing) return;
@@ -2561,5 +2563,6 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault();
   }
 });
+
 
 
