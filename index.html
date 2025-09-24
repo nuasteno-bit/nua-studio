@@ -2101,6 +2101,12 @@
                 path: './Development.json' // GitHub/Render 배포용 경로
             });
 
+            // Sync animation with tab rotation (15 seconds for full cycle)
+            // Original animation: ~8.6 seconds (258 frames at 30fps)
+            // Target duration: 15 seconds (3 tabs × 5 seconds each)
+            // Speed calculation: 8.6 / 15 = 0.573
+            anim.setSpeed(0.573);
+
             // Optional: Replay animation on tab switch
             document.querySelectorAll('.tab-indicator').forEach(el => {
                 el.addEventListener('click', () => {
