@@ -539,6 +539,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            padding-top: 40px; /* 아래로 이동 */
         }
 
         #heroLottie {
@@ -1304,6 +1305,7 @@
             .hero-visual {
                 order: 2;
                 margin-top: 20px;
+                padding-top: 0; /* 모바일에서는 패딩 제거 */
             }
 
             .hero-copy {
@@ -2101,11 +2103,11 @@
                 path: './Development.json' // GitHub/Render 배포용 경로
             });
 
-            // Sync animation with tab rotation (15 seconds for full cycle)
+            // Sync animation with 2 tab rotations (30 seconds for 2 full cycles)
             // Original animation: ~8.6 seconds (258 frames at 30fps)
-            // Target duration: 15 seconds (3 tabs × 5 seconds each)
-            // Speed calculation: 8.6 / 15 = 0.573
-            anim.setSpeed(0.573);
+            // Target duration: 30 seconds (6 tabs × 5 seconds each = 2 cycles)
+            // Speed calculation: 8.6 / 30 = 0.287
+            anim.setSpeed(0.287);
 
             // Optional: Replay animation on tab switch
             document.querySelectorAll('.tab-indicator').forEach(el => {
