@@ -1920,8 +1920,6 @@ if (!isHtmlMode && socket) {
           myEditor.scrollTop = 0;
           myEditor.setSelectionRange(0, 0);
           
-          // 포커스 해제
-          myEditor.blur();
           
           // 추가 보장: 100ms 후 재확인 - 수정됨
           setTimeout(() => {
@@ -1998,7 +1996,11 @@ if (!isHtmlMode && socket) {
       applyEditorLocks();
       updateStatus();
       updateViewerContent();
-      
+
+      // 포커스 자동 복구(교대 타이밍 중복 호출 대비 rAF)
+if (myEditor) requestAnimationFrame(() => { 
+  if (document.activeElement !== myEditor) myEditor.focus();
+});
       // 9. 교대 처리 플래그 해제
       isProcessingSwitch = false;
       lastSwitchTime = Date.now();
@@ -2068,7 +2070,6 @@ if (!isHtmlMode && socket) {
         inputOptimizationCounter = 0;
         myEditor.scrollTop = 0;
         myEditor.setSelectionRange(0, 0);
-        myEditor.blur();
       }
     } else if (myRole === newActiveNum) {
       console.log('[강제 권한 획득] 권한을 가져왔습니다.');
@@ -2560,4 +2561,5 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault();
   }
 });
+
 
