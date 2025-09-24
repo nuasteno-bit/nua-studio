@@ -620,9 +620,8 @@ function updateViewerFromEditor() {
   if (!viewerContent || !myEditor) return;
   
   // HTML 모드에서는 항상 권한자
-  const currentText = accumulatedText + 
-    (accumulatedText && myEditor.value && !accumulatedText.endsWith(' ') ? ' ' : '') + 
-    myEditor.value;
+  const needsSpacer = accumulatedText && myEditor.value && !/[\s]$/.test(accumulatedText);
+const currentText = (accumulatedText || '') + (needsSpacer ? ' ' : '') + myEditor.value;
   
   fullTextStorage = currentText;
   updateMonitoringFromText(currentText);
@@ -662,9 +661,11 @@ function sendToMonitor() {
   
   // 1인 모드이거나 권한자인 경우만 전송 가능
   if (isSoloMode() || myRole === activeStenographer) {
-    accumulatedText += (accumulatedText && !accumulatedText.endsWith(' ') ? ' ' : '') + myEditor.value.trim();
-    fullTextStorage = accumulatedText;
-    myEditor.value = '';
+    const needsSpacer = accumulatedText && !/[\s]$/.test(accumulatedText);
+accumulatedText += (needsSpacer ? ' ' : '') + myEditor.value.trimStart();
+fullTextStorage = accumulatedText;
+myEditor.value = '';
+
     
     updateViewerContent();
     
@@ -2559,3 +2560,4 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault();
   }
 });
+
