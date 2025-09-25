@@ -95,13 +95,15 @@ if (!gotTheLock) {
   });
 }
 
-// 로그인 창 생성
+// 로그인 창 생성 - 투명 배경에 카드만 표시
 function createLoginWindow() {
   mainWindow = new BrowserWindow({
-    width: 720,
-    height: 540,
+    width: 480,        // 좌우도 더 여유있게
+    height: 560,       // 상하 더 충분히
     frame: false,
-    transparent: false,
+    transparent: true, // 투명 배경 활성화
+    hasShadow: false,  // OS 그림자 제거
+    backgroundColor: '#00000000', // 완전 투명
     resizable: false,
     center: true,
     webPreferences: {
@@ -121,43 +123,44 @@ function createLoginWindow() {
     }
   });
 }
-function createViewerWindow(channel, token = null) {  // ← function 키워드 추가!
+
+function createViewerWindow(channel, token = null) {
   // 로그인 창이 있으면 닫기
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.close();
     mainWindow = null;
   }
   
-// 프레임 없는 창으로 생성
-viewerWindow = new BrowserWindow({
-  width: 800,
-  height: 600,
-  minWidth: 400,
-  minHeight: 300,
-  frame: false,
-  transparent: true,
-  backgroundColor: '#01000000',
-  hasShadow: false,
-  skipTaskbar: false,
-  alwaysOnTop: false,
-  resizable: true,
-  center: true,
-  show: false,
-  webPreferences: {
-    nodeIntegration: false,                   
-    contextIsolation: true,                
-    preload: path.join(__dirname, 'preload.js'), 
-    webSecurity: true,
-    allowRunningInsecureContent: false
-  }
-});
+  // 프레임 없는 창으로 생성
+  viewerWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    minWidth: 400,
+    minHeight: 300,
+    frame: false,
+    transparent: true,
+    backgroundColor: '#01000000',
+    hasShadow: false,
+    skipTaskbar: false,
+    alwaysOnTop: false,
+    resizable: true,
+    center: true,
+    show: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+      webSecurity: true,
+      allowRunningInsecureContent: false
+    }
+  });
 
-// 채널 코드 저장
-viewerWindow.channelCode = channel;
-viewerWindow.channelToken = token;
+  // 채널 코드 저장
+  viewerWindow.channelCode = channel;
+  viewerWindow.channelToken = token;
 
-// electron-viewer.html 로드
-viewerWindow.loadFile('electron-viewer.html');
+  // electron-viewer.html 로드
+  viewerWindow.loadFile('electron-viewer.html');
   
   // 로드 완료 후 표시
   viewerWindow.once('ready-to-show', () => {
@@ -305,8 +308,7 @@ ipcMain.on('show-context-menu', (event, { isTransparent, isScrollbarHidden, x, y
 ipcMain.handle('connect-channel', async (event, { channel, passkey }) => {
   try {
     const serverUrl = 'https://nuastudio.co.kr';
-const apiUrl = `${serverUrl}/api/channel/${channel}/verify`;
-
+    const apiUrl = `${serverUrl}/api/channel/${channel}/verify`;
     
     console.log('[Channel] Verifying:', channel);
     
@@ -370,6 +372,11 @@ ipcMain.on('exit-fullscreen', () => {
   }
 });
 
+// 앱 종료 처리
+ipcMain.on('exit-app', () => {
+  app.quit();
+});
+
 // 옵션 창 열기
 ipcMain.on('open-options', (event, currentSettings) => {
   if (optionWindow) {
@@ -378,12 +385,15 @@ ipcMain.on('open-options', (event, currentSettings) => {
   }
   
   optionWindow = new BrowserWindow({
-    width: 500,
-    height: 800,
+    width: 520,
+    height: 600,
     title: '자막 뷰어 설정',
     parent: viewerWindow,
     frame: false,
-    resizable: true,
+    transparent: true,
+    backgroundColor: '#00000000',
+    hasShadow: false,
+    resizable: false,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
