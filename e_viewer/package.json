@@ -12,10 +12,8 @@
   },
   "author": "NUA Studio",
   "license": "MIT",
-  "dependencies": {
-    "electron": "^27.0.0"
-  },
   "devDependencies": {
+    "electron": "^27.0.0",
     "electron-builder": "^24.9.1"
   },
   "build": {
@@ -25,8 +23,17 @@
       "output": "dist"
     },
     "files": [
-      "**/*",
-      "!dist/**/*"
+      "main.js",
+      "preload.js",
+      "electron-viewer.html",
+      "electron-options.html",
+      "login-dialog.html",
+      "final_logo.ico",
+      "final_logo.png",
+      "!node_modules/**/*",
+      "!dist/**/*",
+      "!*.log",
+      "!*.md"
     ],
     "win": {
       "target": "nsis",
@@ -34,7 +41,10 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     },
     "mac": {
       "target": "dmg",
@@ -47,6 +57,9 @@
     "protocols": {
       "name": "NUA Viewer Protocol",
       "schemes": ["nuaviewer"]
-    }
+    },
+    "compression": "maximum",
+    "npmRebuild": false,
+    "nodeGypRebuild": false
   }
 }
