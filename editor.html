@@ -200,7 +200,7 @@
                 
                 <!-- Tabs -->
                 <div class="panel-tabs tab-nav">
-                    <button class="panel-tab tab-btn active" data-tab="controls" onclick="switchTab('controls', event)">제어</button>
+                    <button class="panel-tab tab-btn active" data-tab="controls" onclick="switchTab('control', event)">제어</button>
                     <button class="panel-tab tab-btn" data-tab="chat" onclick="switchTab('chat', event)">
                         소통
                         <span class="chat-badge" id="chatBadge" style="display: none;">0</span>
@@ -210,7 +210,7 @@
 
                 <div class="panel-content panel-body" id="utility-body">
                     <!-- Controls Tab -->
-                    <div class="tab-content active" id="controls-tab">
+                    <div class="tab-content active" id="control-tab">
                         <div class="control-group">
                             <div class="control-label">권한 관리</div>
                             <div class="control-buttons">
@@ -223,7 +223,7 @@
                                 <button class="control-btn ctrl-btn danger warning" onclick="forceGetRole()">
                                     <i class="xi-warning"></i> 강제 획득
                                 </button>
-                    <button class="control-btn ctrl-btn" onclick="correctionRequest()">
+                                <button class="control-btn ctrl-btn" onclick="correctionRequest()">
                                     <i class="xi-pen"></i> 교정 요청
                                 </button>
                             </div>
@@ -573,3 +573,4 @@
     </script>
 </body>
 </html>
+
