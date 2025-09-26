@@ -11,6 +11,10 @@ const compression = require('compression');
 const cors = require('cors');
 const fs = require('fs');
 
+// === DB 모듈 로드 (ADD) ===
+const DB = require('./db/db_app');
+console.log('[DB] Using file:', DB.DB_PATH);
+
 // =========================
 // 환경 자동 감지 및 설정
 // =========================
@@ -487,29 +491,28 @@ app.get('/api/admin/stats', requireAuth, (req, res) => {
   }
 });
 
-// 채널 삭제 (관리자 전용)
+// 채널 삭제 (관리자 전용) - REPLACE
 app.delete('/api/admin/channel/:code', requireAuth, (req, res) => {
   try {
     const { code } = req.params;
     
-    if (!channelDatabase.has(code)) {
-      return res.status(404).json({ error: 'Channel not found' });
-    }
+    const ch = DB.loadChannel(code);
+    if (!ch) return res.status(404).json({ error: 'Channel not found' });
     
-    // 채널 관련 데이터 모두 삭제
+    // DB 삭제
+    DB.deleteChannel(code);
+    
+    // 메모리 상태/세션 정리(기존 유지)
     delete channelStates[code];
     delete stenoChannels[code];
     delete channelEditStates[code];
     delete channelBackups[code];
     delete channelSwitchCooldowns[code];
-    lastCommitAt.delete(code);  // 커밋 시각도 삭제
+    lastCommitAt.delete(code);
     channelDatabase.delete(code);
     
-    // 연결된 사용자들 강제 퇴장
     io.to(code).emit('channel_closed', { reason: 'Admin closed this channel' });
     io.socketsLeave(code);
-    
-    console.log(`[관리자] 채널 삭제: ${code}`);
     res.json({ success: true, message: `Channel ${code} deleted` });
     
   } catch (error) {
@@ -527,7 +530,13 @@ app.post('/api/admin/reset-all', requireAuth, (req, res) => {
       return res.status(400).json({ error: 'Confirmation required' });
     }
     
-    // 모든 데이터 초기화
+    // DB의 모든 채널 삭제
+    const allChannels = DB.loadAllChannels();
+    allChannels.forEach(ch => {
+      DB.deleteChannel(ch.code);
+    });
+    
+    // 모든 메모리 데이터 초기화
     const channelCount = channelDatabase.size;
     channelDatabase.clear();
     Object.keys(channelStates).forEach(key => delete channelStates[key]);
@@ -537,10 +546,10 @@ app.post('/api/admin/reset-all', requireAuth, (req, res) => {
     Object.keys(channelSwitchCooldowns).forEach(key => delete channelSwitchCooldowns[key]);
     lastCommitAt.clear();  // 커밋 시각도 초기화
     
-    console.log(`[관리자] 전체 초기화 - ${channelCount}개 채널 삭제됨`);
+    console.log(`[관리자] 전체 초기화 - ${allChannels.length}개 DB 채널, ${channelCount}개 메모리 채널 삭제됨`);
     res.json({ 
       success: true, 
-      message: `Reset complete. ${channelCount} channels deleted.` 
+      message: `Reset complete. ${allChannels.length} DB channels, ${channelCount} memory channels deleted.` 
     });
     
   } catch (error) {
@@ -553,7 +562,7 @@ app.post('/api/admin/reset-all', requireAuth, (req, res) => {
 // 채널 API 라우트
 // =========================
 
-// 채널 생성 API
+// 채널 생성 API - REPLACE
 app.post('/api/channel/create', (req, res) => {
   try {
     const { code, type, passkey, eventName, eventDateTime } = req.body;
@@ -562,10 +571,25 @@ app.post('/api/channel/create', (req, res) => {
       return res.status(400).json({ error: 'Channel code is required' });
     }
     
-    if (channelDatabase.has(code)) {
+    if (DB.loadChannel(code)) {
       return res.status(400).json({ error: 'Channel already exists' });
     }
     
+    // 기존: channelDatabase.set(code, channelInfo);
+    const saved = DB.saveChannel({
+      code,
+      type: type || 'public',
+      passkey: (type === 'secured') ? passkey : null,
+      eventName: eventName || '',
+      eventDateTime: eventDateTime || null,
+      createdAt: Date.now(),
+      autoDelete: true,
+      expiresAt: null,
+      lastActivity: Date.now()
+    });
+    if (!saved) return res.status(500).json({ error: 'DB save failed' });
+    
+    // (선택) 메모리 캐시는 유지하여 기존 로직 영향 최소화
     const channelInfo = {
       code,
       type: type || 'public',
@@ -574,8 +598,8 @@ app.post('/api/channel/create', (req, res) => {
       eventDateTime: eventDateTime || null,
       createdAt: new Date(),
     };
-    
     channelDatabase.set(code, channelInfo);
+    
     console.log(`[API] Channel created: ${code}`);
     res.json({ success: true, channel: channelInfo });
   } catch (error) {
@@ -584,13 +608,13 @@ app.post('/api/channel/create', (req, res) => {
   }
 });
 
-// 채널 목록
+// 채널 목록 - REPLACE
 app.get('/api/channels', (req, res) => {
   try {
-    const channels = Array.from(channelDatabase.values()).map(ch => ({
+    const channels = DB.loadAllChannels().map(ch => ({
       ...ch,
       activeUsers: Array.isArray(stenoChannels[ch.code]) ? stenoChannels[ch.code].length : 0,
-      accumulated: channelStates[ch.code]?.accumulatedText.length || 0
+      accumulated: channelStates[ch.code]?.accumulatedText?.length || 0
     }));
     res.json(channels);
   } catch (error) {
@@ -599,29 +623,25 @@ app.get('/api/channels', (req, res) => {
   }
 });
 
-// 채널 확인 API (index.html이 실제 사용하는 버전)
+// 채널 확인 API (index.html이 실제 사용하는 버전) - REPLACE
 app.get('/api/channel/:code/verify', (req, res) => {
   try {
     const { code } = req.params;
     
-    if (channelDatabase.has(code)) {
-      const channel = channelDatabase.get(code);
-      res.json({ 
+    const ch = DB.loadChannel(code);
+    if (ch) {
+      res.json({
         success: true,
         exists: true,
         channel: {
-          code: channel.code,
-          type: channel.type,
-          eventName: channel.eventName,
-          needsPasskey: channel.type === 'secured'
+          code: ch.code,
+          type: ch.type,
+          eventName: ch.eventName,
+          needsPasskey: ch.type === 'secured'
         }
       });
     } else {
-      res.json({ 
-        success: false,
-        exists: false,
-        message: 'Channel not found'
-      });
+      res.json({ success: false, exists: false, message: 'Channel not found' });
     }
   } catch (error) {
     console.error('[API] Channel verify error:', error);
@@ -629,20 +649,20 @@ app.get('/api/channel/:code/verify', (req, res) => {
   }
 });
 
-// 채널 확인 API (신버전)
+// 채널 확인 API (신버전) - REPLACE
 app.get('/api/channel/check/:code', (req, res) => {
   try {
     const { code } = req.params;
     
-    if (channelDatabase.has(code)) {
-      const channel = channelDatabase.get(code);
-      res.json({ 
-        exists: true, 
+    const ch = DB.loadChannel(code);
+    if (ch) {
+      res.json({
+        exists: true,
         channel: {
-          code: channel.code,
-          type: channel.type,
-          eventName: channel.eventName,
-          needsPasskey: channel.type === 'secured'
+          code: ch.code,
+          type: ch.type,
+          eventName: ch.eventName,
+          needsPasskey: ch.type === 'secured'
         }
       });
     } else {
@@ -654,20 +674,16 @@ app.get('/api/channel/check/:code', (req, res) => {
   }
 });
 
-// 채널 확인 API (구버전 호환 - POST)
+// 채널 확인 API (구버전 호환 - POST) - REPLACE
 app.post('/api/check-channel', (req, res) => {
   try {
     const { code } = req.body;
     
-    if (channelDatabase.has(code)) {
-      const channel = channelDatabase.get(code);
-      res.json({ 
-        exists: true,
-        needsPasskey: channel.type === 'secured'
-      });
-    } else {
-      res.json({ exists: false });
-    }
+    const ch = DB.loadChannel(code);
+    res.json({
+      exists: !!ch,
+      needsPasskey: ch ? (ch.type === 'secured') : false
+    });
   } catch (error) {
     console.error('[API] Check channel error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -679,11 +695,10 @@ app.post('/api/channel/join', (req, res) => {
   try {
     const { code, passkey } = req.body;
     
-    if (!channelDatabase.has(code)) {
+    const channel = DB.loadChannel(code);
+    if (!channel) {
       return res.status(404).json({ error: 'Channel not found' });
     }
-    
-    const channel = channelDatabase.get(code);
     
     // 보안 채널인 경우 패스키 확인
     if (channel.type === 'secured' && channel.passkey) {
@@ -706,26 +721,23 @@ app.post('/api/channel/join', (req, res) => {
   }
 });
 
-// 채널 정보 조회
+// 채널 정보 조회 - REPLACE
 app.get('/api/channel/info/:code', (req, res) => {
   try {
     const { code } = req.params;
     
-    if (!channelDatabase.has(code)) {
-      return res.status(404).json({ error: 'Channel not found' });
-    }
+    const ch = DB.loadChannel(code);
+    if (!ch) return res.status(404).json({ error: 'Channel not found' });
     
-    const channel = channelDatabase.get(code);
     const state = channelStates[code];
     const stenos = stenoChannels[code] || [];
-    
     res.json({
       channel: {
-        code: channel.code,
-        type: channel.type,
-        eventName: channel.eventName,
-        eventDateTime: channel.eventDateTime,
-        createdAt: channel.createdAt
+        code: ch.code,
+        type: ch.type,
+        eventName: ch.eventName,
+        eventDateTime: ch.eventDateTime,
+        createdAt: ch.createdAt
       },
       status: {
         activeUsers: stenos.length,
@@ -744,21 +756,34 @@ app.get('/api/channel/info/:code', (req, res) => {
 // 추가 API 라우트
 // =========================
 
-// 채널 텍스트 조회
+// 채널 텍스트 조회 (수정 3: GET 라우트 정상 종료)
 app.get('/api/channel/text/:code', (req, res) => {
   try {
     const { code } = req.params;
+    const ch = DB.loadChannel(code);
+    if (!ch) return res.status(404).json({ error: 'Channel not found' });
     
-    if (!channelDatabase.has(code)) {
-      return res.status(404).json({ error: 'Channel not found' });
+    // 1) 메모리 우선 (최신)
+    const memText = channelStates[code]?.accumulatedText;
+    if (typeof memText === 'string' && memText.length) {
+      return res.json({
+        code,
+        accumulatedText: memText,
+        length: memText.length,
+        source: 'memory',
+        lastActivity: channelStates[code]?.lastActivity || null
+      });
     }
     
-    const state = channelStates[code];
-    res.json({
+    // 2) 메모리 비었으면 DB 병합본
+    const rows = DB.loadRecentViewerTexts(code, 10000);
+    const textFromDB = Array.isArray(rows) ? rows.map(r => r.content).join('\n') : '';
+    return res.json({
       code,
-      accumulatedText: state?.accumulatedText || '',
-      length: state?.accumulatedText?.length || 0,
-      lastActivity: state?.lastActivity || null
+      accumulatedText: textFromDB,
+      length: textFromDB.length || 0,
+      source: 'db',
+      lastActivity: channelStates[code]?.lastActivity || null
     });
   } catch (error) {
     console.error('[API] Channel text error:', error);
@@ -766,47 +791,88 @@ app.get('/api/channel/text/:code', (req, res) => {
   }
 });
 
-// 채널 텍스트 내보내기
+// 채널 텍스트 저장 (수정 3: POST 라우트 별도 선언)
+app.post('/api/channel/text/:code', (req, res) => {
+  try {
+    const { code } = req.params;
+    const { text = '' } = req.body || {};
+    const ch = DB.loadChannel(code);
+    if (!ch) return res.status(404).json({ error: 'Channel not found' });
+    
+    // 메모리 반영
+    if (!channelStates[code]) channelStates[code] = { accumulatedText: '' };
+    const normalized = (text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    channelStates[code].accumulatedText = normalized;
+    channelStates[code].lastActivity = Date.now();
+    
+    // DB에는 전체본 1회 기록(사전 세팅 시 중복 적음)
+    if (normalized && normalized.trim()) {
+      DB.appendViewerText(code, normalized.trim());
+    }
+    
+    // 접속자 화면 즉시 동기화
+    io.to(code).emit('sync_accumulated', { accumulatedText: normalized, source: 'manual-set' });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[API] Save text error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 채널 텍스트 내보내기 - REPLACE
 app.get('/api/channel/export/:code', (req, res) => {
   try {
     const { code } = req.params;
     
-    if (!channelDatabase.has(code)) {
-      return res.status(404).json({ error: 'Channel not found' });
-    }
+    const ch = DB.loadChannel(code);
+    if (!ch) return res.status(404).json({ error: 'Channel not found' });
     
-    const channel = channelDatabase.get(code);
-    const state = channelStates[code];
-    const text = state?.accumulatedText || '';
+    // 1) DB 로그로 본문 구성
+    const rows = DB.loadRecentViewerTexts(code, 10000);
+    let textFromDB = rows.map(r => r.content).join('\n');
+    if (textFromDB && !textFromDB.endsWith('\n')) textFromDB += '\n';
+    
+    // 2) 폴백: 메모리 누적본
+    const memText = (channelStates[code]?.accumulatedText || '');
+    const finalText = textFromDB || memText || '';
     
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${code}_${Date.now()}.txt"`);
-    res.send(text);
+    res.send(finalText);
   } catch (error) {
     console.error('[API] Channel export error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// 채널 업데이트
+// 채널 업데이트 - REPLACE
 app.put('/api/channel/update/:code', requireAuth, (req, res) => {
   try {
     const { code } = req.params;
     const { eventName, eventDateTime, passkey } = req.body;
     
-    if (!channelDatabase.has(code)) {
-      return res.status(404).json({ error: 'Channel not found' });
-    }
+    const ch = DB.loadChannel(code);
+    if (!ch) return res.status(404).json({ error: 'Channel not found' });
     
-    const channel = channelDatabase.get(code);
+    const updated = {
+      ...ch,
+      eventName: (eventName !== undefined) ? eventName : ch.eventName,
+      eventDateTime: (eventDateTime !== undefined) ? eventDateTime : ch.eventDateTime,
+      passkey: (passkey !== undefined) ? passkey : ch.passkey,
+      lastActivity: Date.now()
+    };
+    if (!DB.saveChannel(updated)) return res.status(500).json({ error: 'DB update failed' });
     
-    if (eventName !== undefined) channel.eventName = eventName;
-    if (eventDateTime !== undefined) channel.eventDateTime = eventDateTime;
-    if (passkey !== undefined) channel.passkey = passkey;
-    
-    channelDatabase.set(code, channel);
-    
-    res.json({ success: true, channel });
+    // (선택) 메모리 캐시 갱신
+    channelDatabase.set(code, {
+      code: updated.code,
+      type: updated.type,
+      passkey: updated.passkey,
+      eventName: updated.eventName,
+      eventDateTime: updated.eventDateTime,
+      createdAt: new Date(updated.createdAt)
+    });
+    res.json({ success: true, channel: updated });
   } catch (error) {
     console.error('[API] Channel update error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -930,6 +996,21 @@ io.on('connection', (socket) => {
       }
       
       channelStates[channel].lastActivity = Date.now();
+      
+      // [영속화: 초기 로드] 메모리에 누적본이 없으면 DB에서 최신본 복원
+      try {
+        if (!channelStates[channel]?.accumulatedText) {
+          const rows = DB.loadRecentViewerTexts(channel, 10000); // 최근 로그 병합
+          const restored = Array.isArray(rows) ? rows.map(r => r.content).join('\n') : '';
+          if (!channelStates[channel]) channelStates[channel] = {};
+          channelStates[channel].accumulatedText = restored || '';
+          if (restored && restored.length) {
+            socket.emit('sync_accumulated', { accumulatedText: channelStates[channel].accumulatedText, source: 'db-restore' });
+          }
+        }
+      } catch (e) {
+        console.error('[join_channel] DB restore failed:', e);
+      }
       
       const isStenoJoin = role === 'steno' || role === 'steno1' || role === 'steno2';
       
@@ -1192,7 +1273,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ========== 패치: text_sent 수정 ==========
+  // text_sent 핸들러 (수정 2: 증분 저장 로직 스코프 교정)
   socket.on('text_sent', ({ channel, accumulatedText, sender }) => {
     try {
       const ch = channel || socket.data.channel;
@@ -1207,12 +1288,29 @@ io.on('connection', (socket) => {
         console.log(`[${ch}] 줄바꿈 추가 → 최종 길이: ${normalized.length}자`);
       }
       
+      // 수정 2: 상태 저장 "직전"의 이전 누적본 캡처
+      const prevAccumulated = channelStates[ch]?.accumulatedText || '';
+      
       // 3) 상태 저장
       if (channelStates[ch]) {
         channelStates[ch].accumulatedText = normalized;
         channelStates[ch].lastActivity = Date.now();
         lastCommitAt.set(ch, Date.now());  // 커밋 시각 기록
         backupChannelState(ch);
+      }
+      
+      // 수정 2: [영속화: 증분 저장] 상태 저장 "직후"
+      try {
+        if (normalized && normalized.startsWith(prevAccumulated)) {
+          const delta = normalized.slice(prevAccumulated.length).trim();
+          if (delta) {
+            DB.appendViewerText(ch, delta);
+          }
+        } else if (normalized && !prevAccumulated) {
+          DB.appendViewerText(ch, normalized.trim());
+        }
+      } catch (e) {
+        console.error('[text_sent] DB append failed:', e);
       }
       
       // 4) 정규화된 내용으로 방송 (자신 제외)
@@ -1234,7 +1332,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ========== 추가: text_commit 이벤트 (선택적) ==========
+  // text_commit 이벤트 (선택적)
   socket.on('text_commit', ({ channel, commitText, accumulatedText }) => {
     try {
       const ch = channel || socket.data.channel;
@@ -1264,6 +1362,16 @@ io.on('connection', (socket) => {
         channelStates[ch].lastActivity = Date.now();
         lastCommitAt.set(ch, Date.now());  // 커밋 시각 기록
         backupChannelState(ch);
+        
+        // === DB 저장 (ADD) ===
+        if (commitText && commitText.trim()) {
+          DB.appendViewerText(ch, commitText.trim());
+        } else if (currentAccumulated && currentAccumulated.trim()) {
+          const lastLine = currentAccumulated.trim().split('\n').slice(-1)[0];
+          if (lastLine && lastLine.trim()) {
+            DB.appendViewerText(ch, lastLine.trim());
+          }
+        }
         
         // 모든 클라이언트에 브로드캐스트
         io.to(ch).emit('text_committed', {
