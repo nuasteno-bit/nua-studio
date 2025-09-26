@@ -17,6 +17,74 @@
     
     <!-- CSS 파일 연결 -->
     <link rel="stylesheet" href="editor_styles.css">
+    
+    <!-- Neon 테마 select 가독성 수정 -->
+    <style>
+        /* Neon 테마에서 select 옵션 가독성 개선 */
+        [data-theme="neon"] .theme-select {
+            background: rgba(10,10,10,0.95);
+            color: #00f0ff;
+            border-color: rgba(0,240,255,0.4);
+        }
+        
+        [data-theme="neon"] .theme-select option {
+            background: #0a0a0a;
+            color: #ffffff;
+        }
+        
+        [data-theme="neon"] .theme-select:hover {
+            background: rgba(0,240,255,0.1);
+            border-color: #00f0ff;
+        }
+        
+        /* 모니터링 뷰어 구조 수정 */
+        .viewer-content-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+        
+        #viewerContent {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 16px;
+            background: var(--input-bg);
+            border: 2px solid var(--input-border);
+            border-radius: 12px;
+            margin: 0 20px;
+            font-size: 15px;
+            line-height: 1.8;
+            color: var(--text-primary);
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+        
+        #viewerContent span {
+            display: block;
+        }
+        
+        /* 뷰어 편집 모드 스타일 수정 */
+        .viewer.editing #viewerContent {
+            border-color: #f39c12;
+            box-shadow: 0 0 10px rgba(243, 156, 18, 0.4);
+            background-color: var(--bg-tertiary);
+        }
+        
+        /* 기존 wrapper 제거 */
+        .viewer-content-wrapper {
+            display: none;
+        }
+        
+        /* panel-body 수정 */
+        #viewer-body {
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+        }
+    </style>
 </head>
 <body data-theme="light">
     <!-- Header -->
@@ -177,8 +245,8 @@
                     </div>
                 </div>
                 <div class="panel-content panel-body" id="viewer-body">
-                    <div class="viewer-content-wrapper">
-                        <div class="viewer-text panel-content" id="viewerContent" style="font-size: 15px;">
+                    <div class="viewer-content-container">
+                        <div id="viewerContent" style="font-size: 15px;">
                             <span class="viewer-placeholder">자막이 여기에 표시됩니다.</span>
                         </div>
                     </div>
@@ -198,14 +266,14 @@
                     </div>
                 </div>
                 
-                <!-- Tabs -->
+                <!-- Tabs - 소통을 메시지로 변경 -->
                 <div class="panel-tabs tab-nav">
-                    <button class="panel-tab tab-btn active" data-tab="controls" onclick="switchTab('control', event)">제어</button>
-                    <button class="panel-tab tab-btn" data-tab="chat" onclick="switchTab('chat', event)">
-                        소통
+                    <button class="panel-tab tab-btn active" data-tab="control" onclick="switchTabFixed('control', this)">제어</button>
+                    <button class="panel-tab tab-btn" data-tab="chat" onclick="switchTabFixed('chat', this)">
+                        메시지
                         <span class="chat-badge" id="chatBadge" style="display: none;">0</span>
                     </button>
-                    <button class="panel-tab tab-btn" data-tab="settings" onclick="switchTab('settings', event)">설정</button>
+                    <button class="panel-tab tab-btn" data-tab="settings" onclick="switchTabFixed('settings', this)">설정</button>
                 </div>
 
                 <div class="panel-content panel-body" id="utility-body">
@@ -408,11 +476,67 @@
         NUA STUDIO Live Steno Editor - Real-time Collaboration
     </footer>
 
-    <!-- JavaScript 파일 연결 (변경 없음) -->
+    <!-- JavaScript 파일 연결 -->
     <script src="editor_script.js"></script>
     
     <!-- 추가 헬퍼 함수들 (기존 디자인과 호환) -->
     <script>
+        // Fixed Tab switching function
+        function switchTabFixed(tabName, buttonElement) {
+            // 채팅 탭일 때 배지 리셋
+            if (tabName === 'chat') {
+                if (typeof unreadMessages !== 'undefined') {
+                    unreadMessages = 0;
+                }
+                if (typeof updateChatBadge === 'function') {
+                    updateChatBadge();
+                }
+            }
+            
+            // 모든 탭 버튼의 active 클래스 제거
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            // 모든 탭 컨텐츠 숨기기
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // 클릭한 버튼에 active 추가
+            if (buttonElement) {
+                buttonElement.classList.add('active');
+            }
+            
+            // 해당 탭 컨텐츠 보이기
+            const tabContent = document.getElementById(tabName + '-tab');
+            if (tabContent) {
+                tabContent.classList.add('active');
+            }
+        }
+
+        // editor_script.js의 switchTab 함수 오버라이드
+        window.switchTab = function(tabName, event) {
+            let buttonElement = null;
+            
+            // 이벤트가 있으면 타겟 버튼 찾기
+            if (event && event.target) {
+                buttonElement = event.target.closest('.tab-btn');
+            } else {
+                // 이벤트가 없으면 data-tab으로 버튼 찾기
+                buttonElement = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+            }
+            
+            switchTabFixed(tabName, buttonElement);
+        };
+
+        // 교정 요청 함수 (만약 정의되지 않았다면)
+        if (typeof correctionRequest === 'undefined') {
+            window.correctionRequest = function() {
+                console.log('[교정 요청] 기능 실행');
+                // 교정 요청 로직은 editor_script.js에서 처리
+                if (typeof requestCorrection === 'function') {
+                    requestCorrection();
+                }
+            };
+        }
+
         // Theme Management
         function setTheme(theme) {
             document.body.setAttribute('data-theme', theme);
@@ -573,4 +697,3 @@
     </script>
 </body>
 </html>
-
