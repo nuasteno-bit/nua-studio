@@ -1,248 +1,575 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-   <meta charset="utf-8"/>
-   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-   <title>Steno Editor (실시간 협업)</title>
-   
-   <!-- CSS 파일 연결 -->
-   <link rel="stylesheet" href="editor_styles.css">
-   
-   <!-- Socket.io 라이브러리 -->
-   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-   <script src="config.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NUA STUDIO – Live Steno Editor</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Ubuntu:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xeicon@2.3.3/xeicon.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+    
+    <!-- Socket.io -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="config.js"></script>
+    
+    <!-- CSS 파일 연결 -->
+    <link rel="stylesheet" href="editor_redesign.css">
 </head>
-<body>
-   <header>
-       <strong>LiveSteno</strong>
-       <!-- 중앙에 권한매칭 단어 수 설정 UI -->
-       <span id="matchControl" style="position:absolute; left:50%; transform:translateX(-50%); text-align:center;">
-           <span style="font-size:13px; color:#a2c1ff;">권한매칭 단어 수:</span>
-           <select id="matchWordSelect" style="font-size:13px; padding:2px 8px; border-radius:4px; border:1px solid #444; background:#232323; color:#a2c1ff;">
-               <option value="3" selected>3</option>
-               <option value="4">4</option>
-               <option value="5">5</option>
-               <option value="6">6</option>
-               <option value="7">7</option>
-           </select>
-       </span>
-       <span style="float:right; color:#a2c1ff; font-size:13px;">채널: <span id="channelInfo">default</span> | 내 역할: <span id="roleInfo">속기사1</span> | 상태: <span id="statusInfo">HTML 모드</span></span>
-   </header>
-   
-   <div class="main-container" id="mainContainer">
-       <!-- 상단 영역: 속기사1, 속기사2 -->
-       <div class="top-row" id="topRow">
-           <div class="column" id="col1">
-               <div class="title-bar">
-                   <span id="title1">Stenographer 1</span>
-                   <span class="role-badge" id="badge1">대기</span>
-               </div>
-               <div class="font-controls" id="font-controls-1">
-                   <div class="performance-info" id="performanceInfo1">
-                       <span id="perfChars1">0자</span>
-                       <span id="perfStatus1">최적화됨</span>
-                       <span id="perfMonitor1">0/30줄</span>
-                   </div>
-                   <div class="font-controls-right">
-                       <button class="font-btn" onclick="adjustFontSize(1, 1)">A+</button>
-                       <button class="font-btn" onclick="adjustFontSize(1, -1)">A−</button>
-                   </div>
-               </div>
-               <textarea class="editor-box" id="editor1" placeholder="여기에 입력..." autocomplete="off"></textarea>
-               <div class="status-bar" id="statusBar1">
-                   <span class="status-dot waiting" id="dot1"></span> 
-                   <span id="statusText1">대기 중</span>
-               </div>
-           </div>
-           
-           <div class="column" id="col2">
-               <div class="title-bar">
-                   <span id="title2">Stenographer 2</span>
-                   <span class="role-badge" id="badge2">대기</span>
-               </div>
-               <div class="font-controls" id="font-controls-2">
-                   <div class="performance-info" id="performanceInfo2">
-                       <span id="perfChars2">0자</span>
-                       <span id="perfStatus2">최적화됨</span>
-                       <span id="perfMonitor2"></span>
-                   </div>
-                   <div class="font-controls-right">
-                       <button class="font-btn" onclick="adjustFontSize(2, 1)">A+</button>
-                       <button class="font-btn" onclick="adjustFontSize(2, -1)">A−</button>
-                   </div>
-               </div>
-               <textarea class="editor-box" id="editor2" placeholder="여기에 입력..." autocomplete="off"></textarea>
-               <div class="status-bar" id="statusBar2">
-                   <span class="status-dot waiting" id="dot2"></span> 
-                   <span id="statusText2">대기 중</span>
-               </div>
-           </div>
-       </div>
-       
-       <!-- 하단 영역: 모니터링뷰어, 유틸리티 -->
-       <div class="bottom-row">
-           <div class="viewer" id="viewer">
-               <div class="title-bar">
-                   <div style="display: flex; align-items: center; gap: 10px;">
-                       <span>Monitoring Viewer</span>
-                       <span id="viewerIconBtn" title="Open Viewer in new window" style="cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; background: #2b2b2b; border-radius: 4px; border: 1px solid #444;">
-                           <svg width="16" height="16" fill="#a2c1ff" viewBox="0 0 24 24">
-                               <path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zM4 18V6h16v12H4zm4-2h2v-2H6v2h2zm0-4h8v-2H8v2zm4 4h6v-2h-6v2z"/>
-                           </svg>
-                       </span>
-                   </div>
-                   <div style="display: flex; align-items: center; gap: 6px;">
-                       <button class="viewer-edit-btn" id="viewerEditBtn" onclick="toggleViewerEdit()" title="뷰어 편집" style="display: none;">편집</button>
-                       <button class="font-btn" onclick="adjustViewerFontSize(1)" title="뷰어 폰트 크게">A+</button>
-                       <button class="font-btn" onclick="adjustViewerFontSize(-1)" title="뷰어 폰트 작게">A−</button>
-                   </div>
-               </div>
-               <div class="panel-body" id="viewer-body">
-                   <div class="panel-content" id="viewerContent" style="font-size: 15px;">
-                       <span class="viewer-placeholder">자막이 여기에 표시됩니다.</span>
-                   </div>
-               </div>
-           </div>
-           
-           <div class="utility" id="utility">
-               <div class="title-bar">
-                   <span class="utility-title">Utility Box</span>
-               </div>
-               <div class="panel-body" id="utility-body">
-                   <div class="tab-nav">
-                       <button class="tab-btn active" onclick="switchTab('settings')">설정</button>
-                       <button class="tab-btn" onclick="switchTab('chat')">
-                           소통
-                           <span class="chat-badge" id="chatBadge" style="display: none;">0</span>
-                       </button>
-                       <button class="tab-btn" onclick="switchTab('control')">제어</button>
-                   </div>
-                   
-                   <!-- 설정 탭 -->
-                   <div class="tab-content active" id="settings-tab">
-                       <div class="settings-section">
-                           <h4>테마 설정</h4>
-                           <div class="theme-selector">
-                               <button class="theme-option dark active" onclick="setTheme('dark')" title="다크 테마">다크</button>
-                               <button class="theme-option light" onclick="setTheme('light')" title="라이트 테마">라이트</button>
-                               <button class="theme-option solarized" onclick="setTheme('solarized')" title="솔라라이즈드">솔라라이즈드</button>
-                               <button class="theme-option contrast" onclick="setTheme('contrast')" title="고대비">고대비</button>
-                           </div>
-                       </div>
-                       
-                       <div class="settings-section">
-                           <h4>텍스트 개인화</h4>
-                           <div class="text-setting-item">
-                               <label>글자 크기</label>
-                               <div class="setting-control">
-                                   <input type="range" id="fontSizeRange" min="11" max="24" value="15" onchange="updateTextSettings()">
-                                   <span id="fontSizeValue">15px</span>
-                               </div>
-                           </div>
-                           <div class="text-setting-item">
-                               <label>행간 간격</label>
-                               <div class="setting-control">
-                                   <input type="range" id="lineHeightRange" min="10" max="25" value="14" onchange="updateTextSettings()">
-                                   <span id="lineHeightValue">1.4</span>
-                               </div>
-                           </div>
-                           <div class="text-setting-item">
-                               <label>자간 간격</label>
-                               <div class="setting-control">
-                                   <input type="range" id="letterSpacingRange" min="-2" max="5" value="0" onchange="updateTextSettings()">
-                                   <span id="letterSpacingValue">0px</span>
-                               </div>
-                           </div>
-                           <div class="text-setting-item">
-                               <label>단어 간격</label>
-                               <div class="setting-control">
-                                   <input type="range" id="wordSpacingRange" min="-2" max="10" value="0" onchange="updateTextSettings()">
-                                   <span id="wordSpacingValue">0px</span>
-                               </div>
-                           </div>
-                       </div>
-                       
-                       <div class="settings-section">
-                           <h4>단축키</h4>
-                           <div class="shortcut-info">
-                               <div>F4: 단어 삭제</div>
-                               <div>F6: 권한 양보</div>
-                               <div>F7: 권한 요청</div>
-                               <div>F8: 교정 요청</div>
-                               <div>Shift+Enter: 엔터 모드 전환</div>
-                           </div>
-                       </div>
-                   </div>
-                   
-                   <!-- 소통 탭 -->
-                   <div class="tab-content" id="chat-tab">
-                       <div class="chat-container">
-                           <div class="chat-messages" id="chatMessages">
-                               <div class="chat-placeholder">협업 소통 메시지가 여기에 표시됩니다.</div>
-                           </div>
-                           <div class="chat-input-container">
-                               <input type="text" id="chatInput" class="chat-input" placeholder="메시지 입력..." maxlength="200">
-                               <button class="chat-send-btn" onclick="sendChatMessage()">전송</button>
-                           </div>
-                           <div class="chat-quick-messages">
-                               <button class="quick-msg-btn" onclick="sendQuickMessage('교대하겠습니다')">교대</button>
-                               <button class="quick-msg-btn" onclick="sendQuickMessage('잠시 대기')">대기</button>
-                               <button class="quick-msg-btn" onclick="sendQuickMessage('확인했습니다')">확인</button>
-                               <button class="quick-msg-btn" onclick="sendQuickMessage('도움 필요')">도움</button>
-                           </div>
-                       </div>
-                   </div>
-                   
-                   <!-- 제어 탭 -->
-                   <div class="tab-content" id="control-tab">
-                       <div class="control-compact">
-                           <div class="control-group">
-                               <label>권한 제어</label>
-                               <div class="control-row">
-                                   <button class="ctrl-btn" onclick="requestRole()" title="권한을 요청합니다 (F7)">권한 요청</button>
-                                   <button class="ctrl-btn" onclick="offerRole()" title="권한을 양보합니다 (F6)">권한 양보</button>
-                               </div>
-                               <div class="control-row">
-                                   <button class="ctrl-btn warning" onclick="forceGetRole()" title="강제로 권한을 가져옵니다 (상대 연결 끊김 시)">권한 가져오기</button>
-                               </div>
-                           </div>
-                           
-                           <div class="control-group">
-                               <label>연결 상태</label>
-                               <div class="status-row">
-                                   <div class="status-mini">
-                                       <span>내 연결:</span>
-                                       <span id="myConnectionStatus" class="stat-val good">정상</span>
-                                   </div>
-                                   <div class="status-mini">
-                                       <span>상대:</span>
-                                       <span id="otherConnectionStatus" class="stat-val">대기</span>
-                                   </div>
-                                   <div class="status-mini">
-                                       <span>핑:</span>
-                                       <span id="serverPing" class="stat-val">-ms</span>
-                                   </div>
-                               </div>
-                               <button class="ctrl-btn mini" onclick="checkConnection()">연결 확인</button>
-                           </div>
-                           
-                           <div class="control-group">
-                               <label>데이터 관리</label>
-                               <button class="ctrl-btn" onclick="downloadFullText()">전체 텍스트 다운로드</button>
-                               <button class="ctrl-btn" onclick="clearLocalStorage()">로컬 데이터 초기화</button>
-                           </div>
-                       </div>
-                   </div>
-               </div>
-           </div>
-       </div>
-   </div>
-   
-   <footer>
-       UI Prototype + 실시간 협업 기능 완전 결합<br>Designed to match dev tools aesthetic.
-   </footer>
-   
-   <!-- JavaScript 파일 연결 -->
-   <script src="editor_script.js"></script>
+<body data-theme="light">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">
+                <svg viewBox="0 0 122 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0 25C0 11.193 11.193 0 25 0h72c13.807 0 25 11.193 25 25s-11.193 25-25 25H25C11.193 50 0 38.807 0 25z" fill="#000"/>
+                    <text x="61" y="32" text-anchor="middle" fill="white" font-family="Poppins" font-size="20" font-weight="700">NUA</text>
+                </svg>
+            </div>
+            <div class="channel-info">
+                <span class="channel-badge live">
+                    <span class="status-dot"></span>
+                    LIVE
+                </span>
+                <span>Channel: <strong id="channelInfo">default</strong></span>
+                <span>Role: <strong id="roleInfo">속기사1</strong></span>
+                
+                <!-- 권한매칭 단어 수 설정 (기존 위치 유지) -->
+                <span id="matchControl" style="margin-left: 20px;">
+                    <span style="font-size:13px; color:var(--text-secondary);">권한매칭 단어 수:</span>
+                    <select id="matchWordSelect" style="font-size:13px; padding:2px 8px; border-radius:4px; border:1px solid var(--border); background:var(--bg-primary); color:var(--text-primary);">
+                        <option value="3" selected>3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                    </select>
+                </span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="status-indicator">
+                <span class="status-dot" id="connectionDot"></span>
+                <span id="connectionStatus">연결됨</span>
+                <span id="statusInfo" style="display:none;">HTML 모드</span>
+            </div>
+            
+            <!-- Theme Toggle -->
+            <select class="theme-select" onchange="setTheme(this.value)">
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+                <option value="neon">Neon</option>
+                <option value="mono">Mono</option>
+                <option value="tokyo">Tokyo</option>
+            </select>
+            
+            <button class="btn-icon" onclick="toggleFullscreen()" title="전체화면">
+                <i class="xi-expand-square"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container - 2x2 레이아웃 유지 -->
+    <div class="main-container" id="mainContainer">
+        <!-- 상단 영역: 속기사1, 속기사2 -->
+        <div class="top-row" id="topRow">
+            <!-- Editor 1 Column -->
+            <div class="column" id="col1">
+                <div class="editor-card" id="editor1Card">
+                    <div class="editor-header">
+                        <div class="editor-info">
+                            <span class="editor-title" id="title1">Stenographer 1</span>
+                            <span class="role-badge" id="badge1">대기</span>
+                        </div>
+                        <div class="editor-controls">
+                            <button class="font-btn" onclick="adjustFontSize(1, -1)" title="글자 작게">A−</button>
+                            <button class="font-btn" onclick="adjustFontSize(1, 1)" title="글자 크게">A+</button>
+                        </div>
+                    </div>
+                    <!-- 성능 정보 (기존 font-controls 대체) -->
+                    <div class="font-controls" id="font-controls-1">
+                        <div class="performance-info" id="performanceInfo1">
+                            <span id="perfChars1">0자</span>
+                            <span id="perfStatus1">최적화됨</span>
+                            <span id="perfMonitor1">0/30줄</span>
+                        </div>
+                    </div>
+                    <div class="editor-content">
+                        <textarea 
+                            class="editor-textarea editor-box" 
+                            id="editor1"
+                            placeholder="여기에 입력..."
+                            autocomplete="off"
+                        ></textarea>
+                    </div>
+                    <div class="editor-footer status-bar" id="statusBar1">
+                        <span class="char-count" id="charCount1">0자</span>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span class="status-dot waiting" id="dot1"></span>
+                            <span id="statusText1">대기 중</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Editor 2 Column -->
+            <div class="column" id="col2">
+                <div class="editor-card" id="editor2Card">
+                    <div class="editor-header">
+                        <div class="editor-info">
+                            <span class="editor-title" id="title2">Stenographer 2</span>
+                            <span class="role-badge" id="badge2">대기</span>
+                        </div>
+                        <div class="editor-controls">
+                            <button class="font-btn" onclick="adjustFontSize(2, -1)" title="글자 작게">A−</button>
+                            <button class="font-btn" onclick="adjustFontSize(2, 1)" title="글자 크게">A+</button>
+                        </div>
+                    </div>
+                    <!-- 성능 정보 -->
+                    <div class="font-controls" id="font-controls-2">
+                        <div class="performance-info" id="performanceInfo2">
+                            <span id="perfChars2">0자</span>
+                            <span id="perfStatus2">최적화됨</span>
+                            <span id="perfMonitor2"></span>
+                        </div>
+                    </div>
+                    <div class="editor-content">
+                        <textarea 
+                            class="editor-textarea editor-box" 
+                            id="editor2"
+                            placeholder="여기에 입력..."
+                            autocomplete="off"
+                        ></textarea>
+                    </div>
+                    <div class="editor-footer status-bar" id="statusBar2">
+                        <span class="char-count" id="charCount2">0자</span>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span class="status-dot waiting" id="dot2"></span>
+                            <span id="statusText2">대기 중</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 하단 영역: 모니터링뷰어, 유틸리티 -->
+        <div class="bottom-row">
+            <!-- Viewer Panel -->
+            <div class="viewer panel-card" id="viewer">
+                <div class="panel-header title-bar">
+                    <div class="panel-title">
+                        Monitoring Viewer
+                        <span id="viewerIconBtn" title="Open Viewer in new window" style="cursor: pointer; padding: 4px; display: inline-flex; align-items: center; justify-content: center; background: var(--bg-tertiary); border-radius: 4px; border: 1px solid var(--border); margin-left: 8px;">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zM4 18V6h16v12H4zm4-2h2v-2H6v2h2zm0-4h8v-2H8v2zm4 4h6v-2h-6v2z"/>
+                            </svg>
+                        </span>
+                    </div>
+                    <div class="editor-controls">
+                        <button class="viewer-edit-btn" id="viewerEditBtn" onclick="toggleViewerEdit()" title="뷰어 편집" style="display: none;">편집</button>
+                        <button class="font-btn" onclick="adjustViewerFontSize(-1)" title="글자 작게">A−</button>
+                        <button class="font-btn" onclick="adjustViewerFontSize(1)" title="글자 크게">A+</button>
+                        <button class="font-btn" onclick="openViewerWindow()" title="새 창으로">
+                            <i class="xi-external-link"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="panel-content panel-body" id="viewer-body">
+                    <div class="viewer-content-wrapper">
+                        <div class="viewer-text panel-content" id="viewerContent" style="font-size: 15px;">
+                            <span class="viewer-placeholder">자막이 여기에 표시됩니다.</span>
+                        </div>
+                    </div>
+                    <div class="quick-actions">
+                        <button class="quick-action-btn" onclick="clearViewer()">화면 지우기</button>
+                        <button class="quick-action-btn" onclick="copyViewerText()">텍스트 복사</button>
+                        <button class="quick-action-btn" onclick="saveViewerText()">저장</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="utility panel-card" id="utility">
+                <div class="panel-header title-bar">
+                    <div class="panel-title utility-title">
+                        Control Center
+                    </div>
+                </div>
+                
+                <!-- Tabs -->
+                <div class="panel-tabs tab-nav">
+                    <button class="panel-tab tab-btn active" data-tab="controls" onclick="switchTab('control', event)">제어</button>
+                    <button class="panel-tab tab-btn" data-tab="chat" onclick="switchTab('chat', event)">
+                        소통
+                        <span class="chat-badge" id="chatBadge" style="display: none;">0</span>
+                    </button>
+                    <button class="panel-tab tab-btn" data-tab="settings" onclick="switchTab('settings', event)">설정</button>
+                </div>
+
+                <div class="panel-content panel-body" id="utility-body">
+                    <!-- Controls Tab -->
+                    <div class="tab-content active" id="control-tab">
+                        <div class="control-group">
+                            <div class="control-label">권한 관리</div>
+                            <div class="control-buttons">
+                                <button class="control-btn ctrl-btn" onclick="requestRole()">
+                                    <i class="xi-hand-paper"></i> 권한 요청
+                                </button>
+                                <button class="control-btn ctrl-btn" onclick="offerRole()">
+                                    <i class="xi-share-alt"></i> 권한 양보
+                                </button>
+                                <button class="control-btn ctrl-btn danger warning" onclick="forceGetRole()">
+                                    <i class="xi-warning"></i> 강제 획득
+                                </button>
+                                <button class="control-btn ctrl-btn" onclick="correctionRequest()">
+                                    <i class="xi-pen"></i> 교정 요청
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <div class="control-label">데이터 관리</div>
+                            <div class="control-buttons">
+                                <button class="control-btn ctrl-btn primary" onclick="downloadFullText()">
+                                    <i class="xi-download"></i> 전체 다운로드
+                                </button>
+                                <button class="control-btn ctrl-btn" onclick="clearLocalStorage()">
+                                    <i class="xi-refresh"></i> 캐시 초기화
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">연결 상태</div>
+                            <div class="status-info-box status-row">
+                                <div class="status-info-row status-mini">
+                                    <span class="status-info-label">내 연결:</span>
+                                    <span class="status-info-value stat-val good" id="myConnectionStatus">정상</span>
+                                </div>
+                                <div class="status-info-row status-mini">
+                                    <span class="status-info-label">상대:</span>
+                                    <span class="status-info-value stat-val" id="otherConnectionStatus">대기</span>
+                                </div>
+                                <div class="status-info-row status-mini">
+                                    <span class="status-info-label">핑:</span>
+                                    <span class="status-info-value stat-val" id="serverPing">-ms</span>
+                                </div>
+                            </div>
+                            <button class="control-btn ctrl-btn mini" onclick="checkConnection()" style="margin-top:8px;">연결 확인</button>
+                        </div>
+                    </div>
+
+                    <!-- Chat Tab -->
+                    <div class="tab-content" id="chat-tab">
+                        <div class="chat-container">
+                            <div class="chat-messages" id="chatMessages">
+                                <div class="chat-placeholder" style="text-align: center; color: var(--text-tertiary); padding: 60px 20px;">
+                                    <i class="xi-message-o" style="font-size: 32px; margin-bottom: 10px; opacity: 0.5;"></i>
+                                    <div>채팅 메시지가 없습니다</div>
+                                </div>
+                            </div>
+                            <div class="chat-input-container chat-input-group">
+                                <input 
+                                    type="text" 
+                                    class="chat-input" 
+                                    id="chatInput"
+                                    placeholder="메시지를 입력하세요..."
+                                    maxlength="200"
+                                >
+                                <button class="chat-send chat-send-btn" onclick="sendChatMessage()">
+                                    <i class="xi-telegram"></i> 전송
+                                </button>
+                            </div>
+                            <div class="quick-actions chat-quick-messages">
+                                <button class="quick-action-btn quick-msg-btn" onclick="sendQuickMessage('확인했습니다')">확인</button>
+                                <button class="quick-action-btn quick-msg-btn" onclick="sendQuickMessage('교대하겠습니다')">교대</button>
+                                <button class="quick-action-btn quick-msg-btn" onclick="sendQuickMessage('잠시만요')">대기</button>
+                                <button class="quick-action-btn quick-msg-btn" onclick="sendQuickMessage('도움이 필요해요')">도움</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Tab -->
+                    <div class="tab-content" id="settings-tab">
+                        <!-- 테마 설정 -->
+                        <div class="settings-section">
+                            <h4>테마 설정</h4>
+                            <div class="theme-selector">
+                                <button class="theme-option dark" onclick="setTheme('dark')" title="다크 테마">다크</button>
+                                <button class="theme-option light active" onclick="setTheme('light')" title="라이트 테마">라이트</button>
+                                <button class="theme-option solarized" onclick="setTheme('solarized')" title="솔라라이즈드">솔라</button>
+                                <button class="theme-option contrast" onclick="setTheme('contrast')" title="고대비">고대비</button>
+                            </div>
+                        </div>
+                        
+                        <!-- 텍스트 개인화 -->
+                        <div class="settings-section">
+                            <h4>텍스트 설정</h4>
+                            <div class="setting-item text-setting-item">
+                                <div class="setting-label">
+                                    <span>글자 크기</span>
+                                    <span class="setting-value" id="fontSizeValue">15px</span>
+                                </div>
+                                <input 
+                                    type="range" 
+                                    class="setting-slider" 
+                                    id="fontSizeRange"
+                                    min="12" 
+                                    max="24" 
+                                    value="15"
+                                    oninput="updateFontSize(this.value)"
+                                >
+                            </div>
+
+                            <div class="setting-item text-setting-item">
+                                <div class="setting-label">
+                                    <span>줄 간격</span>
+                                    <span class="setting-value" id="lineHeightValue">1.8</span>
+                                </div>
+                                <input 
+                                    type="range" 
+                                    class="setting-slider" 
+                                    id="lineHeightRange"
+                                    min="14" 
+                                    max="24" 
+                                    value="18"
+                                    oninput="updateLineHeight(this.value)"
+                                >
+                            </div>
+
+                            <div class="setting-item text-setting-item">
+                                <div class="setting-label">
+                                    <span>권한매칭 단어 수</span>
+                                    <span class="setting-value" id="matchWordValue">3</span>
+                                </div>
+                                <input 
+                                    type="range" 
+                                    class="setting-slider" 
+                                    id="matchWordSlider"
+                                    min="3" 
+                                    max="7" 
+                                    value="3"
+                                    oninput="updateMatchWords(this.value)"
+                                >
+                            </div>
+                            
+                            <!-- 추가 텍스트 설정 (기존 JS 호환) -->
+                            <div class="text-setting-item" style="display:none;">
+                                <label>자간</label>
+                                <div class="setting-control">
+                                    <input type="range" id="letterSpacingRange" min="-2" max="5" value="0" onchange="updateTextSettings()">
+                                    <span id="letterSpacingValue">0px</span>
+                                </div>
+                            </div>
+                            <div class="text-setting-item" style="display:none;">
+                                <label>단어 간격</label>
+                                <div class="setting-control">
+                                    <input type="range" id="wordSpacingRange" min="-2" max="10" value="0" onchange="updateTextSettings()">
+                                    <span id="wordSpacingValue">0px</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 단축키 -->
+                        <div class="control-group">
+                            <div class="control-label">단축키</div>
+                            <div class="shortcuts-list shortcut-info">
+                                <div class="shortcut-item">
+                                    <span>단어 삭제</span>
+                                    <span class="shortcut-key">F4</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <span>권한 양보</span>
+                                    <span class="shortcut-key">F6</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <span>권한 요청</span>
+                                    <span class="shortcut-key">F7</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <span>교정 요청</span>
+                                    <span class="shortcut-key">F8</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <span>엔터 모드</span>
+                                    <span class="shortcut-key">Shift+Enter</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        NUA STUDIO Live Steno Editor - Real-time Collaboration
+    </footer>
+
+    <!-- JavaScript 파일 연결 (변경 없음) -->
+    <script src="editor_script.js"></script>
+    
+    <!-- 추가 헬퍼 함수들 (기존 디자인과 호환) -->
+    <script>
+        // Theme Management
+        function setTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            localStorage.setItem('stenoTheme', theme); 
+
+            // Update select value
+            document.querySelector('.theme-select').value = theme;
+            
+            // Update theme buttons
+            document.querySelectorAll('.theme-option').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const themeBtn = document.querySelector(`.theme-option.${theme}`);
+            if (themeBtn) themeBtn.classList.add('active');
+        }
+
+        // Load saved theme
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            setTheme(savedTheme);
+        });
+
+        // Fullscreen Toggle
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // Update functions for sliders (디자인 호환)
+        function updateFontSize(value) {
+            document.getElementById('fontSizeValue').textContent = `${value}px`;
+            // 기존 JS의 updateTextSettings와 연동
+            const fontSizeRange = document.getElementById('fontSizeRange');
+            if (fontSizeRange) fontSizeRange.value = value;
+            if (typeof updateTextSettings === 'function') {
+                updateTextSettings();
+            }
+        }
+
+        function updateLineHeight(value) {
+            const lineHeight = (value / 10).toFixed(1);
+            document.getElementById('lineHeightValue').textContent = lineHeight;
+            const lineHeightRange = document.getElementById('lineHeightRange');
+            if (lineHeightRange) lineHeightRange.value = value;
+            if (typeof updateTextSettings === 'function') {
+                updateTextSettings();
+            }
+        }
+
+        function updateMatchWords(value) {
+            document.getElementById('matchWordValue').textContent = value;
+            const matchWordSlider = document.getElementById('matchWordSlider');
+            if (matchWordSlider) matchWordSlider.value = value;
+            // matchWordCount 전역 변수 업데이트 (기존 JS 호환)
+            if (typeof matchWordCount !== 'undefined') {
+                matchWordCount = parseInt(value);
+            }
+            // matchWordSelect 동기화
+            const matchWordSelect = document.getElementById('matchWordSelect');
+            if (matchWordSelect) {
+                matchWordSelect.value = value;
+            }
+        }
+
+        // Viewer functions (디자인 호환)
+        function openViewerWindow() {
+            const channel = document.getElementById('channelInfo')?.textContent || 'default';
+            window.open(`viewer.html?channel=${channel}`, 'viewer', 'width=800,height=600');
+        }
+
+        function clearViewer() {
+            const viewerContent = document.getElementById('viewerContent');
+            if (viewerContent) {
+                viewerContent.innerHTML = '<span class="viewer-placeholder">자막이 여기에 표시됩니다.</span>';
+            }
+        }
+
+        function copyViewerText() {
+            const text = document.getElementById('viewerContent').innerText;
+            navigator.clipboard.writeText(text);
+            // 알림 표시 (기존 showNotification 또는 간단한 alert)
+            if (typeof showNotification === 'function') {
+                showNotification('텍스트가 복사되었습니다');
+            } else {
+                console.log('텍스트가 복사되었습니다');
+            }
+        }
+
+        function saveViewerText() {
+            const text = document.getElementById('viewerContent').innerText;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `transcript_${new Date().getTime()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Notification helper (fallback)
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 24px;
+                left: 50%;
+                transform: translateX(-50%);
+                padding: 12px 24px;
+                background: ${type === 'warning' ? '#ff9800' : 'var(--accent-gradient)'};
+                color: white;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: 500;
+                z-index: 1000;
+                animation: slideUp 0.3s ease;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideDown 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Add slide animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideUp {
+                from { transform: translateX(-50%) translateY(100px); opacity: 0; }
+                to { transform: translateX(-50%) translateY(0); opacity: 1; }
+            }
+            @keyframes slideDown {
+                from { transform: translateX(-50%) translateY(0); opacity: 1; }
+                to { transform: translateX(-50%) translateY(100px); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Connection status update
+        setInterval(() => {
+            const connectionDot = document.getElementById('connectionDot');
+            const connectionStatus = document.getElementById('connectionStatus');
+            if (typeof socket !== 'undefined' && socket && socket.connected) {
+                if (connectionDot) connectionDot.classList.remove('disconnected');
+                if (connectionStatus) connectionStatus.textContent = '연결됨';
+            } else {
+                if (connectionDot) connectionDot.classList.add('disconnected');
+                if (connectionStatus) connectionStatus.textContent = '연결 끊김';
+            }
+        }, 5000);
+    </script>
 </body>
 </html>
