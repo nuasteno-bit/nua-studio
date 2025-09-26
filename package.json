@@ -7,7 +7,8 @@
     "start": "node socket-server.js",
     "dev": "nodemon socket-server.js || node socket-server.js",
     "test": "node diagnostic.js",
-    "health": "curl http://localhost:${PORT:-3000}/health"
+    "health": "curl http://localhost:${PORT:-3000}/health",
+    "postinstall": "npm rebuild better-sqlite3 || true"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -18,18 +19,10 @@
     "socket.io": "^4.8.1",
     "helmet": "^7.1.0",
     "compression": "^1.7.4",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "better-sqlite3": "^9.4.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
-  },
-  "keywords": [
-    "realtime",
-    "websocket",
-    "subtitle",
-    "stenography",
-    "collaboration"
-  ],
-  "author": "NUA STUDIO",
-  "license": "MIT"
+  }
 }
