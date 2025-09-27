@@ -530,7 +530,7 @@ function completeViewerEdit() {
   const editBtn = document.getElementById('viewerEditBtn');
   if (!viewerContent) return;
 
-  // PATCH: 편집 완료 시 텍스트를 innerText로 수집 + 개행/공백 정규화 (이중 개행 방지)
+  // 편집 완료 시 텍스트를 innerText로 수집 + 개행/공백 정규화
   const editedText = viewerContent.innerText
     .replace(/\r\n?/g, '\n')   // CRLF/CR -> LF
     .replace(/\u00A0/g, ' ');  // NBSP -> space
@@ -561,7 +561,6 @@ function completeViewerEdit() {
   updateViewerContent();
   if (myEditor) myEditor.focus();
 }
-
 
 function cancelViewerEdit() {
   if (!isViewerEditing) return;
@@ -622,8 +621,17 @@ function updateViewerFromEditor() {
   if (!viewerContent || !myEditor) return;
   
   // HTML 모드에서는 항상 권한자
-  const needsSpacer = accumulatedText && myEditor.value && !/[\s]$/.test(accumulatedText);
-const currentText = (accumulatedText || '') + (needsSpacer ? ' ' : '') + myEditor.value;
+  // 수정: sendToMonitor와 동일한 로직 적용
+  const inputText = myEditor.value;
+  let currentText = accumulatedText || '';
+  if (currentText.length > 0 && inputText) {
+    const needsSpacer = !currentText.endsWith('\n') && 
+                        !currentText.endsWith(' ') && 
+                        !inputText.startsWith('\n');
+    currentText += (needsSpacer ? ' ' : '') + inputText;
+  } else {
+    currentText = inputText;
+  }
   
   fullTextStorage = currentText;
   updateMonitoringFromText(currentText);
@@ -657,17 +665,25 @@ function updateViewerContent() {
   }
 }
 
-// 전송 모드에서 텍스트 전송
+// 전송 모드에서 텍스트 전송 (수정됨: 줄바꿈 처리 개선)
 function sendToMonitor() {
   if (!myEditor || myEditor.value.trim() === '') return;
   
   // 1인 모드이거나 권한자인 경우만 전송 가능
   if (isSoloMode() || myRole === activeStenographer) {
-    const needsSpacer = accumulatedText && !/[\s]$/.test(accumulatedText);
-accumulatedText += (needsSpacer ? ' ' : '') + myEditor.value.trimStart();
-fullTextStorage = accumulatedText;
-myEditor.value = '';
-
+    // 수정: 줄바꿈 처리 개선
+    const inputText = myEditor.value.trimStart();
+    if (accumulatedText && accumulatedText.length > 0) {
+      // 이전 텍스트가 줄바꿈으로 끝나지 않고, 새 텍스트가 줄바꿈으로 시작하지 않을 때만 공백 추가
+      const needsSpacer = !accumulatedText.endsWith('\n') && 
+                          !accumulatedText.endsWith(' ') && 
+                          !inputText.startsWith('\n');
+      accumulatedText += (needsSpacer ? ' ' : '') + inputText;
+    } else {
+      accumulatedText = inputText;
+    }
+    fullTextStorage = accumulatedText;
+    myEditor.value = '';
     
     updateViewerContent();
     
@@ -2000,9 +2016,9 @@ if (!isHtmlMode && socket) {
       updateViewerContent();
 
       // 포커스 자동 복구(교대 타이밍 중복 호출 대비 rAF)
-if (myEditor) requestAnimationFrame(() => { 
-  if (document.activeElement !== myEditor) myEditor.focus();
-});
+      if (myEditor) requestAnimationFrame(() => { 
+        if (document.activeElement !== myEditor) myEditor.focus();
+      });
       // 9. 교대 처리 플래그 해제
       isProcessingSwitch = false;
       lastSwitchTime = Date.now();
@@ -2026,14 +2042,16 @@ if (myEditor) requestAnimationFrame(() => {
     }
   });
   
-  // 채팅 메시지 수신
+  // 채팅 메시지 수신 (수정: 속기사2 문제 해결)
   socket.on('chat_message', ({ sender, message }) => {
-    if (sender !== `속기사${myRole}`) {
+    // 수정: 자기 자신이 보낸 메시지인지 정확히 확인
+    const mySenderName = `속기사${myRole}`;
+    if (sender !== mySenderName) {  // 다른 사람이 보낸 메시지일 때만
       const chatMsg = {
         sender: sender,
         message: message,
         timestamp: new Date().toISOString(),
-        isMine: false,
+        isMine: false,  // 다른 사람 메시지
         isQuick: message.startsWith('[빠른 메시지]')
       };
       
@@ -2563,7 +2581,3 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault();
   }
 });
-
-
-
-
