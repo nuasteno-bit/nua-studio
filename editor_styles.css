@@ -1,4 +1,4 @@
-/* NUA STUDIO Steno Editor - Redesigned Styles */
+/* NUA STUDIO Steno Editor - Compact Styles */
 /* 기존 editor.css와 충돌 방지를 위해 CSS 변수와 스코프 사용 */
 
 * {
@@ -644,13 +644,18 @@ body.solo-mode #col2 {
     gap: 8px;
 }
 
-/* Panel Content */
+/* Panel Content - Compact version */
 .panel-content,
 .panel-body {
     flex: 1;
     padding: 20px;
     overflow-y: auto;
     background: var(--card-bg);
+}
+
+.panel-content.compact,
+.panel-body.compact {
+    padding: 12px;
 }
 
 /* Viewer Content */
@@ -708,36 +713,6 @@ body.solo-mode #col2 {
     outline: none;
 }
 
-/* Quick Actions */
-.quick-actions {
-    display: flex;
-    gap: 8px;
-    padding: 12px 20px;
-    background: var(--bg-tertiary);
-    border-top: 1px solid var(--border);
-}
-
-.quick-action-btn,
-.quick-msg-btn {
-    flex: 1;
-    padding: 8px;
-    font-size: 11px;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-weight: 500;
-}
-
-.quick-action-btn:hover,
-.quick-msg-btn:hover {
-    background: var(--hover-bg);
-    color: var(--text-primary);
-    transform: translateY(-1px);
-}
-
 /* Panel Tabs */
 .panel-tabs,
 .tab-nav {
@@ -748,10 +723,10 @@ body.solo-mode #col2 {
 .panel-tab,
 .tab-btn {
     flex: 1;
-    padding: 14px;
+    padding: 12px;
     background: none;
     border: none;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     color: var(--text-secondary);
     cursor: pointer;
@@ -785,15 +760,15 @@ body.solo-mode #col2 {
 /* Chat Badge */
 .chat-badge {
     position: absolute;
-    top: 6px;
-    right: 6px;
+    top: 4px;
+    right: 4px;
     background: #ff4444;
     color: white;
     border-radius: 10px;
-    padding: 2px 6px;
-    font-size: 10px;
+    padding: 1px 5px;
+    font-size: 9px;
     font-weight: bold;
-    min-width: 14px;
+    min-width: 12px;
     text-align: center;
 }
 
@@ -812,25 +787,29 @@ body.solo-mode #col2 {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Control Tab Styles */
+/* Control Tab Styles - Compact */
 .control-group {
     margin-bottom: 24px;
 }
 
+.control-group.compact {
+    margin-bottom: 16px;
+}
+
 .control-label {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.5px;
     text-transform: uppercase;
     color: var(--text-secondary);
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     font-family: 'Poppins', sans-serif;
 }
 
 .control-buttons {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    gap: 6px;
 }
 
 .control-btn,
@@ -845,6 +824,13 @@ body.solo-mode #col2 {
     cursor: pointer;
     transition: all 0.2s var(--ease);
     font-family: 'Pretendard', sans-serif;
+}
+
+.control-btn.compact,
+.ctrl-btn.compact {
+    padding: 8px 12px;
+    font-size: 11px;
+    border-radius: 8px;
 }
 
 .control-btn:hover,
@@ -873,7 +859,12 @@ body.solo-mode #col2 {
     font-size: 11px;
 }
 
-/* Status Info Box */
+.ctrl-btn.mini.compact {
+    padding: 6px 10px;
+    font-size: 10px;
+}
+
+/* Status Info Box - Compact */
 .status-info-box,
 .status-row {
     padding: 16px;
@@ -883,6 +874,13 @@ body.solo-mode #col2 {
     font-size: 12px;
     display: flex;
     gap: 16px;
+}
+
+.status-info-box.compact,
+.status-row.compact {
+    padding: 10px;
+    gap: 12px;
+    font-size: 11px;
 }
 
 .status-info-row,
@@ -915,11 +913,15 @@ body.solo-mode #col2 {
     color: #f44336;
 }
 
-/* Chat Tab Styles */
+/* Chat Tab Styles - Compact */
 .chat-container {
     display: flex;
     flex-direction: column;
     height: 100%;
+}
+
+.chat-container.compact {
+    gap: 8px;
 }
 
 .chat-messages {
@@ -930,6 +932,12 @@ body.solo-mode #col2 {
     border: 1px solid var(--input-border);
     border-radius: 10px;
     margin-bottom: 12px;
+}
+
+.chat-messages.compact {
+    height: 180px;
+    padding: 10px;
+    margin-bottom: 8px;
 }
 
 .chat-message {
@@ -976,6 +984,11 @@ body.solo-mode #col2 {
     gap: 8px;
 }
 
+.chat-input-container.compact,
+.chat-input-group.compact {
+    gap: 6px;
+}
+
 .chat-input {
     flex: 1;
     padding: 12px 14px;
@@ -987,6 +1000,12 @@ body.solo-mode #col2 {
     background: var(--input-bg);
     color: var(--text-primary);
     transition: all 0.2s ease;
+}
+
+.chat-input.compact {
+    padding: 8px 12px;
+    font-size: 12px;
+    border-radius: 8px;
 }
 
 .chat-input::placeholder {
@@ -1012,21 +1031,67 @@ body.solo-mode #col2 {
     font-family: 'Poppins', sans-serif;
 }
 
+.chat-send.compact,
+.chat-send-btn.compact {
+    padding: 8px 16px;
+    font-size: 12px;
+    border-radius: 8px;
+}
+
 .chat-send:hover,
 .chat-send-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px var(--accent-shadow);
 }
 
+/* Quick Actions - Compact */
+.quick-actions,
 .chat-quick-messages {
     display: flex;
     gap: 4px;
     flex-wrap: wrap;
 }
 
-/* Settings Tab */
+.quick-actions.compact,
+.chat-quick-messages.compact {
+    gap: 4px;
+}
+
+.quick-action-btn,
+.quick-msg-btn {
+    flex: 1;
+    padding: 8px;
+    font-size: 11px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.quick-action-btn.compact,
+.quick-msg-btn.compact {
+    padding: 6px;
+    font-size: 10px;
+    border-radius: 4px;
+}
+
+.quick-action-btn:hover,
+.quick-msg-btn:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+/* Settings Tab - Compact */
 .settings-section {
     margin-bottom: 24px;
+}
+
+.settings-section.compact {
+    margin-bottom: 16px;
 }
 
 .settings-section h4 {
@@ -1036,9 +1101,18 @@ body.solo-mode #col2 {
     font-family: 'Poppins', sans-serif;
 }
 
+.settings-section.compact h4 {
+    margin: 0 0 8px 0;
+    font-size: 12px;
+}
+
 .theme-selector {
     display: flex;
     gap: 8px;
+}
+
+.theme-selector.compact {
+    gap: 4px;
 }
 
 .theme-option {
@@ -1054,6 +1128,12 @@ body.solo-mode #col2 {
     font-family: 'Poppins', sans-serif;
 }
 
+.theme-option.compact {
+    padding: 6px;
+    font-size: 10px;
+    border-radius: 4px;
+}
+
 .theme-option:hover {
     transform: scale(1.05);
 }
@@ -1063,7 +1143,14 @@ body.solo-mode #col2 {
     box-shadow: 0 0 8px var(--accent-shadow);
 }
 
-/* Settings Items */
+/* Text Settings Grid - New compact design */
+.text-settings-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Settings Items - Compact with buttons */
 .setting-item,
 .text-setting-item {
     margin-bottom: 16px;
@@ -1073,19 +1160,61 @@ body.solo-mode #col2 {
     border: 1px solid var(--input-border);
 }
 
+.setting-item.compact,
+.text-setting-item.compact {
+    margin-bottom: 0;
+    padding: 10px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 .setting-label {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 12px;
     font-size: 13px;
     color: var(--text-primary);
+}
+
+.text-setting-item.compact .setting-label {
+    flex: 1;
+    font-size: 11px;
+    margin: 0;
 }
 
 .setting-value {
     font-weight: 600;
     color: var(--accent-primary);
     font-family: 'Poppins', sans-serif;
+    margin-left: 8px;
+}
+
+/* New button controls for settings */
+.setting-control-buttons {
+    display: flex;
+    gap: 4px;
+}
+
+.setting-btn {
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--border);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.setting-btn:hover {
+    background: var(--hover-bg);
+    transform: scale(1.1);
 }
 
 .setting-control {
@@ -1129,12 +1258,17 @@ body.solo-mode #col2 {
     box-shadow: 0 2px 8px var(--accent-shadow);
 }
 
-/* Shortcuts List */
+/* Shortcuts List - Compact */
 .shortcuts-list,
 .shortcut-info {
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.shortcuts-list.compact,
+.shortcut-info.compact {
+    gap: 4px;
 }
 
 .shortcut-item {
@@ -1147,6 +1281,12 @@ body.solo-mode #col2 {
     font-size: 12px;
 }
 
+.shortcut-item.compact {
+    padding: 6px 10px;
+    font-size: 11px;
+    border-radius: 6px;
+}
+
 .shortcut-key {
     font-weight: 600;
     font-family: 'Poppins', sans-serif;
@@ -1154,6 +1294,12 @@ body.solo-mode #col2 {
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 6px;
+}
+
+.shortcut-item.compact .shortcut-key {
+    padding: 2px 6px;
+    font-size: 10px;
+    border-radius: 4px;
 }
 
 /* Footer */
