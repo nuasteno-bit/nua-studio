@@ -1282,11 +1282,6 @@ io.on('connection', (socket) => {
       // 1) 개행 정규화 (CRLF, CR → LF)
       let normalized = (accumulatedText || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
       
-      // 2) 확정 시 반드시 줄바꿈 추가 (중복 방지)
-      if (normalized && !normalized.endsWith('\n')) {
-        normalized += '\n';
-        console.log(`[${ch}] 줄바꿈 추가 → 최종 길이: ${normalized.length}자`);
-      }
       
       // 수정 2: 상태 저장 "직전"의 이전 누적본 캡처
       const prevAccumulated = channelStates[ch]?.accumulatedText || '';
