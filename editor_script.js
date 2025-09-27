@@ -704,17 +704,15 @@ function sendToMonitor() {
   
   // 1인 모드이거나 권한자인 경우만 전송 가능
   if (isSoloMode() || myRole === activeStenographer) {
-    // 수정: 줄바꿈 처리 개선
-    const inputText = myEditor.value.trimStart();
+    const inputText = myEditor.value;
+    
     if (accumulatedText && accumulatedText.length > 0) {
-      // 이전 텍스트가 줄바꿈으로 끝나지 않고, 새 텍스트가 줄바꿈으로 시작하지 않을 때만 공백 추가
-      const needsSpacer = !accumulatedText.endsWith('\n') && 
-                          !accumulatedText.endsWith(' ') && 
-                          !inputText.startsWith('\n');
-      accumulatedText += (needsSpacer ? ' ' : '') + inputText;
+      // 엔터키로 전송했으므로 줄바꿈 추가
+      accumulatedText += '\n' + inputText;
     } else {
       accumulatedText = inputText;
     }
+    
     fullTextStorage = accumulatedText;
     myEditor.value = '';
     
@@ -2071,23 +2069,7 @@ if (!isHtmlMode && socket) {
     }
   });
   
-  // 채팅 메시지 수신 (수정: 속기사2 문제 해결)
-  socket.on('chat_message', ({ sender, message }) => {
-    // 수정: 자기 자신이 보낸 메시지인지 정확히 확인
-    const mySenderName = `속기사${myRole}`;
-    if (sender !== mySenderName) {  // 다른 사람이 보낸 메시지일 때만
-      const chatMsg = {
-        sender: sender,
-        message: message,
-        timestamp: new Date().toISOString(),
-        isMine: false,  // 다른 사람 메시지
-        isQuick: message.startsWith('[빠른 메시지]')
-      };
-      
-      addChatMessage(chatMsg);
-    }
-  });
-  
+ 
   // 채팅 메시지 수신 (통합된 단일 핸들러)
   socket.on('chat_message', ({ sender, message, timestamp }) => {
     const mySenderName = `속기사${myRole}`;
@@ -2628,3 +2610,4 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault();
   }
 });
+
