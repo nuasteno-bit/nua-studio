@@ -229,7 +229,7 @@
                 <div class="panel-header title-bar">
                     <div class="panel-title">
                         Monitoring Viewer
-                        <span id="viewerIconBtn" title="Open Viewer in new window" style="cursor: pointer; padding: 4px; display: inline-flex; align-items: center; justify-content: center; background: var(--bg-tertiary); border-radius: 4px; border: 1px solid var(--border); margin-left: 8px;">
+                        <span id="viewerIconBtn" onclick="openViewerWindow()" title="Open Viewer in new window" style="cursor: pointer; padding: 4px; display: inline-flex; align-items: center; justify-content: center; background: var(--bg-tertiary); border-radius: 4px; border: 1px solid var(--border); margin-left: 8px;">
                             <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zM4 18V6h16v12H4zm4-2h2v-2H6v2h2zm0-4h8v-2H8v2zm4 4h6v-2h-6v2z"/>
                             </svg>
@@ -239,8 +239,8 @@
                         <button class="viewer-edit-btn" id="viewerEditBtn" onclick="toggleViewerEdit()" title="뷰어 편집" style="display: none;">편집</button>
                         <button class="font-btn" onclick="adjustViewerFontSize(-1)" title="글자 작게">A−</button>
                         <button class="font-btn" onclick="adjustViewerFontSize(1)" title="글자 크게">A+</button>
-                        <button class="font-btn" onclick="openViewerWindow()" title="새 창으로">
-                            <i class="xi-external-link"></i>
+                        <button class="font-btn" onclick="saveViewerText()" title="내보내기">
+                            <i class="xi-download"></i>
                         </button>
                     </div>
                 </div>
@@ -249,11 +249,6 @@
                         <div id="viewerContent" style="font-size: 15px;">
                             <span class="viewer-placeholder">자막이 여기에 표시됩니다.</span>
                         </div>
-                    </div>
-                    <div class="quick-actions">
-                        <button class="quick-action-btn" onclick="clearViewer()">화면 지우기</button>
-                        <button class="quick-action-btn" onclick="copyViewerText()">텍스트 복사</button>
-                        <button class="quick-action-btn" onclick="saveViewerText()">저장</button>
                     </div>
                 </div>
             </div>
@@ -276,42 +271,42 @@
                     <button class="panel-tab tab-btn" data-tab="settings" onclick="switchTabFixed('settings', this)">설정</button>
                 </div>
 
-                <div class="panel-content panel-body" id="utility-body">
+                <div class="panel-content panel-body compact" id="utility-body">
                     <!-- Controls Tab -->
                     <div class="tab-content active" id="control-tab">
-                        <div class="control-group">
+                        <div class="control-group compact">
                             <div class="control-label">권한 관리</div>
                             <div class="control-buttons">
-                                <button class="control-btn ctrl-btn" onclick="requestRole()">
+                                <button class="control-btn ctrl-btn compact" onclick="requestRole()">
                                     <i class="xi-hand-paper"></i> 권한 요청
                                 </button>
-                                <button class="control-btn ctrl-btn" onclick="offerRole()">
+                                <button class="control-btn ctrl-btn compact" onclick="offerRole()">
                                     <i class="xi-share-alt"></i> 권한 양보
                                 </button>
-                                <button class="control-btn ctrl-btn danger warning" onclick="forceGetRole()">
+                                <button class="control-btn ctrl-btn danger warning compact" onclick="forceGetRole()">
                                     <i class="xi-warning"></i> 강제 획득
                                 </button>
-                                <button class="control-btn ctrl-btn" onclick="correctionRequest()">
+                                <button class="control-btn ctrl-btn compact" onclick="correctionRequest()">
                                     <i class="xi-pen"></i> 교정 요청
                                 </button>
                             </div>
                         </div>
                         
-                        <div class="control-group">
+                        <div class="control-group compact">
                             <div class="control-label">데이터 관리</div>
                             <div class="control-buttons">
-                                <button class="control-btn ctrl-btn primary" onclick="downloadFullText()">
+                                <button class="control-btn ctrl-btn primary compact" onclick="downloadFullText()">
                                     <i class="xi-download"></i> 전체 다운로드
                                 </button>
-                                <button class="control-btn ctrl-btn" onclick="clearLocalStorage()">
+                                <button class="control-btn ctrl-btn compact" onclick="clearLocalStorage()">
                                     <i class="xi-refresh"></i> 캐시 초기화
                                 </button>
                             </div>
                         </div>
 
-                        <div class="control-group">
+                        <div class="control-group compact">
                             <div class="control-label">연결 상태</div>
-                            <div class="status-info-box status-row">
+                            <div class="status-info-box status-row compact">
                                 <div class="status-info-row status-mini">
                                     <span class="status-info-label">내 연결:</span>
                                     <span class="status-info-value stat-val good" id="myConnectionStatus">정상</span>
@@ -325,36 +320,36 @@
                                     <span class="status-info-value stat-val" id="serverPing">-ms</span>
                                 </div>
                             </div>
-                            <button class="control-btn ctrl-btn mini" onclick="checkConnection()" style="margin-top:8px;">연결 확인</button>
+                            <button class="control-btn ctrl-btn mini compact" onclick="checkConnection()" style="margin-top:6px;">연결 확인</button>
                         </div>
                     </div>
 
                     <!-- Chat Tab -->
                     <div class="tab-content" id="chat-tab">
-                        <div class="chat-container">
-                            <div class="chat-messages" id="chatMessages">
-                                <div class="chat-placeholder" style="text-align: center; color: var(--text-tertiary); padding: 60px 20px;">
-                                    <i class="xi-message-o" style="font-size: 32px; margin-bottom: 10px; opacity: 0.5;"></i>
+                        <div class="chat-container compact">
+                            <div class="chat-messages compact" id="chatMessages">
+                                <div class="chat-placeholder" style="text-align: center; color: var(--text-tertiary); padding: 40px 20px;">
+                                    <i class="xi-message-o" style="font-size: 28px; margin-bottom: 8px; opacity: 0.5;"></i>
                                     <div>채팅 메시지가 없습니다</div>
                                 </div>
                             </div>
-                            <div class="chat-input-container chat-input-group">
+                            <div class="chat-input-container chat-input-group compact">
                                 <input 
                                     type="text" 
-                                    class="chat-input" 
+                                    class="chat-input compact" 
                                     id="chatInput"
                                     placeholder="메시지를 입력하세요..."
                                     maxlength="200"
                                 >
-                                <button class="chat-send chat-send-btn" onclick="sendChatMessage()">
+                                <button class="chat-send chat-send-btn compact" onclick="sendChatMessage()">
                                     <i class="xi-telegram"></i> 전송
                                 </button>
                             </div>
-                            <div class="quick-actions chat-quick-messages">
-                                <button class="quick-action-btn quick-msg-btn" onclick="sendQuickMessage('확인했습니다')">확인</button>
-                                <button class="quick-action-btn quick-msg-btn" onclick="sendQuickMessage('교대하겠습니다')">교대</button>
-                                <button class="quick-action-btn quick-msg-btn" onclick="sendQuickMessage('잠시만요')">대기</button>
-                                <button class="quick-action-btn quick-msg-btn" onclick="sendQuickMessage('도움이 필요해요')">도움</button>
+                            <div class="quick-actions chat-quick-messages compact">
+                                <button class="quick-action-btn quick-msg-btn compact" onclick="sendQuickMessage('확인했습니다')">확인</button>
+                                <button class="quick-action-btn quick-msg-btn compact" onclick="sendQuickMessage('교대하겠습니다')">교대</button>
+                                <button class="quick-action-btn quick-msg-btn compact" onclick="sendQuickMessage('잠시만요')">대기</button>
+                                <button class="quick-action-btn quick-msg-btn compact" onclick="sendQuickMessage('도움이 필요해요')">도움</button>
                             </div>
                         </div>
                     </div>
@@ -362,65 +357,56 @@
                     <!-- Settings Tab -->
                     <div class="tab-content" id="settings-tab">
                         <!-- 테마 설정 -->
-                        <div class="settings-section">
+                        <div class="settings-section compact">
                             <h4>테마 설정</h4>
-                            <div class="theme-selector">
-                                <button class="theme-option dark" onclick="setTheme('dark')" title="다크 테마">다크</button>
-                                <button class="theme-option light active" onclick="setTheme('light')" title="라이트 테마">라이트</button>
-                                <button class="theme-option solarized" onclick="setTheme('solarized')" title="솔라라이즈드">솔라</button>
-                                <button class="theme-option contrast" onclick="setTheme('contrast')" title="고대비">고대비</button>
+                            <div class="theme-selector compact">
+                                <button class="theme-option dark compact" onclick="setTheme('dark')" title="다크 테마">다크</button>
+                                <button class="theme-option light active compact" onclick="setTheme('light')" title="라이트 테마">라이트</button>
+                                <button class="theme-option neon compact" onclick="setTheme('neon')" title="네온">네온</button>
+                                <button class="theme-option mono compact" onclick="setTheme('mono')" title="모노">모노</button>
+                                <button class="theme-option tokyo compact" onclick="setTheme('tokyo')" title="도쿄">도쿄</button>
                             </div>
                         </div>
                         
                         <!-- 텍스트 개인화 -->
-                        <div class="settings-section">
+                        <div class="settings-section compact">
                             <h4>텍스트 설정</h4>
-                            <div class="setting-item text-setting-item">
-                                <div class="setting-label">
-                                    <span>글자 크기</span>
-                                    <span class="setting-value" id="fontSizeValue">15px</span>
+                            <div class="text-settings-grid">
+                                <div class="setting-item text-setting-item compact">
+                                    <div class="setting-label">
+                                        <span>글자 크기</span>
+                                        <span class="setting-value" id="fontSizeValue">15px</span>
+                                    </div>
+                                    <div class="setting-control-buttons">
+                                        <button class="setting-btn" onclick="updateFontSizeButton(-1)">▼</button>
+                                        <button class="setting-btn" onclick="updateFontSizeButton(1)">▲</button>
+                                    </div>
+                                    <input type="hidden" id="fontSizeRange" value="15">
                                 </div>
-                                <input 
-                                    type="range" 
-                                    class="setting-slider" 
-                                    id="fontSizeRange"
-                                    min="12" 
-                                    max="24" 
-                                    value="15"
-                                    oninput="updateFontSize(this.value)"
-                                >
-                            </div>
 
-                            <div class="setting-item text-setting-item">
-                                <div class="setting-label">
-                                    <span>줄 간격</span>
-                                    <span class="setting-value" id="lineHeightValue">1.8</span>
+                                <div class="setting-item text-setting-item compact">
+                                    <div class="setting-label">
+                                        <span>줄 간격</span>
+                                        <span class="setting-value" id="lineHeightValue">1.8</span>
+                                    </div>
+                                    <div class="setting-control-buttons">
+                                        <button class="setting-btn" onclick="updateLineHeightButton(-1)">▼</button>
+                                        <button class="setting-btn" onclick="updateLineHeightButton(1)">▲</button>
+                                    </div>
+                                    <input type="hidden" id="lineHeightRange" value="18">
                                 </div>
-                                <input 
-                                    type="range" 
-                                    class="setting-slider" 
-                                    id="lineHeightRange"
-                                    min="14" 
-                                    max="24" 
-                                    value="18"
-                                    oninput="updateLineHeight(this.value)"
-                                >
-                            </div>
 
-                            <div class="setting-item text-setting-item">
-                                <div class="setting-label">
-                                    <span>권한매칭 단어 수</span>
-                                    <span class="setting-value" id="matchWordValue">3</span>
+                                <div class="setting-item text-setting-item compact">
+                                    <div class="setting-label">
+                                        <span>권한매칭 단어</span>
+                                        <span class="setting-value" id="matchWordValue">3</span>
+                                    </div>
+                                    <div class="setting-control-buttons">
+                                        <button class="setting-btn" onclick="updateMatchWordsButton(-1)">▼</button>
+                                        <button class="setting-btn" onclick="updateMatchWordsButton(1)">▲</button>
+                                    </div>
+                                    <input type="hidden" id="matchWordSlider" value="3">
                                 </div>
-                                <input 
-                                    type="range" 
-                                    class="setting-slider" 
-                                    id="matchWordSlider"
-                                    min="3" 
-                                    max="7" 
-                                    value="3"
-                                    oninput="updateMatchWords(this.value)"
-                                >
                             </div>
                             
                             <!-- 추가 텍스트 설정 (기존 JS 호환) -->
@@ -441,26 +427,26 @@
                         </div>
 
                         <!-- 단축키 -->
-                        <div class="control-group">
+                        <div class="control-group compact">
                             <div class="control-label">단축키</div>
-                            <div class="shortcuts-list shortcut-info">
-                                <div class="shortcut-item">
+                            <div class="shortcuts-list shortcut-info compact">
+                                <div class="shortcut-item compact">
                                     <span>단어 삭제</span>
                                     <span class="shortcut-key">F4</span>
                                 </div>
-                                <div class="shortcut-item">
+                                <div class="shortcut-item compact">
                                     <span>권한 양보</span>
                                     <span class="shortcut-key">F6</span>
                                 </div>
-                                <div class="shortcut-item">
+                                <div class="shortcut-item compact">
                                     <span>권한 요청</span>
                                     <span class="shortcut-key">F7</span>
                                 </div>
-                                <div class="shortcut-item">
+                                <div class="shortcut-item compact">
                                     <span>교정 요청</span>
                                     <span class="shortcut-key">F8</span>
                                 </div>
-                                <div class="shortcut-item">
+                                <div class="shortcut-item compact">
                                     <span>엔터 모드</span>
                                     <span class="shortcut-key">Shift+Enter</span>
                                 </div>
@@ -571,10 +557,65 @@
             }
         }
 
-        // Update functions for sliders (디자인 호환)
+        // Button-based update functions for text settings
+        function updateFontSizeButton(direction) {
+            const fontSizeRange = document.getElementById('fontSizeRange');
+            let currentValue = parseInt(fontSizeRange.value) || 15;
+            let newValue = currentValue + direction;
+            
+            // Limit to min 12, max 24
+            newValue = Math.max(12, Math.min(24, newValue));
+            
+            fontSizeRange.value = newValue;
+            document.getElementById('fontSizeValue').textContent = `${newValue}px`;
+            
+            if (typeof updateTextSettings === 'function') {
+                updateTextSettings();
+            }
+        }
+
+        function updateLineHeightButton(direction) {
+            const lineHeightRange = document.getElementById('lineHeightRange');
+            let currentValue = parseInt(lineHeightRange.value) || 18;
+            let newValue = currentValue + direction;
+            
+            // Limit to min 14, max 24
+            newValue = Math.max(14, Math.min(24, newValue));
+            
+            lineHeightRange.value = newValue;
+            const lineHeight = (newValue / 10).toFixed(1);
+            document.getElementById('lineHeightValue').textContent = lineHeight;
+            
+            if (typeof updateTextSettings === 'function') {
+                updateTextSettings();
+            }
+        }
+
+        function updateMatchWordsButton(direction) {
+            const matchWordSlider = document.getElementById('matchWordSlider');
+            let currentValue = parseInt(matchWordSlider.value) || 3;
+            let newValue = currentValue + direction;
+            
+            // Limit to min 3, max 7
+            newValue = Math.max(3, Math.min(7, newValue));
+            
+            matchWordSlider.value = newValue;
+            document.getElementById('matchWordValue').textContent = newValue;
+            
+            // matchWordCount 전역 변수 업데이트 (기존 JS 호환)
+            if (typeof matchWordCount !== 'undefined') {
+                matchWordCount = newValue;
+            }
+            // matchWordSelect 동기화
+            const matchWordSelect = document.getElementById('matchWordSelect');
+            if (matchWordSelect) {
+                matchWordSelect.value = newValue;
+            }
+        }
+
+        // Update functions for sliders (디자인 호환 - 기존 함수 유지)
         function updateFontSize(value) {
             document.getElementById('fontSizeValue').textContent = `${value}px`;
-            // 기존 JS의 updateTextSettings와 연동
             const fontSizeRange = document.getElementById('fontSizeRange');
             if (fontSizeRange) fontSizeRange.value = value;
             if (typeof updateTextSettings === 'function') {
@@ -596,11 +637,9 @@
             document.getElementById('matchWordValue').textContent = value;
             const matchWordSlider = document.getElementById('matchWordSlider');
             if (matchWordSlider) matchWordSlider.value = value;
-            // matchWordCount 전역 변수 업데이트 (기존 JS 호환)
             if (typeof matchWordCount !== 'undefined') {
                 matchWordCount = parseInt(value);
             }
-            // matchWordSelect 동기화
             const matchWordSelect = document.getElementById('matchWordSelect');
             if (matchWordSelect) {
                 matchWordSelect.value = value;
