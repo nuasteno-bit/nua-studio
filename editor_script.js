@@ -613,6 +613,44 @@ function updateMonitoringFromText(fullText) {
   monitoringLines = splitTextIntoLines(fullText, MAX_MONITORING_LINES);
 }
 
+// 공통 뷰어 렌더링 함수 (XSS 방지, 중복 제거)
+function renderMonitoringHTML(targetEl, monitoringText) {
+  if (!targetEl) return;
+  
+  targetEl.innerHTML = ''; // 기존 내용 초기화
+  
+  if (!monitoringText) {
+    // placeholder 표시
+    const placeholder = document.createElement('span');
+    placeholder.className = 'viewer-placeholder';
+    placeholder.textContent = '자막이 여기에 표시됩니다.';
+    targetEl.appendChild(placeholder);
+    return;
+  }
+  
+  const frag = document.createDocumentFragment();
+  const lines = monitoringText.split('\n');
+  
+  lines.forEach((line, idx) => {
+    if (line === '') {
+      // 빈 줄은 br만 추가
+      frag.appendChild(document.createElement('br'));
+    } else {
+      // 내용이 있는 줄은 span으로 감싸기
+      const span = document.createElement('span');
+      span.textContent = line; // XSS 방지: textContent 사용
+      frag.appendChild(span);
+    }
+    
+    // 마지막 줄이 아니면 br 추가
+    if (idx < lines.length - 1) {
+      frag.appendChild(document.createElement('br'));
+    }
+  });
+  
+  targetEl.appendChild(frag);
+}
+
 // 뷰어 업데이트 함수들
 function updateViewerFromEditor() {
   if (isViewerEditing) return;
@@ -621,7 +659,6 @@ function updateViewerFromEditor() {
   if (!viewerContent || !myEditor) return;
   
   // HTML 모드에서는 항상 권한자
-  // 수정: sendToMonitor와 동일한 로직 적용
   const inputText = myEditor.value;
   let currentText = accumulatedText || '';
   if (currentText.length > 0 && inputText) {
@@ -638,9 +675,7 @@ function updateViewerFromEditor() {
   const monitoringText = monitoringLines.join('\n');
   
   requestAnimationFrame(() => {
-    viewerContent.innerHTML = monitoringText.split('\n').map(line => 
-      `<span>${line}</span>`
-    ).join('<br>') || '<span class="viewer-placeholder">자막이 여기에 표시됩니다.</span>';
+    renderMonitoringHTML(viewerContent, monitoringText);
     viewerContent.scrollTop = viewerContent.scrollHeight;
     lastDisplayedText = monitoringText;
   });
@@ -656,9 +691,7 @@ function updateViewerContent() {
     const monitoringText = monitoringLines.join('\n');
     
     requestAnimationFrame(() => {
-      viewerContent.innerHTML = monitoringText.split('\n').map(line => 
-        `<span>${line}</span>`
-    ).join('<br>') || '<span class="viewer-placeholder">자막이 여기에 표시됩니다.</span>';
+      renderMonitoringHTML(viewerContent, monitoringText);
       viewerContent.scrollTop = viewerContent.scrollHeight;
       lastDisplayedText = monitoringText;
     });
@@ -862,9 +895,7 @@ function updateViewerWithCurrentInput() {
   const monitoringText = monitoringLines.join('\n');
   
   requestAnimationFrame(() => {
-    viewerContent.innerHTML = monitoringText.split('\n').map(line => 
-      `<span>${line}</span>`
-    ).join('<br>') || '<span class="viewer-placeholder">자막이 여기에 표시됩니다.</span>';
+    renderMonitoringHTML(viewerContent, monitoringText);
     viewerContent.scrollTop = viewerContent.scrollHeight;
     lastDisplayedText = monitoringText;
   });
@@ -900,9 +931,7 @@ function updateViewerWithOtherInput(otherText) {
   const monitoringText = monitoringLines.join('\n');
   
   requestAnimationFrame(() => {
-    viewerContent.innerHTML = monitoringText.split('\n').map(line => 
-      `<span>${line}</span>`
-    ).join('<br>') || '<span class="viewer-placeholder">자막이 여기에 표시됩니다.</span>';
+    renderMonitoringHTML(viewerContent, monitoringText);
     viewerContent.scrollTop = viewerContent.scrollHeight;
     lastDisplayedText = monitoringText;
   });
@@ -2056,6 +2085,24 @@ if (!isHtmlMode && socket) {
       };
       
       addChatMessage(chatMsg);
+    }
+  });
+  
+  // 채팅 메시지 수신 (통합된 단일 핸들러)
+  socket.on('chat_message', ({ sender, message, timestamp }) => {
+    const mySenderName = `속기사${myRole}`;
+    // 자기 자신이 보낸 메시지가 아닐 때만 추가
+    if (sender !== mySenderName) {
+      const chatMsg = {
+        sender: sender,
+        message: message,
+        timestamp: timestamp || new Date().toISOString(),
+        isMine: false,  // 다른 사람의 메시지
+        isQuick: message?.startsWith('[빠른 메시지]')
+      };
+      
+      addChatMessage(chatMsg);
+      console.log('[채팅 수신]', sender, ':', message);
     }
   });
   
