@@ -1,5 +1,5 @@
-// socket-server.js - 완전 수정 버전
-// NUA STUDIO 실시간 협업 속기 서버 v2.1 - 버전 관리 적용
+// socket-server.js - 관리자 API 포함 완전판
+// NUA STUDIO 실시간 협업 속기 서버 v2.0 - 패치판
 
 const express = require('express');
 const http = require('http');
@@ -11,7 +11,7 @@ const compression = require('compression');
 const cors = require('cors');
 const fs = require('fs');
 
-// === DB 모듈 로드 ===
+// === DB 모듈 로드 (ADD) ===
 const DB = require('./db/db_app');
 console.log('[DB] Using file:', DB.DB_PATH);
 
@@ -22,11 +22,13 @@ const IS_RENDER = process.env.RENDER === 'true' || process.env.RENDER_SERVICE_NA
 const NODE_ENV = process.env.NODE_ENV || (IS_RENDER ? 'production' : 'development');
 const IS_PRODUCTION = NODE_ENV === 'production';
 
+// Render는 PORT를 자동 할당 - 절대 수동 설정하지 마세요
 const PORT = process.env.PORT || 3000;
 const SERVICE_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
 
+// 시작 로그
 console.log('=================================');
-console.log('[NUA STUDIO] 서버 초기화 v2.1');
+console.log('[NUA STUDIO] 서버 초기화');
 console.log('=================================');
 console.log(`플랫폼: ${IS_RENDER ? 'Render Cloud' : 'Local'}`);
 console.log(`환경: ${NODE_ENV}`);
@@ -34,28 +36,13 @@ console.log(`포트: ${PORT}`);
 console.log(`URL: ${SERVICE_URL}`);
 console.log('=================================');
 
+// 연결 설정 (Render 유료 플랜 최적화)
 const HEARTBEAT_TIMEOUT = IS_RENDER ? 30000 : 20000;
 const PING_INTERVAL = IS_RENDER ? 25000 : 15000;
 const PING_TIMEOUT = IS_RENDER ? 60000 : 30000;
 
 // =========================
-// 채널 버전 관리 시스템 (핵심 추가)
-// =========================
-const channelVersions = new Map();
-
-function getChannelState(code) {
-  if (!channelVersions.has(code)) {
-    channelVersions.set(code, { 
-      docVersion: 0, 
-      text: '',
-      lastUpdate: Date.now()
-    });
-  }
-  return channelVersions.get(code);
-}
-
-// =========================
-// 메모리 기반 데이터 저장소 (기존)
+// 메모리 기반 데이터 저장소
 // =========================
 const channelDatabase = new Map();
 const stenoChannels = {};
@@ -64,12 +51,14 @@ const channelEditStates = {};
 const recentMessages = new Map();
 const channelBackups = {};
 const connectionStats = new Map();
-const channelSwitchCooldowns = {};
-const SWITCH_COOLDOWN_MS = 600;
 
-// 커밋 시각 관리 (누락된 변수 추가)
+// 교대 쿨다운 관리 (서버에서 관리)
+const channelSwitchCooldowns = {};
+const SWITCH_COOLDOWN_MS = 600; // 0.6초 쿨다운 (실사용 최적화)
+
+// 커밋 시각 관리 (패치 추가)
 const lastCommitAt = new Map();
-const COMMIT_NOISE_FILTER_MS = 100;
+const COMMIT_NOISE_FILTER_MS = 100; // 커밋 직후 100ms 노이즈 필터
 
 // =========================
 // Helper 함수들
@@ -89,7 +78,7 @@ function ensureActiveConsistent(channel) {
       accumulatedText: '', 
       lastSwitchText: '',
       lastActivity: Date.now(),
-      lastSwitchTime: 0
+      lastSwitchTime: 0  // 교대 시간 추가
     };
   }
   
@@ -116,6 +105,7 @@ function broadcastActiveRole(io, channel) {
   return active;
 }
 
+// 교대 쿨다운 체크 함수 추가
 function canSwitch(channel) {
   if (!channelSwitchCooldowns[channel]) {
     return true;
@@ -155,7 +145,7 @@ function restoreChannelState(channel) {
 
 function cleanupInactiveChannels() {
   const now = Date.now();
-  const INACTIVE_THRESHOLD = 2 * 60 * 60 * 1000;
+  const INACTIVE_THRESHOLD = 2 * 60 * 60 * 1000; // 2시간
   
   let cleanedCount = 0;
   
@@ -168,8 +158,7 @@ function cleanupInactiveChannels() {
       delete channelBackups[channel];
       delete channelSwitchCooldowns[channel];
       channelDatabase.delete(channel);
-      channelVersions.delete(channel);  // 버전 정보도 정리
-      lastCommitAt.delete(channel);     // 커밋 시각도 정리 (누락 추가)
+      lastCommitAt.delete(channel);  // 커밋 시각도 정리
       cleanedCount++;
     }
   }
@@ -198,6 +187,7 @@ function cleanupInactiveChannels() {
 const app = express();
 const server = http.createServer(app);
 
+// CORS 설정
 const corsOptions = IS_PRODUCTION ? {
   origin: [
     'https://nuastudio.co.kr',
@@ -223,6 +213,7 @@ app.use(helmet({
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 
+// 정적 파일 서빙 - 루트 디렉토리 사용
 app.use(express.static(__dirname));
 console.log(`[정적 파일] 루트 디렉토리 서빙: ${__dirname}`);
 
@@ -230,13 +221,16 @@ console.log(`[정적 파일] 루트 디렉토리 서빙: ${__dirname}`);
 // 라우트 설정
 // =========================
 
+// 루트 경로 - index.html 우선 제공
 app.get('/', (req, res) => {
   const indexPath = path.join(__dirname, 'index.html');
   
+  // index.html이 있으면 제공
   if (fs.existsSync(indexPath)) {
     console.log('[라우트] index.html 제공');
     res.sendFile(indexPath);
   } else {
+    // index.html이 없을 때만 서버 상태 페이지 표시
     console.log('[라우트] index.html 없음, 기본 페이지 표시');
     res.status(200).send(`
       <!DOCTYPE html>
@@ -305,27 +299,19 @@ app.get('/', (req, res) => {
   }
 });
 
+// 헬스체크 (Render 필수)
 app.get('/health', (req, res) => {
   const memoryUsage = process.memoryUsage();
   const uptime = process.uptime();
   
+  // Render 헬스체크는 빠르게 응답
   if (req.headers['user-agent']?.includes('Render')) {
     return res.status(200).json({ status: 'healthy', timestamp: Date.now() });
   }
   
-  // 버전 정보 추가
-  const versionInfo = {};
-  for (const [code, state] of channelVersions.entries()) {
-    versionInfo[code] = {
-      version: state.docVersion,
-      textLength: state.text.length,
-      lastUpdate: state.lastUpdate
-    };
-  }
-  
   res.status(200).json({
     status: 'healthy',
-    service: 'NUA STUDIO Socket Server v2.1',
+    service: 'NUA STUDIO Socket Server',
     platform: IS_RENDER ? 'Render' : 'Local',
     timestamp: new Date().toISOString(),
     uptime: {
@@ -339,8 +325,7 @@ app.get('/health', (req, res) => {
     },
     channels: {
       active: Object.keys(channelStates).length,
-      total: channelDatabase.size,
-      versions: versionInfo
+      total: channelDatabase.size
     },
     environment: {
       node: process.version,
@@ -352,10 +337,12 @@ app.get('/health', (req, res) => {
   });
 });
 
+// 상태 체크
 app.get('/status', (req, res) => {
   res.status(200).send('OK');
 });
 
+// 성능 지표
 app.get('/api/metrics', (req, res) => {
   const metrics = {
     server: {
@@ -401,23 +388,27 @@ function requireAuth(req, res, next) {
 // 관리자 API 라우트
 // =========================
 
+// 관리자 로그인
 app.post('/api/admin/login', (req, res) => {
   try {
     const { username, password } = req.body;
     
     console.log(`[관리자 로그인 시도] Username: ${username}`);
     
+    // 계정 확인
     const account = ADMIN_ACCOUNTS[username];
     if (!account) {
       console.log(`[관리자 로그인 실패] 계정 없음: ${username}`);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     
+    // 비밀번호 확인
     if (account.password !== password) {
       console.log(`[관리자 로그인 실패] 잘못된 비밀번호`);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     
+    // 토큰 생성
     const token = generateToken();
     activeSessions.set(token, {
       username,
@@ -439,6 +430,7 @@ app.post('/api/admin/login', (req, res) => {
   }
 });
 
+// 관리자 로그아웃
 app.post('/api/admin/logout', (req, res) => {
   const token = req.headers['authorization'];
   if (token && activeSessions.has(token)) {
@@ -448,6 +440,7 @@ app.post('/api/admin/logout', (req, res) => {
   res.json({ success: true });
 });
 
+// 관리자 세션 체크
 app.get('/api/admin/check', (req, res) => {
   const token = req.headers['authorization'];
   if (token && activeSessions.has(token)) {
@@ -462,6 +455,7 @@ app.get('/api/admin/check', (req, res) => {
   }
 });
 
+// 관리자 대시보드 통계
 app.get('/api/admin/stats', requireAuth, (req, res) => {
   try {
     const stats = {
@@ -474,8 +468,7 @@ app.get('/api/admin/stats', requireAuth, (req, res) => {
           eventName: ch.eventName,
           createdAt: ch.createdAt,
           activeUsers: stenoChannels[ch.code]?.length || 0,
-          accumulatedText: channelStates[ch.code]?.accumulatedText?.length || 0,
-          version: channelVersions.get(ch.code)?.docVersion || 0
+          accumulatedText: channelStates[ch.code]?.accumulatedText?.length || 0
         }))
       },
       connections: {
@@ -498,6 +491,7 @@ app.get('/api/admin/stats', requireAuth, (req, res) => {
   }
 });
 
+// 채널 삭제 (관리자 전용) - REPLACE
 app.delete('/api/admin/channel/:code', requireAuth, (req, res) => {
   try {
     const { code } = req.params;
@@ -505,16 +499,17 @@ app.delete('/api/admin/channel/:code', requireAuth, (req, res) => {
     const ch = DB.loadChannel(code);
     if (!ch) return res.status(404).json({ error: 'Channel not found' });
     
+    // DB 삭제
     DB.deleteChannel(code);
     
+    // 메모리 상태/세션 정리(기존 유지)
     delete channelStates[code];
     delete stenoChannels[code];
     delete channelEditStates[code];
     delete channelBackups[code];
     delete channelSwitchCooldowns[code];
+    lastCommitAt.delete(code);
     channelDatabase.delete(code);
-    channelVersions.delete(code);
-    lastCommitAt.delete(code);  // 커밋 시각도 정리 (누락 추가)
     
     io.to(code).emit('channel_closed', { reason: 'Admin closed this channel' });
     io.socketsLeave(code);
@@ -526,6 +521,7 @@ app.delete('/api/admin/channel/:code', requireAuth, (req, res) => {
   }
 });
 
+// 모든 채널 초기화 (관리자 전용)
 app.post('/api/admin/reset-all', requireAuth, (req, res) => {
   try {
     const { confirm } = req.body;
@@ -534,11 +530,13 @@ app.post('/api/admin/reset-all', requireAuth, (req, res) => {
       return res.status(400).json({ error: 'Confirmation required' });
     }
     
+    // DB의 모든 채널 삭제
     const allChannels = DB.loadAllChannels();
     allChannels.forEach(ch => {
       DB.deleteChannel(ch.code);
     });
     
+    // 모든 메모리 데이터 초기화
     const channelCount = channelDatabase.size;
     channelDatabase.clear();
     Object.keys(channelStates).forEach(key => delete channelStates[key]);
@@ -546,8 +544,7 @@ app.post('/api/admin/reset-all', requireAuth, (req, res) => {
     Object.keys(channelEditStates).forEach(key => delete channelEditStates[key]);
     Object.keys(channelBackups).forEach(key => delete channelBackups[key]);
     Object.keys(channelSwitchCooldowns).forEach(key => delete channelSwitchCooldowns[key]);
-    channelVersions.clear();
-    lastCommitAt.clear();  // 커밋 시각도 초기화 (누락 추가)
+    lastCommitAt.clear();  // 커밋 시각도 초기화
     
     console.log(`[관리자] 전체 초기화 - ${allChannels.length}개 DB 채널, ${channelCount}개 메모리 채널 삭제됨`);
     res.json({ 
@@ -565,6 +562,7 @@ app.post('/api/admin/reset-all', requireAuth, (req, res) => {
 // 채널 API 라우트
 // =========================
 
+// 채널 생성 API - REPLACE
 app.post('/api/channel/create', (req, res) => {
   try {
     const { code, type, passkey, eventName, eventDateTime } = req.body;
@@ -577,6 +575,7 @@ app.post('/api/channel/create', (req, res) => {
       return res.status(400).json({ error: 'Channel already exists' });
     }
     
+    // 기존: channelDatabase.set(code, channelInfo);
     const saved = DB.saveChannel({
       code,
       type: type || 'public',
@@ -590,6 +589,7 @@ app.post('/api/channel/create', (req, res) => {
     });
     if (!saved) return res.status(500).json({ error: 'DB save failed' });
     
+    // (선택) 메모리 캐시는 유지하여 기존 로직 영향 최소화
     const channelInfo = {
       code,
       type: type || 'public',
@@ -608,13 +608,13 @@ app.post('/api/channel/create', (req, res) => {
   }
 });
 
+// 채널 목록 - REPLACE
 app.get('/api/channels', (req, res) => {
   try {
     const channels = DB.loadAllChannels().map(ch => ({
       ...ch,
       activeUsers: Array.isArray(stenoChannels[ch.code]) ? stenoChannels[ch.code].length : 0,
-      accumulated: channelStates[ch.code]?.accumulatedText?.length || 0,
-      version: channelVersions.get(ch.code)?.docVersion || 0
+      accumulated: channelStates[ch.code]?.accumulatedText?.length || 0
     }));
     res.json(channels);
   } catch (error) {
@@ -623,6 +623,7 @@ app.get('/api/channels', (req, res) => {
   }
 });
 
+// 채널 확인 API (index.html이 실제 사용하는 버전) - REPLACE
 app.get('/api/channel/:code/verify', (req, res) => {
   try {
     const { code } = req.params;
@@ -648,6 +649,7 @@ app.get('/api/channel/:code/verify', (req, res) => {
   }
 });
 
+// 채널 확인 API (신버전) - REPLACE
 app.get('/api/channel/check/:code', (req, res) => {
   try {
     const { code } = req.params;
@@ -672,6 +674,7 @@ app.get('/api/channel/check/:code', (req, res) => {
   }
 });
 
+// 채널 확인 API (구버전 호환 - POST) - REPLACE
 app.post('/api/check-channel', (req, res) => {
   try {
     const { code } = req.body;
@@ -687,6 +690,7 @@ app.post('/api/check-channel', (req, res) => {
   }
 });
 
+// 채널 입장 API (패스키 확인)
 app.post('/api/channel/join', (req, res) => {
   try {
     const { code, passkey } = req.body;
@@ -696,6 +700,7 @@ app.post('/api/channel/join', (req, res) => {
       return res.status(404).json({ error: 'Channel not found' });
     }
     
+    // 보안 채널인 경우 패스키 확인
     if (channel.type === 'secured' && channel.passkey) {
       if (passkey !== channel.passkey) {
         return res.status(401).json({ error: 'Invalid passkey' });
@@ -716,6 +721,7 @@ app.post('/api/channel/join', (req, res) => {
   }
 });
 
+// 채널 정보 조회 - REPLACE
 app.get('/api/channel/info/:code', (req, res) => {
   try {
     const { code } = req.params;
@@ -724,7 +730,6 @@ app.get('/api/channel/info/:code', (req, res) => {
     if (!ch) return res.status(404).json({ error: 'Channel not found' });
     
     const state = channelStates[code];
-    const versionState = getChannelState(code);
     const stenos = stenoChannels[code] || [];
     res.json({
       channel: {
@@ -738,8 +743,7 @@ app.get('/api/channel/info/:code', (req, res) => {
         activeUsers: stenos.length,
         accumulatedText: state?.accumulatedText?.length || 0,
         activeStenographer: state?.activeStenographer || null,
-        stenographers: stenos.map(s => s.role),
-        version: versionState.docVersion
+        stenographers: stenos.map(s => s.role)
       }
     });
   } catch (error) {
@@ -748,26 +752,30 @@ app.get('/api/channel/info/:code', (req, res) => {
   }
 });
 
+// =========================
+// 추가 API 라우트
+// =========================
+
+// 채널 텍스트 조회 (수정 3: GET 라우트 정상 종료)
 app.get('/api/channel/text/:code', (req, res) => {
   try {
     const { code } = req.params;
     const ch = DB.loadChannel(code);
     if (!ch) return res.status(404).json({ error: 'Channel not found' });
     
-    const versionState = getChannelState(code);
-    const memText = versionState.text || channelStates[code]?.accumulatedText;
-    
+    // 1) 메모리 우선 (최신)
+    const memText = channelStates[code]?.accumulatedText;
     if (typeof memText === 'string' && memText.length) {
       return res.json({
         code,
         accumulatedText: memText,
         length: memText.length,
         source: 'memory',
-        version: versionState.docVersion,
         lastActivity: channelStates[code]?.lastActivity || null
       });
     }
     
+    // 2) 메모리 비었으면 DB 병합본
     const rows = DB.loadRecentViewerTexts(code, 10000);
     const textFromDB = Array.isArray(rows) ? rows.map(r => r.content).join('\n') : '';
     return res.json({
@@ -775,7 +783,6 @@ app.get('/api/channel/text/:code', (req, res) => {
       accumulatedText: textFromDB,
       length: textFromDB.length || 0,
       source: 'db',
-      version: 0,
       lastActivity: channelStates[code]?.lastActivity || null
     });
   } catch (error) {
@@ -784,6 +791,7 @@ app.get('/api/channel/text/:code', (req, res) => {
   }
 });
 
+// 채널 텍스트 저장 (수정 3: POST 라우트 별도 선언)
 app.post('/api/channel/text/:code', (req, res) => {
   try {
     const { code } = req.params;
@@ -791,38 +799,27 @@ app.post('/api/channel/text/:code', (req, res) => {
     const ch = DB.loadChannel(code);
     if (!ch) return res.status(404).json({ error: 'Channel not found' });
     
-    const versionState = getChannelState(code);
-    const normalized = (text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    
-    // 버전 증가
-    versionState.docVersion += 1;
-    versionState.text = normalized;
-    versionState.lastUpdate = Date.now();
-    
+    // 메모리 반영
     if (!channelStates[code]) channelStates[code] = { accumulatedText: '' };
+    const normalized = (text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     channelStates[code].accumulatedText = normalized;
     channelStates[code].lastActivity = Date.now();
     
+    // DB에는 전체본 1회 기록(사전 세팅 시 중복 적음)
     if (normalized && normalized.trim()) {
       DB.appendViewerText(code, normalized.trim());
     }
     
-    // 버전 정보와 함께 브로드캐스트
-    io.to(code).emit('text_broadcast', { 
-      channel: code,
-      version: versionState.docVersion,
-      text: normalized,
-      sender: 'api',
-      timestamp: Date.now()
-    });
-    
-    res.json({ success: true, version: versionState.docVersion });
+    // 접속자 화면 즉시 동기화
+    io.to(code).emit('sync_accumulated', { accumulatedText: normalized, source: 'manual-set' });
+    res.json({ success: true });
   } catch (error) {
     console.error('[API] Save text error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
+// 채널 텍스트 내보내기 - REPLACE
 app.get('/api/channel/export/:code', (req, res) => {
   try {
     const { code } = req.params;
@@ -830,8 +827,14 @@ app.get('/api/channel/export/:code', (req, res) => {
     const ch = DB.loadChannel(code);
     if (!ch) return res.status(404).json({ error: 'Channel not found' });
     
-    const versionState = getChannelState(code);
-    const finalText = versionState.text || channelStates[code]?.accumulatedText || '';
+    // 1) DB 로그로 본문 구성
+    const rows = DB.loadRecentViewerTexts(code, 10000);
+    let textFromDB = rows.map(r => r.content).join('\n');
+    if (textFromDB && !textFromDB.endsWith('\n')) textFromDB += '\n';
+    
+    // 2) 폴백: 메모리 누적본
+    const memText = (channelStates[code]?.accumulatedText || '');
+    const finalText = textFromDB || memText || '';
     
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${code}_${Date.now()}.txt"`);
@@ -842,6 +845,7 @@ app.get('/api/channel/export/:code', (req, res) => {
   }
 });
 
+// 채널 업데이트 - REPLACE
 app.put('/api/channel/update/:code', requireAuth, (req, res) => {
   try {
     const { code } = req.params;
@@ -859,6 +863,7 @@ app.put('/api/channel/update/:code', requireAuth, (req, res) => {
     };
     if (!DB.saveChannel(updated)) return res.status(500).json({ error: 'DB update failed' });
     
+    // (선택) 메모리 캐시 갱신
     channelDatabase.set(code, {
       code: updated.code,
       type: updated.type,
@@ -874,6 +879,7 @@ app.put('/api/channel/update/:code', requireAuth, (req, res) => {
   }
 });
 
+// 채널 백업
 app.post('/api/channel/backup/:code', requireAuth, (req, res) => {
   try {
     const { code } = req.params;
@@ -894,6 +900,7 @@ app.post('/api/channel/backup/:code', requireAuth, (req, res) => {
   }
 });
 
+// 백업 목록
 app.get('/api/admin/backups', requireAuth, (req, res) => {
   try {
     const backups = Object.entries(channelBackups).map(([code, backup]) => ({
@@ -934,12 +941,14 @@ io.on('connection', (socket) => {
   const clientIP = socket.handshake.address;
   console.log(`[연결] Socket connected: ${socket.id} from ${clientIP}`);
   
+  // 연결 통계
   const statKey = `${clientIP}_${new Date().toDateString()}`;
   if (!connectionStats.has(statKey)) {
     connectionStats.set(statKey, { count: 0, firstConnect: Date.now(), messageCount: 0 });
   }
   connectionStats.get(statKey).count++;
   
+  // 소켓 상태 초기화
   socket.data = {
     channel: null,
     role: null,
@@ -947,19 +956,15 @@ io.on('connection', (socket) => {
     messageCount: 0
   };
   
-  // 중복 방지 래퍼 (서버→클라이언트 emit 중복 방지용)
-  // 주의: 이는 socket.emit을 오버라이드하여 서버가 보내는 이벤트 중복을 방지
-  // steno_input은 클라→서버 이벤트이므로 직접 영향 없음
+  // 중복 방지 래퍼
   const originalEmit = socket.emit;
   socket.emit = function(...args) {
-    // 특정 이벤트에 대한 중복 방지 (필요시 확장 가능)
-    if (args[0] === 'steno_preview' && args[1]) {  // steno_input이 아닌 preview로 수정
-      const key = `${socket.id}_${args[0]}_${JSON.stringify(args[1])}`;
+    if (args[0] === 'steno_input' && args[1]) {
+      const key = `${socket.id}_${args[1].text}`;
       const now = Date.now();
       const last = recentMessages.get(key);
       
       if (last && now - last < 50) {
-        console.log(`[중복 방지] ${args[0]} 이벤트 스킵`);
         return;
       }
       
@@ -977,9 +982,6 @@ io.on('connection', (socket) => {
       socket.join(channel);
       socket.data.channel = channel;
       
-      // 버전 상태 초기화
-      const versionState = getChannelState(channel);
-      
       // 채널 상태 초기화 또는 복구
       if (!channelStates[channel]) {
         if (!restoreChannelState(channel)) {
@@ -995,15 +997,15 @@ io.on('connection', (socket) => {
       
       channelStates[channel].lastActivity = Date.now();
       
-      // DB에서 이전 데이터 복원
+      // [영속화: 초기 로드] 메모리에 누적본이 없으면 DB에서 최신본 복원
       try {
-        if (!versionState.text && !channelStates[channel]?.accumulatedText) {
-          const rows = DB.loadRecentViewerTexts(channel, 10000);
+        if (!channelStates[channel]?.accumulatedText) {
+          const rows = DB.loadRecentViewerTexts(channel, 10000); // 최근 로그 병합
           const restored = Array.isArray(rows) ? rows.map(r => r.content).join('\n') : '';
-          if (restored) {
-            versionState.text = restored;
-            versionState.docVersion = 1;
-            channelStates[channel].accumulatedText = restored;
+          if (!channelStates[channel]) channelStates[channel] = {};
+          channelStates[channel].accumulatedText = restored || '';
+          if (restored && restored.length) {
+            socket.emit('sync_accumulated', { accumulatedText: channelStates[channel].accumulatedText, source: 'db-restore' });
           }
         }
       } catch (e) {
@@ -1018,12 +1020,14 @@ io.on('connection', (socket) => {
           channelEditStates[channel] = { isEditing: false, editorId: null, editorRole: null };
         }
         
+        // 최대 2명 제한
         if (stenoChannels[channel].length >= 2) {
           socket.emit('join_reject', { reason: 'Channel full (max 2 stenographers)' });
           console.log(`[${channel}] Join rejected: capacity exceeded`);
           return;
         }
         
+        // 역할 할당
         let myRole;
         const hasSteno1 = hasRole(channel, 'steno1');
         const hasSteno2 = hasRole(channel, 'steno2');
@@ -1046,14 +1050,9 @@ io.on('connection', (socket) => {
         socket.emit('role_assigned', { role: myRole });
         broadcastActiveRole(io, channel);
         
-        // 초기 동기화 - 버전 정보와 함께
-        if (requestSync || versionState.text) {
-          socket.emit('text_broadcast', {
-            channel: channel,
-            version: versionState.docVersion,
-            text: versionState.text,
-            sender: 'system',
-            timestamp: Date.now()
+        if (requestSync || channelStates[channel]?.accumulatedText) {
+          socket.emit('sync_accumulated', {
+            accumulatedText: channelStates[channel]?.accumulatedText || ''
           });
         }
         
@@ -1079,13 +1078,9 @@ io.on('connection', (socket) => {
         io.to(channel).emit('user_joined', { role: 'viewer' });
         broadcastActiveRole(io, channel);
         
-        if (versionState.text) {
-          socket.emit('text_broadcast', {
-            channel: channel,
-            version: versionState.docVersion,
-            text: versionState.text,
-            sender: 'system',
-            timestamp: Date.now()
+        if (channelStates[channel]?.accumulatedText) {
+          socket.emit('sync_accumulated', {
+            accumulatedText: channelStates[channel].accumulatedText
           });
         }
         
@@ -1097,13 +1092,12 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 미리보기 입력 (버전 정보 포함)
-  socket.on('steno_input', ({ channel, role, text, ts }) => {
+  // 입력 처리 (커밋 직후 노이즈 필터 추가)
+  socket.on('steno_input', ({ channel, role, text, isSync }) => {
     try {
       const ch = channel || socket.data.channel;
-      const versionState = getChannelState(ch);
       
-      // 커밋 직후 노이즈 필터 (빈 입력만 차단) - 누락된 로직 추가
+      // 커밋 직후 노이즈 필터 (빈 입력만 차단)
       const lastCommit = lastCommitAt.get(ch);
       if (lastCommit && Date.now() - lastCommit < COMMIT_NOISE_FILTER_MS) {
         if (!text || text.trim() === '') {
@@ -1112,8 +1106,13 @@ io.on('connection', (socket) => {
         }
       }
       
-      // Rate limiting
       socket.data.messageCount++;
+      
+      const statKey = `${clientIP}_${new Date().toDateString()}`;
+      if (connectionStats.has(statKey)) {
+        connectionStats.get(statKey).messageCount = (connectionStats.get(statKey).messageCount || 0) + 1;
+      }
+      
       if (socket.data.messageCount > 100) {
         const timeDiff = Date.now() - socket.data.lastActivity;
         if (timeDiff < 1000) {
@@ -1122,205 +1121,38 @@ io.on('connection', (socket) => {
         }
         socket.data.messageCount = 0;
       }
+      
       socket.data.lastActivity = Date.now();
       
-      // 발신자 제외하고 미리보기 브로드캐스트
-      socket.broadcast.to(ch).emit('steno_preview', {
-        channel: ch,
-        text: text || '',
-        sender: role,
-        ts: ts || Date.now(),
-        baseVersion: versionState.docVersion
-      });
+      const serverRole = socket.data.role || role || 'viewer';
+      const active = ensureActiveConsistent(ch);
       
-      console.log(`[${ch}] 미리보기 전송 - baseVersion: ${versionState.docVersion}`);
+      if (channelStates[ch]) {
+        channelStates[ch].lastActivity = Date.now();
+      }
       
+      if (serverRole !== active) {
+        const stenoPeers = stenoChannels[ch] || [];
+        stenoPeers.forEach(s => {
+          if (s.id !== socket.id) {
+            io.to(s.id).emit('steno_input', { 
+              role: serverRole, 
+              text,
+              isSync: isSync || false
+            });
+          }
+        });
+        console.log(`[${ch}] 대기자 입력 공유: ${serverRole}, ${text.length}자`);
+      } else {
+        socket.broadcast.to(ch).emit('steno_input', { 
+          role: serverRole, 
+          text,
+          isSync: isSync || false
+        });
+        console.log(`[${ch}] 권한자 입력 송출: ${serverRole}, ${text.length}자`);
+      }
     } catch (error) {
       console.error('[steno_input] Error:', error);
-    }
-  });
-
-  // 텍스트 확정 전송 (단일 이벤트)
-  socket.on('text_sent', ({ channel, accumulatedText, sender }) => {
-    try {
-      const ch = channel || socket.data.channel;
-      console.log(`[${ch}] Text sent attempt by ${sender} - ${accumulatedText?.length || 0}자`);
-      
-      // 강화된 역할 검증 (GPT 재지적 반영)
-      const myRole = socket.data.role; // 서버가 할당한 실제 역할
-      const activeRole = channelStates[ch]?.activeStenographer;
-      
-      // sender 파라미터와 실제 소켓 역할 일치 확인
-      const expectedSender = myRole === 'steno1' ? '1' : (myRole === 'steno2' ? '2' : 'viewer');
-      if (sender !== expectedSender) {
-        console.log(`[${ch}] 역할 위조 시도: sender=${sender}, 실제=${expectedSender}`);
-        socket.emit('error', { message: 'Invalid sender role' });
-        return;
-      }
-      
-      // 1인 모드 체크
-      const stenographers = stenoChannels[ch] || [];
-      const isSoloMode = stenographers.length === 1;
-      
-      // 2인 모드에서는 활성 권한자만 전송 가능
-      if (!isSoloMode && myRole !== activeRole) {
-        console.log(`[${ch}] 권한 없음: ${myRole} (활성: ${activeRole})`);
-        socket.emit('error', { message: 'Not active stenographer' });
-        return;
-      }
-      
-      // 뷰어는 절대 전송 불가
-      if (myRole === 'viewer') {
-        console.log(`[${ch}] 뷰어는 전송 불가`);
-        socket.emit('error', { message: 'Viewers cannot send text' });
-        return;
-      }
-      
-      // 텍스트 길이 제한 (200KB)
-      if (accumulatedText && accumulatedText.length > 200000) {
-        socket.emit('error', { message: 'Text too long (max 200KB)' });
-        return;
-      }
-      
-      console.log(`[${ch}] 권한 검증 통과: ${myRole} === ${activeRole} (1인모드: ${isSoloMode})`);
-      
-      // 버전 상태 가져오기
-      const versionState = getChannelState(ch);
-      
-      // 이전 텍스트 캡처 (DB 증분 저장용)
-      const prevText = versionState.text;
-      
-      // 버전 증가 및 텍스트 업데이트
-      versionState.docVersion += 1;
-      versionState.text = (accumulatedText || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-      versionState.lastUpdate = Date.now();
-      
-      // 단일 확정 이벤트만 방송 (text_broadcast)
-      io.to(ch).emit('text_broadcast', {
-        channel: ch,
-        version: versionState.docVersion,
-        text: versionState.text,
-        sender: sender,
-        timestamp: Date.now()
-      });
-      
-      // DB 증분 저장
-      try {
-        if (versionState.text && versionState.text.startsWith(prevText)) {
-          const delta = versionState.text.slice(prevText.length).trim();
-          if (delta) {
-            DB.appendViewerText(ch, delta);
-          }
-        } else if (versionState.text && !prevText) {
-          DB.appendViewerText(ch, versionState.text.trim());
-        }
-      } catch (e) {
-        console.error('[text_sent] DB append failed:', e);
-      }
-      
-      // 기존 channelStates도 업데이트 (호환성)
-      if (channelStates[ch]) {
-        channelStates[ch].accumulatedText = versionState.text;
-        channelStates[ch].lastActivity = Date.now();
-        lastCommitAt.set(ch, Date.now());  // 커밋 시각 기록 (누락 추가)
-        // 백업 추가
-        backupChannelState(ch);
-      }
-      
-      console.log(`[${ch}] 확정 전송 완료 - v${versionState.docVersion}`);
-      
-    } catch (error) {
-      console.error('[text_sent] Error:', error);
-    }
-  });
-
-  // text_commit 이벤트 (선택적 - 완전한 버전)
-  socket.on('text_commit', ({ channel, commitText, accumulatedText }) => {
-    try {
-      const ch = channel || socket.data.channel;
-      console.log(`[${ch}] Text commit: ${commitText?.length || 0}자`);
-      
-      const versionState = getChannelState(ch);
-      
-      if (channelStates[ch]) {
-        // 기존 누적 텍스트 가져오기
-        let currentAccumulated = versionState.text || '';
-        
-        // 커밋 텍스트가 있으면 추가
-        if (commitText) {
-          // 줄바꿈 자동 추가
-          if (currentAccumulated && !currentAccumulated.endsWith('\n')) {
-            currentAccumulated += '\n';
-          }
-          currentAccumulated += commitText;
-        } else if (accumulatedText) {
-          // 전체 누적 텍스트가 제공된 경우
-          currentAccumulated = accumulatedText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-          if (currentAccumulated && !currentAccumulated.endsWith('\n')) {
-            currentAccumulated += '\n';
-          }
-        }
-        
-        // 버전 증가 및 상태 업데이트
-        versionState.docVersion += 1;
-        versionState.text = currentAccumulated;
-        versionState.lastUpdate = Date.now();
-        
-        channelStates[ch].accumulatedText = currentAccumulated;
-        channelStates[ch].lastActivity = Date.now();
-        lastCommitAt.set(ch, Date.now());  // 커밋 시각 기록 (누락 추가)
-        backupChannelState(ch);
-        
-        // DB 저장
-        if (commitText && commitText.trim()) {
-          DB.appendViewerText(ch, commitText.trim());
-        } else if (currentAccumulated && currentAccumulated.trim()) {
-          const lastLine = currentAccumulated.trim().split('\n').slice(-1)[0];
-          if (lastLine && lastLine.trim()) {
-            DB.appendViewerText(ch, lastLine.trim());
-          }
-        }
-        
-        // 버전 정보와 함께 브로드캐스트
-        io.to(ch).emit('text_broadcast', {
-          channel: ch,
-          version: versionState.docVersion,
-          text: currentAccumulated,
-          sender: 'commit',
-          timestamp: Date.now()
-        });
-        
-        // 호환성을 위한 이벤트도 발송
-        io.to(ch).emit('text_committed', {
-          accumulatedText: currentAccumulated,
-          commitText: commitText,
-          timestamp: Date.now()
-        });
-      }
-    } catch (error) {
-      console.error('[text_commit] Error:', error);
-    }
-  });
-
-  // 동기화 요청 (재접속/복구용)
-  socket.on('request_sync', ({ channel }) => {
-    try {
-      const ch = channel || socket.data.channel;
-      const versionState = getChannelState(ch);
-      
-      // 현재 최신 정본만 전송 (개별)
-      socket.emit('text_broadcast', {
-        channel: ch,
-        version: versionState.docVersion,
-        text: versionState.text,
-        sender: 'system',
-        timestamp: Date.now()
-      });
-      
-      console.log(`[${ch}] 동기화 요청 - v${versionState.docVersion} 전송`);
-      
-    } catch (error) {
-      console.error('[request_sync] Error:', error);
     }
   });
 
@@ -1329,6 +1161,7 @@ io.on('connection', (socket) => {
     try {
       const ch = channel || socket.data.channel;
       
+      // 쿨다운 체크
       if (!manual && !canSwitch(ch)) {
         console.log(`[${ch}] Switch denied - cooldown active`);
         return;
@@ -1351,6 +1184,7 @@ io.on('connection', (socket) => {
         return;
       }
       
+      // 중요: 이전 권한자를 변경 전에 저장
       const previousActive = channelStates[ch].activeStenographer;
       const currentActive = ensureActiveConsistent(ch);
       
@@ -1359,35 +1193,39 @@ io.on('connection', (socket) => {
         return;
       }
       
+      // 상태 업데이트 (emit 전에)
       channelStates[ch].activeStenographer = newActive;
       channelStates[ch].lastActivity = Date.now();
       channelStates[ch].lastSwitchTime = Date.now();
+      
+      // 이전 권한자 관련 임시값 초기화 (확장성)
       channelStates[ch].lastSwitchText = '';
       
+      // 쿨다운 업데이트
       updateSwitchCooldown(ch);
       
+      // 중요: matchedText로 누적 텍스트를 덮어쓰지 않음!
+      // 누적 텍스트 관리는 text_sent 이벤트에서만 처리
       if (matchedText && matchedText.trim()) {
+        // 로그만 남기고 누적 텍스트는 건드리지 않음
         console.log(`[${ch}] Switch with matchedText(len=${matchedText.length})`);
+        // 필요시 백업만
         backupChannelState(ch);
       }
       
-      // 버전 상태 가져오기 (GPT 제안 반영)
-      const versionState = getChannelState(ch);
-      
+      // 중요: switch_role을 먼저 emit (previousActive 포함)
       io.to(ch).emit('switch_role', {
         newActive,
-        previousActive,
-        matchedText,
-        accumulatedText: channelStates[ch].accumulatedText,
+        previousActive,  // 이전 권한자 정보 추가!
+        matchedText,  // 클라이언트가 참고용으로 사용
+        accumulatedText: channelStates[ch].accumulatedText,  // 현재 누적 텍스트 (변경 안 함)
         manual: !!manual,
         matchStartIndex,
         matchWordCount,
-        ts: Date.now(),
-        // 정본 동봉 (GPT 제안 반영)
-        version: versionState.docVersion,
-        text: versionState.text
+        ts: Date.now()  // 디버깅용 타임스탬프
       });
       
+      // 그 다음에 active_role emit (순서 중요!)
       broadcastActiveRole(io, ch);
       
       console.log(`[${ch}] ${manual ? 'Manual' : 'Auto'} switch: ${previousActive} -> ${newActive}`);
@@ -1427,7 +1265,7 @@ io.on('connection', (socket) => {
       
       io.to(ch).emit('force_role_switch', { 
         newActive, 
-        previousActive
+        previousActive  // 강제 전환시에도 이전 권한자 정보 추가
       });
       console.log(`[${ch}] Force switch: ${previousActive} -> ${newActive} (${reason})`);
     } catch (error) {
@@ -1435,33 +1273,122 @@ io.on('connection', (socket) => {
     }
   });
 
+  // text_sent 핸들러 (수정 2: 증분 저장 로직 스코프 교정)
+  socket.on('text_sent', ({ channel, accumulatedText, sender }) => {
+    try {
+      const ch = channel || socket.data.channel;
+      console.log(`[${ch}] Text sent by ${sender} - 원본 길이: ${accumulatedText?.length || 0}자`);
+      
+      // 1) 개행 정규화 (CRLF, CR → LF)
+      let normalized = (accumulatedText || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      
+      
+      // 수정 2: 상태 저장 "직전"의 이전 누적본 캡처
+      const prevAccumulated = channelStates[ch]?.accumulatedText || '';
+      
+      // 3) 상태 저장
+      if (channelStates[ch]) {
+        channelStates[ch].accumulatedText = normalized;
+        channelStates[ch].lastActivity = Date.now();
+        lastCommitAt.set(ch, Date.now());  // 커밋 시각 기록
+        backupChannelState(ch);
+      }
+      
+      // 수정 2: [영속화: 증분 저장] 상태 저장 "직후"
+      try {
+        if (normalized && normalized.startsWith(prevAccumulated)) {
+          const delta = normalized.slice(prevAccumulated.length).trim();
+          if (delta) {
+            DB.appendViewerText(ch, delta);
+          }
+        } else if (normalized && !prevAccumulated) {
+          DB.appendViewerText(ch, normalized.trim());
+        }
+      } catch (e) {
+        console.error('[text_sent] DB append failed:', e);
+      }
+      
+      // 4) 정규화된 내용으로 방송 (자신 제외)
+      socket.broadcast.to(ch).emit('text_sent', { 
+        accumulatedText: normalized, 
+        sender 
+      });
+      
+      // 5) 전체 동기화 이벤트도 발송 (뷰어 호환성)
+      io.to(ch).emit('sync_accumulated', { 
+        accumulatedText: normalized,
+        source: 'commit'
+      });
+      
+      console.log(`[${ch}] 텍스트 커밋 완료 및 동기화`);
+      
+    } catch (error) {
+      console.error('[text_sent] Error:', error);
+    }
+  });
+
+  // text_commit 이벤트 (선택적)
+  socket.on('text_commit', ({ channel, commitText, accumulatedText }) => {
+    try {
+      const ch = channel || socket.data.channel;
+      console.log(`[${ch}] Text commit: ${commitText?.length || 0}자`);
+      
+      if (channelStates[ch]) {
+        // 기존 누적 텍스트 가져오기
+        let currentAccumulated = channelStates[ch].accumulatedText || '';
+        
+        // 커밋 텍스트가 있으면 추가
+        if (commitText) {
+          // 줄바꿈 자동 추가
+          if (currentAccumulated && !currentAccumulated.endsWith('\n')) {
+            currentAccumulated += '\n';
+          }
+          currentAccumulated += commitText;
+        } else if (accumulatedText) {
+          // 전체 누적 텍스트가 제공된 경우
+          currentAccumulated = accumulatedText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+          if (currentAccumulated && !currentAccumulated.endsWith('\n')) {
+            currentAccumulated += '\n';
+          }
+        }
+        
+        // 상태 업데이트
+        channelStates[ch].accumulatedText = currentAccumulated;
+        channelStates[ch].lastActivity = Date.now();
+        lastCommitAt.set(ch, Date.now());  // 커밋 시각 기록
+        backupChannelState(ch);
+        
+        // === DB 저장 (ADD) ===
+        if (commitText && commitText.trim()) {
+          DB.appendViewerText(ch, commitText.trim());
+        } else if (currentAccumulated && currentAccumulated.trim()) {
+          const lastLine = currentAccumulated.trim().split('\n').slice(-1)[0];
+          if (lastLine && lastLine.trim()) {
+            DB.appendViewerText(ch, lastLine.trim());
+          }
+        }
+        
+        // 모든 클라이언트에 브로드캐스트
+        io.to(ch).emit('text_committed', {
+          accumulatedText: currentAccumulated,
+          commitText: commitText,
+          timestamp: Date.now()
+        });
+        
+        // sync_accumulated도 함께 발송
+        io.to(ch).emit('sync_accumulated', {
+          accumulatedText: currentAccumulated,
+          source: 'commit'
+        });
+      }
+    } catch (error) {
+      console.error('[text_commit] Error:', error);
+    }
+  });
+
   // 파트너 입장 응답
   socket.on('partner_joined_ack', ({ channel }) => {
     console.log(`[${channel}] Partner sync acknowledged`);
-  });
-
-  // 파트너 입력 수신 (누락된 핸들러 추가)
-  socket.on('partner_input', ({ channel, role, text }) => {
-    try {
-      const ch = channel || socket.data.channel;
-      const senderRole = role.replace('steno', '');
-      
-      console.log(`[${ch}] Partner input from ${senderRole}: ${text?.length || 0}자`);
-      
-      // 대기자끼리 입력 공유
-      const stenoPeers = stenoChannels[ch] || [];
-      stenoPeers.forEach(s => {
-        if (s.id !== socket.id) {
-          io.to(s.id).emit('partner_input', { 
-            role, 
-            text 
-          });
-        }
-      });
-      
-    } catch (error) {
-      console.error('[partner_input] Error:', error);
-    }
   });
 
   // 교정 요청
@@ -1520,30 +1447,19 @@ io.on('connection', (socket) => {
         return;
       }
       
-      // 버전 상태 업데이트
-      const versionState = getChannelState(ch);
-      versionState.docVersion += 1;
-      versionState.text = editedText;
-      versionState.lastUpdate = Date.now();
-      
       if (channelStates[ch]) {
         channelStates[ch].accumulatedText = editedText;
         channelStates[ch].lastActivity = Date.now();
-        console.log(`[${ch}] Text updated to ${editedText.length} chars - v${versionState.docVersion}`);
+        console.log(`[${ch}] Text updated to ${editedText.length} chars`);
         backupChannelState(ch);
       }
       
       channelEditStates[ch] = { isEditing: false, editorId: null, editorRole: null };
       
-      // 버전 정보와 함께 브로드캐스트
-      io.to(ch).emit('text_broadcast', {
-        channel: ch,
-        version: versionState.docVersion,
-        text: editedText,
-        sender: editorRole,
-        timestamp: Date.now()
+      io.to(ch).emit('viewer_content_updated', { 
+        accumulatedText: editedText, 
+        editorRole 
       });
-      
       io.to(ch).emit('viewer_edit_state', { isEditing: false, editorRole: null });
     } catch (error) {
       console.error('[viewer_edit_complete] Error:', error);
@@ -1606,6 +1522,21 @@ io.on('connection', (socket) => {
     }
   });
 
+  // 동기화 요청
+  socket.on('request_sync', ({ channel }) => {
+    try {
+      const ch = channel || socket.data.channel;
+      
+      if (channelStates[ch]) {
+        socket.emit('sync_accumulated', {
+          accumulatedText: channelStates[ch].accumulatedText || ''
+        });
+      }
+    } catch (error) {
+      console.error('[request_sync] Error:', error);
+    }
+  });
+
   // 연결 해제
   socket.on('disconnect', () => {
     try {
@@ -1641,43 +1572,15 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 동기화 체크 수신 (누락된 핸들러 추가)
-  socket.on('sync_check', ({ activeStenographer: clientActive, accumulatedLength }) => {
-    try {
-      const ch = socket.data.channel;
-      if (!ch) return;
-      
-      const versionState = getChannelState(ch);
-      
-      // 서버와 클라이언트 상태 비교
-      if (versionState.text.length !== accumulatedLength) {
-        console.log(`[${ch}] 동기화 불일치 감지 - 서버: ${versionState.text.length}, 클라: ${accumulatedLength}`);
-        
-        // 최신 버전 전송
-        socket.emit('text_broadcast', {
-          channel: ch,
-          version: versionState.docVersion,
-          text: versionState.text,
-          sender: 'sync',
-          timestamp: Date.now()
-        });
-      }
-    } catch (error) {
-      console.error('[sync_check] Error:', error);
-    }
-  });
-
   // 디버그용
   socket.on('get_channel_state', ({ channel }) => {
     try {
       const ch = channel || socket.data.channel;
-      const versionState = getChannelState(ch);
       
       if (channelStates[ch]) {
         socket.emit('channel_state', {
           channel: ch,
           state: channelStates[ch],
-          version: versionState,
           stenographers: stenoChannels[ch] || [],
           editState: channelEditStates[ch] || { isEditing: false }
         });
@@ -1731,6 +1634,7 @@ const gracefulShutdown = (signal) => {
   
   console.log(`[종료] ${signal} 신호 수신`);
   
+  // 모든 채널 백업
   Object.keys(channelStates).forEach(channel => {
     backupChannelState(channel);
   });
@@ -1744,6 +1648,7 @@ const gracefulShutdown = (signal) => {
     });
   });
   
+  // 타임아웃
   setTimeout(() => {
     console.error('[종료] 강제 종료');
     process.exit(1);
@@ -1772,11 +1677,11 @@ process.on('unhandledRejection', (reason, promise) => {
 const startServer = () => {
   return new Promise((resolve, reject) => {
     try {
-      const host = '0.0.0.0';
+      const host = '0.0.0.0';  // 모든 인터페이스에서 접근 가능
       
       server.listen(PORT, host, () => {
         console.log('=========================================');
-        console.log('[NUA STUDIO] 실시간 협업 속기 서버 v2.1');
+        console.log('[NUA STUDIO] 실시간 협업 속기 서버 v2.0');
         console.log('=========================================');
         console.log(`[플랫폼] ${IS_RENDER ? 'Render Cloud' : 'Local Development'}`);
         console.log(`[환경] ${NODE_ENV}`);
@@ -1787,13 +1692,30 @@ const startServer = () => {
         console.log(`[작업 디렉토리] ${__dirname}`);
         console.log(`[시작 시간] ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`);
         console.log('=========================================');
-        console.log('[새로운 기능]');
-        console.log('✅ 채널별 버전 관리 시스템');
-        console.log('✅ 단일 확정 이벤트 (text_broadcast)');
-        console.log('✅ 미리보기 버전 체크 (steno_preview)');
-        console.log('✅ Rate limiting 강화');
+        console.log('[파일 확인]');
+        const indexExists = fs.existsSync(path.join(__dirname, 'index.html'));
+        console.log(`index.html: ${indexExists ? '✅ 존재' : '❌ 없음'}`);
+        console.log('=========================================');
+        console.log('[엔드포인트]');
+        console.log(`✅ 메인: ${SERVICE_URL}/`);
+        console.log(`✅ 관리자: ${SERVICE_URL}/channel-manager.html`);
+        console.log(`✅ Health: ${SERVICE_URL}/health`);
+        console.log(`✅ Status: ${SERVICE_URL}/status`);
+        console.log(`✅ Metrics: ${SERVICE_URL}/api/metrics`);
+        console.log('=========================================');
+        console.log('[채널 API]');
+        console.log('✅ GET /api/channels - 채널 목록');
+        console.log('✅ GET /api/channel/check/:code - 채널 확인');
+        console.log('✅ GET /api/channel/info/:code - 채널 정보');
+        console.log('✅ GET /api/channel/text/:code - 텍스트 조회');
+        console.log('✅ GET /api/channel/export/:code - 내보내기');
+        console.log('=========================================');
+        console.log('[관리자 계정]');
+        console.log(`아이디: admin`);
+        console.log(`비밀번호: ${ADMIN_ACCOUNTS.admin.password}`);
         console.log('=========================================');
         
+        // 시작 시 메모리 정리
         cleanupInactiveChannels();
         
         resolve(server);
