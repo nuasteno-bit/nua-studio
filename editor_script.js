@@ -692,19 +692,27 @@ function updateViewerContent() {
   }
 }
 
-// 전송 모드에서 텍스트 전송 (수정됨: 줄바꿈 처리 개선)
+// 전송 모드에서 텍스트 전송 
 function sendToMonitor() {
   if (!myEditor || myEditor.value.trim() === '') return;
   
-  // 1인 모드이거나 권한자인 경우만 전송 가능
   if (isSoloMode() || myRole === activeStenographer) {
-    const inputText = myEditor.value;
+    const inputText = myEditor.value.trim();
     
     if (accumulatedText && accumulatedText.length > 0) {
-      // 엔터키로 전송했으므로 줄바꿈 추가
-      accumulatedText += '\n' + inputText;
+      // 마지막이 개행으로 끝나면 그냥 추가
+      if (accumulatedText.endsWith('\n')) {
+        accumulatedText += inputText;
+      } else {
+        // 개행으로 끝나지 않으면 공백으로 이어붙이기
+        const needsSpacer = !accumulatedText.endsWith(' ');
+        accumulatedText += (needsSpacer ? ' ' : '') + inputText;
+      }
+      // 엔터 쳤으니 끝에 개행 추가 (다음 입력은 새 줄)
+      accumulatedText += '\n';
     } else {
-      accumulatedText = inputText;
+      // 첫 입력
+      accumulatedText = inputText + '\n';
     }
     
     fullTextStorage = accumulatedText;
@@ -2604,3 +2612,4 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault();
   }
 });
+
