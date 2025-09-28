@@ -674,7 +674,7 @@ function updateViewerFromEditor() {
   
   fullTextStorage = currentText;
   updateMonitoringFromText(currentText);
-  const monitoringText = monitoringLines.join('\n');
+  const monitoringText = monitoringLines.join('\n').replace(/\n{2,}/g, '\n');
   
   requestAnimationFrame(() => {
     renderMonitoringHTML(viewerContent, monitoringText);
@@ -690,7 +690,9 @@ function updateViewerContent() {
   if (viewerContent) {
     fullTextStorage = accumulatedText;
     updateMonitoringFromText(accumulatedText);
-    const monitoringText = monitoringLines.join('\n');
+    let monitoringText = monitoringLines.join('\n');
+    
+      monitoringText = monitoringText.replace(/\n{2,}/g, '\n');
     
     requestAnimationFrame(() => {
       renderMonitoringHTML(viewerContent, monitoringText);
@@ -898,7 +900,7 @@ function updateViewerWithCurrentInput() {
   
   fullTextStorage = displayText;
   updateMonitoringFromText(displayText);
-  const monitoringText = monitoringLines.join('\n');
+  const monitoringText = monitoringLines.join('\n').replace(/\n{2,}/g, '\n');
   
   requestAnimationFrame(() => {
     renderMonitoringHTML(viewerContent, monitoringText);
@@ -933,7 +935,7 @@ function updateViewerWithOtherInput(otherText) {
   
   fullTextStorage = displayText;
   updateMonitoringFromText(displayText);
-  const monitoringText = monitoringLines.join('\n');
+ const monitoringText = monitoringLines.join('\n').replace(/\n{2,}/g, '\n');
   
   requestAnimationFrame(() => {
     renderMonitoringHTML(viewerContent, monitoringText);
@@ -2617,6 +2619,7 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault();
   }
 });
+
 
 
 
