@@ -592,20 +592,28 @@ function exitEditMode() {
 // 텍스트 처리 유틸리티 함수들
 function splitTextIntoLines(text, maxLines = MAX_MONITORING_LINES) {
   if (!text || typeof text !== 'string') return [];
-  
-  let lines = text.split('\n');
-  
+
+  // 개행/공백 정규화
+  let normalized = text
+    .replace(/\r\n?/g, '\n')
+    .replace(/\u00A0/g, ' ');
+
+  // ✅ 꼬리 빈 줄 제거 (마지막의 \n 연속을 모두 제거)
+  normalized = normalized.replace(/\n+$/g, '');
+
+  const lines = normalized.split('\n');
+
+  // 연속 빈 줄 1회로 압축
   const finalLines = [];
   let prevLineEmpty = false;
-  
-  lines.forEach(line => {
+  for (const line of lines) {
     const isEmpty = line.trim() === '';
     if (!isEmpty || !prevLineEmpty) {
       finalLines.push(line);
     }
     prevLineEmpty = isEmpty;
-  });
-  
+  }
+
   return finalLines.slice(-maxLines);
 }
 
@@ -2613,5 +2621,6 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault();
   }
 });
+
 
 
