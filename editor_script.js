@@ -709,7 +709,9 @@ function sendToMonitor() {
         accumulatedText += (needsSpacer ? ' ' : '') + inputText;
       }
       // 엔터 쳤으니 끝에 개행 추가 (다음 입력은 새 줄)
-      accumulatedText += '\n';
+     if (!accumulatedText.endsWith('\n')) {
+        accumulatedText += '\n';
+      }
     } else {
       // 첫 입력
       accumulatedText = inputText + '\n';
@@ -2611,4 +2613,5 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault();
   }
 });
+
 
