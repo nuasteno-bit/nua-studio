@@ -613,7 +613,6 @@ function updateMonitoringFromText(fullText) {
   monitoringLines = splitTextIntoLines(fullText, MAX_MONITORING_LINES);
 }
 
-// 공통 뷰어 렌더링 함수 (XSS 방지, 중복 제거)
 function renderMonitoringHTML(targetEl, monitoringText) {
   if (!targetEl) return;
   
@@ -632,15 +631,10 @@ function renderMonitoringHTML(targetEl, monitoringText) {
   const lines = monitoringText.split('\n');
   
   lines.forEach((line, idx) => {
-    if (line === '') {
-      // 빈 줄은 br만 추가
-      frag.appendChild(document.createElement('br'));
-    } else {
-      // 내용이 있는 줄은 span으로 감싸기
-      const span = document.createElement('span');
-      span.textContent = line; // XSS 방지: textContent 사용
-      frag.appendChild(span);
-    }
+    // 모든 줄을 span으로 감싸기 (빈 줄도 포함)
+    const span = document.createElement('span');
+    span.textContent = line || '\u200B'; // 빈 줄일 때 zero-width space 추가
+    frag.appendChild(span);
     
     // 마지막 줄이 아니면 br 추가
     if (idx < lines.length - 1) {
@@ -2610,3 +2604,4 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault();
   }
 });
+
