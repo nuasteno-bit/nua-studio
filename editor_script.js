@@ -7,7 +7,6 @@ let viewerDisplayCache = []; // 뷰어 표시용 캐시 추가
 let lastDisplayedText = '';
 let lastRenderedLines = [];
 let lastRenderTime = 0; // 렌더링 성능 추적용
-let lastAppliedVersion = 0; // 🆕 버전 관리 추가
 
 let sendInputTimeout = null;
 let lastSentText = '';
@@ -34,24 +33,6 @@ let unreadMessages = 0;
 
 // 입력 최적화 카운터
 let inputOptimizationCounter = 0;
-
-// 🆕 정규화 함수 추가
-function normalizeForSend(s) {
-  return String(s)
-    .replace(/\r\n?/g, '\n')    // CR/LF → LF 통일
-    .replace(/\u00A0/g, ' ')     // NBSP → space
-    .replace(/\s{2,}/g, ' ')     // 연속 공백 정리
-    .replace(/\n+/g, ' ')        // 본문 중간 개행 제거
-    + '\n';                      // 끝개행 1개 보장
-}
-
-// 🆕 경계 결합 함수 추가
-function mergeAccum(prev, normalized) {
-  const left  = (prev || '').replace(/\r\n?/g,'\n').replace(/\n{2,}$/,'\n');
-  const right = String(normalized||'').replace(/\r\n?/g,'\n').trimEnd();
-  const joiner = left.endsWith('\n') ? '' : '\n';
-  return left ? (left + joiner + right) : right;
-}
 
 // DOM 참조 초기화 함수
 function initializeDOMReferences() {
@@ -149,33 +130,20 @@ function initializeComponents() {
       }
     };
     
-    // 🔥 수정: Enter키 처리 - 단일 핸들러로 통합
+    // 엔터키 처리 - 권한자만 전송 가능
     myEditor.addEventListener('keydown', (e) => {
-      // 1) IME 보호
-      if (e.key === 'Enter' && e.isComposing) return;
-      
-      // 2) Enter = 전송 (Shift 미포함)
       if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault(); // 기본 개행 차단
-        
-        const amActive = (myRole === activeStenographer);
+        e.preventDefault();
         
         // HTML 모드 또는 권한자일 때만 뷰어로 전송
-        if (!(isSoloMode() || isHtmlMode || amActive)) {
+        if (isHtmlMode || myRole === activeStenographer) {
+          sendToMonitor();
+        } else {
           console.log('[엔터키] 대기자는 뷰어로 전송할 수 없습니다. 입력은 계속 가능합니다.');
-          // toast 또는 사용자 알림 (있다면)
-          return;
+          // 대기자는 엔터를 눌러도 아무 일도 일어나지 않음 (입력창 유지)
         }
-        
-        sendToMonitor(); // 전송만, 즉시 렌더 없음(ACK 대기)
-        return;
       }
-      
-      // 3) Shift+Enter = 전송하지 않고 로컬 개행
-      if (e.key === 'Enter' && e.shiftKey) {
-        // 기본 동작 허용(개행), preventDefault() 금지
-        return;
-      }
+      // Shift+Enter는 줄바꿈 허용 (기본 동작)
     });
   }
   
@@ -567,6 +535,10 @@ function completeViewerEdit() {
     .replace(/\r\n?/g, '\n')   // CRLF/CR -> LF
     .replace(/\u00A0/g, ' ');  // NBSP -> space
 
+  // 누적 본문 반영
+  accumulatedText = editedText;
+  fullTextStorage = editedText;
+
   // 편집 모드 종료 UI/상태
   isViewerEditing = false;
   if (viewer) viewer.classList.remove('editing');
@@ -576,7 +548,7 @@ function completeViewerEdit() {
     editBtn.classList.remove('editing');
   }
 
-  // 변경사항 방송 (서버 ACK 대기)
+  // 변경사항 방송
   if (socket && socket.connected) {
     socket.emit('viewer_edit_complete', {
       channel,
@@ -585,7 +557,8 @@ function completeViewerEdit() {
     });
   }
 
-  // 재렌더 및 포커스 복구는 ACK 수신 시
+  // 재렌더 및 포커스 복구
+  updateViewerContent();
   if (myEditor) myEditor.focus();
 }
 
@@ -596,7 +569,7 @@ function cancelViewerEdit() {
     socket.emit('viewer_edit_cancel', { channel });
   }
   
-  // ACK 수신 시 재렌더
+  updateViewerContent();
   exitEditMode();
 }
 
@@ -640,7 +613,7 @@ function updateMonitoringFromText(fullText) {
   monitoringLines = splitTextIntoLines(fullText, MAX_MONITORING_LINES);
 }
 
-// 공통 뷰어 렌더링 함수 (XSS 방지, 중복 제거) - 원본 유지
+// 공통 뷰어 렌더링 함수 (XSS 방지, 중복 제거)
 function renderMonitoringHTML(targetEl, monitoringText) {
   if (!targetEl) return;
   
@@ -678,68 +651,14 @@ function renderMonitoringHTML(targetEl, monitoringText) {
   targetEl.appendChild(frag);
 }
 
-// 🔥 수정: 확정 렌더링 함수 (서버 ACK 전용)
-function renderFromString(confirmedText) {
-  const viewerContent = document.getElementById('viewerContent');
-  if (!viewerContent) return;
-  
-  // 편집 중이면 렌더 보호
-  if (isViewerEditing) return;
-  
-  viewerContent.innerHTML = ''; // 기존 내용 초기화
-  
-  if (!confirmedText) {
-    // placeholder 표시
-    const placeholder = document.createElement('span');
-    placeholder.className = 'viewer-placeholder';
-    placeholder.textContent = '자막이 여기에 표시됩니다.';
-    viewerContent.appendChild(placeholder);
-    return;
-  }
-  
-  // 모니터링 라인 업데이트
-  updateMonitoringFromText(confirmedText);
-  const monitoringText = monitoringLines.join('\n');
-  
-  const frag = document.createDocumentFragment();
-  const lines = monitoringText.split('\n');
-  
-  lines.forEach((line, idx) => {
-    if (line === '') {
-      // 빈 줄은 br만 추가
-      frag.appendChild(document.createElement('br'));
-    } else {
-      // 내용이 있는 줄은 span으로 감싸기
-      const span = document.createElement('span');
-      span.textContent = line; // XSS 방지: textContent 사용
-      frag.appendChild(span);
-    }
-    
-    // 마지막 줄이 아니면 br 추가
-    if (idx < lines.length - 1) {
-      frag.appendChild(document.createElement('br'));
-    }
-  });
-  
-  viewerContent.appendChild(frag);
-  viewerContent.scrollTop = viewerContent.scrollHeight;
-  
-  // 전체 텍스트 스토리지도 업데이트
-  fullTextStorage = confirmedText;
-  lastDisplayedText = monitoringText;
-  
-  console.log('[확정 렌더] 완료:', confirmedText.length, '자');
-}
-
-// 뷰어 업데이트 함수들 - 🔥 낙관적 렌더링 제거
+// 뷰어 업데이트 함수들
 function updateViewerFromEditor() {
-  // HTML 모드에서만 사용 (즉시 렌더)
-  if (!isHtmlMode) return;
   if (isViewerEditing) return;
   
   const viewerContent = document.getElementById('viewerContent');
   if (!viewerContent || !myEditor) return;
   
+  // HTML 모드에서는 항상 권한자
   const inputText = myEditor.value;
   let currentText = accumulatedText || '';
   if (currentText.length > 0 && inputText) {
@@ -751,10 +670,17 @@ function updateViewerFromEditor() {
     currentText = inputText;
   }
   
-  renderFromString(currentText);
+  fullTextStorage = currentText;
+  updateMonitoringFromText(currentText);
+  const monitoringText = monitoringLines.join('\n');
+  
+  requestAnimationFrame(() => {
+    renderMonitoringHTML(viewerContent, monitoringText);
+    viewerContent.scrollTop = viewerContent.scrollHeight;
+    lastDisplayedText = monitoringText;
+  });
 }
 
-// 🔥 누락된 함수: 뷰어 콘텐츠 업데이트 (프리뷰 아님, ACK 수신 후 사용)
 function updateViewerContent() {
   if (isViewerEditing) return;
   
@@ -772,55 +698,37 @@ function updateViewerContent() {
   }
 }
 
-// 🔥 누락된 함수: 권한자 입력 프리뷰 (확정 레이어 건드리지 않음)
-function updateViewerWithCurrentInput() {
-  // ACK 기반 구조에서는 프리뷰 제거
-  // 이 함수는 호출되더라도 아무것도 하지 않음
-  return;
-}
-
-// 🔥 누락된 함수: 상대방 입력 프리뷰 (확정 레이어 건드리지 않음)
-function updateViewerWithOtherInput(otherText) {
-  // ACK 기반 구조에서는 프리뷰 제거
-  // 이 함수는 호출되더라도 아무것도 하지 않음
-  return;
-}
-
-// 🔥 전송 모드 함수 수정 (ACK 대기 구조)
+// 전송 모드에서 텍스트 전송 (수정됨: 줄바꿈 처리 개선)
 function sendToMonitor() {
-  if (!myEditor) return;
-  const raw = myEditor.value;
-  if (!raw || !raw.trim()) return;
+  if (!myEditor || myEditor.value.trim() === '') return;
   
   // 1인 모드이거나 권한자인 경우만 전송 가능
-  if (!(isSoloMode() || isHtmlMode || myRole === activeStenographer)) {
-    console.log('[전송 모드] 대기자는 전송할 수 없습니다. F7로 권한을 요청하세요.');
-    return;
-  }
-  
-  const normalized = normalizeForSend(raw);
-  const next = mergeAccum(accumulatedText, normalized);
-  
-  // HTML 모드: 즉시 반영
-  if (isHtmlMode) {
-    accumulatedText = next;
-    fullTextStorage = next;
+  if (isSoloMode() || myRole === activeStenographer) {
+    const inputText = myEditor.value;
+    
+    if (accumulatedText && accumulatedText.length > 0) {
+      // 엔터키로 전송했으므로 줄바꿈 추가
+      accumulatedText += '\n' + inputText;
+    } else {
+      accumulatedText = inputText;
+    }
+    
+    fullTextStorage = accumulatedText;
     myEditor.value = '';
-    renderFromString(accumulatedText);
-    console.log('[HTML 모드] 즉시 렌더 완료');
-    return;
-  }
-  
-  // 소켓 모드: ACK 대기
-  if (socket && socket.connected) {
-    socket.emit('text_sent', { 
-      channel, 
-      accumulatedText: next,
-      sender: myRole 
-    });
-    myEditor.value = ''; // 입력창 초기화
-    // 🔥 여기서 확정 렌더 호출/accumulatedText 변경 금지(ACK만 반영)
-    console.log('[전송 모드] 서버 전송 완료 - ACK 대기 중');
+    
+    updateViewerContent();
+    
+    if (!isHtmlMode && socket && socket.connected) {
+      socket.emit('text_sent', { 
+        channel, 
+        accumulatedText,
+        sender: myRole 
+      });
+    }
+    
+    console.log('[전송 모드] 텍스트 전송 완료 - 누적:', accumulatedText.length, '자');
+  } else {
+    console.log('[전송 모드] 대기자는 전송할 수 없습니다. F7로 권한을 요청하세요.');
   }
 }
 
@@ -851,7 +759,10 @@ function sendInput() {
   
   // 1인 모드이거나 권한자인 경우
   if (isSoloMode() || myRole === activeStenographer) {
-    // 서버로 입력 전송 (throttling) - 프리뷰 용도
+    // 뷰어 업데이트 (한 단어 지연)
+    updateViewerWithCurrentInput();
+    
+    // 서버로 입력 전송 (throttling)
     if (sendInputTimeout) {
       clearTimeout(sendInputTimeout);
     }
@@ -946,6 +857,82 @@ function sendInput() {
       checkWordMatchingAsActive();   // 권한자: 대기자 매칭 확인
     }
   }
+}
+
+// 뷰어 업데이트 with 입력 (권한자의 입력만 반영)
+function updateViewerWithCurrentInput() {
+  if (isViewerEditing) return;
+  if (myRole !== activeStenographer) return; // 권한자만 뷰어 업데이트
+  
+  const viewerContent = document.getElementById('viewerContent');
+  if (!viewerContent) return;
+  
+  let displayText = accumulatedText;
+  
+  // 현재 입력 중인 텍스트 추가 (단어 단위로)
+  if (myEditor.value) {
+    if (myEditor.value.endsWith(' ')) {
+      // 공백으로 끝나면 전체 추가
+      displayText = accumulatedText + 
+        (accumulatedText && !accumulatedText.endsWith(' ') ? ' ' : '') + 
+        myEditor.value.trim();
+    } else {
+      // 아직 입력 중인 마지막 단어는 제외
+      const words = myEditor.value.trim().split(' ').filter(Boolean);
+      if (words.length > 1) {
+        const completeWords = words.slice(0, -1).join(' ');
+        displayText = accumulatedText + 
+          (accumulatedText && !accumulatedText.endsWith(' ') ? ' ' : '') + 
+          completeWords;
+      }
+    }
+  }
+  
+  fullTextStorage = displayText;
+  updateMonitoringFromText(displayText);
+  const monitoringText = monitoringLines.join('\n');
+  
+  requestAnimationFrame(() => {
+    renderMonitoringHTML(viewerContent, monitoringText);
+    viewerContent.scrollTop = viewerContent.scrollHeight;
+    lastDisplayedText = monitoringText;
+  });
+}
+
+function updateViewerWithOtherInput(otherText) {
+  if (isViewerEditing) return;
+  
+  const viewerContent = document.getElementById('viewerContent');
+  if (!viewerContent) return;
+  
+  let displayText = accumulatedText;
+  
+  // 권한자의 입력 추가
+  if (otherText) {
+    if (otherText.endsWith(' ')) {
+      displayText = accumulatedText + 
+        (accumulatedText && !accumulatedText.endsWith(' ') ? ' ' : '') + 
+        otherText.trim();
+    } else {
+      const words = otherText.trim().split(' ').filter(Boolean);
+      if (words.length > 1) {
+        const completeWords = words.slice(0, -1).join(' ');
+        displayText = accumulatedText + 
+          (accumulatedText && !accumulatedText.endsWith(' ') ? ' ' : '') + 
+          completeWords;
+      }
+    }
+  }
+  
+  fullTextStorage = displayText;
+  updateMonitoringFromText(displayText);
+  const monitoringText = monitoringLines.join('\n');
+  
+  requestAnimationFrame(() => {
+    renderMonitoringHTML(viewerContent, monitoringText);
+    viewerContent.scrollTop = viewerContent.scrollHeight;
+    lastDisplayedText = monitoringText;
+  });
 }
 
 // 입력창 텍스트 최적화
@@ -1590,12 +1577,14 @@ function deleteWordBackward() {
     editor.setSelectionRange(deleteStartPos, deleteStartPos);
   }
   
-  // HTML 모드에서만 즉시 뷰어 업데이트
+  // HTML 모드, 1인 모드, 또는 권한자인 경우 뷰어 업데이트
   if (isHtmlMode) {
     updateViewerFromEditor();
+  } else if (isSoloMode() || myRole === activeStenographer) {
+    updateViewerWithCurrentInput();
   }
   
-  // 서버에 변경사항 전송 (프리뷰용)
+  // 서버에 변경사항 전송
   if (!isHtmlMode && socket && socket.connected) {
     socket.emit('steno_input', { 
       channel: channel, 
@@ -1801,41 +1790,23 @@ if (!isHtmlMode && socket) {
     if (stenoList.length < 2 && otherEditor) {
       otherEditor.value = '';
       console.log('[상대방 퇴장] 입력창 초기화');
+      
+      // 1인 모드에서는 뷰어 계속 업데이트
+      if (nowSolo) {
+        updateViewerContent();
+      }
     }
   });
 
   socket.on('sync_accumulated', ({ accumulatedText: serverAccum }) => {
     accumulatedText = serverAccum || '';
     fullTextStorage = accumulatedText;
-    renderFromString(accumulatedText);
+    updateMonitoringFromText(accumulatedText);
+    updateViewerContent();
     console.log('[누적 텍스트 동기화]', accumulatedText.length, '자');
   });
 
-  // 🔥 새로운 이벤트 핸들러: text_broadcast (ACK)
-  socket.on('text_broadcast', ({ channel: ch, version, text, sender }) => {
-    if (ch !== channel) return;
-    
-    // 버전 체크 (역행 방지)
-    if (typeof version === 'number' && version <= lastAppliedVersion) {
-      console.log('[ACK 무시] 이미 적용된 버전:', version);
-      return;
-    }
-    
-    lastAppliedVersion = version;
-    accumulatedText = text || '';
-    fullTextStorage = accumulatedText;
-    
-    // 확정 렌더링
-    renderFromString(accumulatedText);
-    
-    console.log('[ACK 수신] 확정 렌더 완료', {
-      버전: version,
-      길이: accumulatedText.length,
-      발신자: sender
-    });
-  });
-
-  // 🔥 수정: steno_input 수신 (프리뷰 전용, 확정 레이어 건드리지 않음)
+  // 활성 속기사의 입력 수신 (뷰어에 표시 + 파트너 화면 업데이트)
   socket.on('steno_input', ({ role, text, isSync }) => {
     const senderRole = role.replace('steno', '');
     
@@ -1858,16 +1829,18 @@ if (!isHtmlMode && socket) {
       return;
     }
     
-    // 파트너의 입력창 항상 실시간 업데이트 (권한 무관) - 프리뷰
+    // 파트너의 입력창 항상 실시간 업데이트 (권한 무관)
     if (isCollaborationMode() && otherEditor) {
       otherEditor.value = text;
       trimEditorText(otherEditor);
       otherEditor.scrollTop = otherEditor.scrollHeight;
-      console.log('[파트너 화면] 프리뷰 업데이트:', text.length, '자');
+      console.log('[파트너 화면] 실시간 업데이트:', text.length, '자');
     }
     
-    // 🔥 뷰어 프리뷰는 제거 (확정 레이어 보호)
-    // 활성 속기사의 입력이더라도 뷰어는 ACK 시에만 업데이트
+    // 활성 속기사의 입력이면 뷰어도 업데이트 (한 단어 지연)
+    if (senderRole === activeStenographer) {
+      updateViewerWithOtherInput(text);
+    }
     
     // 2인 모드에서 단어 매칭 체크
     if (isCollaborationMode() && !isProcessingSwitch) {  // 교대 중이 아닐 때만
@@ -1894,12 +1867,12 @@ if (!isHtmlMode && socket) {
     // 자기 자신의 입력은 무시
     if (senderRole === myRole) return;
     
-    // 상대방 입력창 실시간 업데이트 - 프리뷰
+    // 상대방 입력창 실시간 업데이트
     if (otherEditor) {
       otherEditor.value = text;
       trimEditorText(otherEditor);
       otherEditor.scrollTop = otherEditor.scrollHeight;
-      console.log('[파트너 화면] 대기자 입력 프리뷰 업데이트');
+      console.log('[파트너 화면] 대기자 입력 실시간 업데이트');
     }
     
     // 대기자 입력으로 매칭 체크
@@ -1922,7 +1895,6 @@ if (!isHtmlMode && socket) {
     manual, 
     matchStartIndex, 
     matchWordCount: serverMatchCount,
-    version,  // 🆕 버전 추가
     ts  // 타임스탬프 추가
   }) => {
     try {
@@ -1931,7 +1903,6 @@ if (!isHtmlMode && socket) {
         이전권한자: previousActive,
         누적길이: matchedText?.length || 0,
         수동여부: manual,
-        버전: version,
         매칭정보: { startIdx: matchStartIndex, wordCount: serverMatchCount },
         시간: ts
       });
@@ -1946,15 +1917,8 @@ if (!isHtmlMode && socket) {
       if (matchedText) {
         accumulatedText = matchedText;
         fullTextStorage = matchedText;
-        
-        // 버전 업데이트
-        if (typeof version === 'number') {
-          lastAppliedVersion = version;
-        }
-        
-        // 확정 렌더
-        renderFromString(accumulatedText);
-        console.log('[권한 전환] 누적 텍스트 갱신 및 렌더:', accumulatedText.length, '자');
+        updateMonitoringFromText(accumulatedText);
+        console.log('[권한 전환] 누적 텍스트 갱신:', accumulatedText.length, '자');
       }
       
       // 3. 이전 권한자 판정 (서버가 보낸 previousActive 사용)
@@ -1975,7 +1939,7 @@ if (!isHtmlMode && socket) {
       activeStenographer = newActiveNum;
       
       // 6. 입력창 처리 (핵심 로직)
-      // 6-1. 이전 권한자 → 새 대기자: 완전 하드 리셋
+      // 6-1. 이전 권한자 → 새 대기자: 완전 하드 리셋 - 수정됨
       if (wasIPreviousActive && !willIBeNewActive) {
         console.log('[권한 전환] 이전 권한자 → 대기자 전환: 완전 초기화');
         
@@ -1983,10 +1947,10 @@ if (!isHtmlMode && socket) {
           // 입력창 완전 비우기
           myEditor.value = '';
           
-          // 모든 버퍼 초기화
+          // 모든 버퍼 초기화 - 수정됨: 더 철저한 초기화
           lastSentText = '';
           lastMyInput = '';
-          lastSendTime = Date.now();
+          lastSendTime = Date.now();  // 수정됨: 추가
           
           // 전송 타이머 취소
           if (sendInputTimeout) {
@@ -2001,10 +1965,11 @@ if (!isHtmlMode && socket) {
           myEditor.scrollTop = 0;
           myEditor.setSelectionRange(0, 0);
           
-          // 추가 보장: 100ms 후 재확인
+          
+          // 추가 보장: 100ms 후 재확인 - 수정됨
           setTimeout(() => {
             if (myEditor && myEditor.value !== '') {
-              console.warn('[권한 전환] 재초기화 필요');
+              console.warn('[권한 전환] 재초기화 필요 - 수정됨');
               myEditor.value = '';
               lastSentText = '';
             }
@@ -2043,7 +2008,7 @@ if (!isHtmlMode && socket) {
               myEditor.value = tail;
               myEditor.setSelectionRange(tail.length, tail.length);
               lastSentText = tail;  // 새 권한자의 마지막 전송 텍스트 갱신
-              lastSendTime = Date.now();
+              lastSendTime = Date.now();  // 수정됨: 추가
             } else {
               // 매칭 정보 부족 시 입력창 유지
               console.log('[권한 전환] 매칭 정보 부족 - 입력창 유지');
@@ -2075,6 +2040,7 @@ if (!isHtmlMode && socket) {
       // 8. 권한 및 UI 갱신
       applyEditorLocks();
       updateStatus();
+      updateViewerContent();
 
       // 포커스 자동 복구(교대 타이밍 중복 호출 대비 rAF)
       if (myEditor) requestAnimationFrame(() => { 
@@ -2103,6 +2069,7 @@ if (!isHtmlMode && socket) {
     }
   });
   
+ 
   // 채팅 메시지 수신 (통합된 단일 핸들러)
   socket.on('chat_message', ({ sender, message, timestamp }) => {
     const mySenderName = `속기사${myRole}`;
@@ -2121,12 +2088,12 @@ if (!isHtmlMode && socket) {
     }
   });
   
-  // 🔥 누락된 핸들러: 핑 응답
+  // 핑 응답
   socket.on('pong_test', () => {
     // checkConnection 함수에서 처리됨
   });
   
-  // 🔥 누락된 핸들러: 강제 권한 전환
+  // 강제 권한 전환
   socket.on('force_role_switch', ({ newActive, previousActive }) => {
     const prevActiveNum = previousActive === 'steno1' ? '1' : '2';
     const newActiveNum = newActive === 'steno1' ? '1' : '2';
@@ -2134,14 +2101,14 @@ if (!isHtmlMode && socket) {
     activeStenographer = newActiveNum;
     updateStatus();
     
-    // 이전 권한자였으면 완전 초기화
+    // 이전 권한자였으면 완전 초기화 - 수정됨
     if (myRole === prevActiveNum) {
       console.log('[강제 권한 상실] 권한이 이동했습니다.');
       if (myEditor) {
         myEditor.value = '';
         lastSentText = '';
         lastMyInput = '';
-        lastSendTime = Date.now();
+        lastSendTime = Date.now();  // 수정됨: 추가
         
         // 전송 타이머 취소
         if (sendInputTimeout) {
@@ -2159,7 +2126,7 @@ if (!isHtmlMode && socket) {
     }
   });
 
-  // 🔥 누락된 핸들러: 교정 요청 수신
+  // 교정 요청 수신 처리
   socket.on('correction_request', ({ active, requester, requesterRole }) => {
     if (requester !== myRole) {
       const otherStatusBar = document.getElementById('statusBar' + otherColNum);
@@ -2195,12 +2162,12 @@ if (!isHtmlMode && socket) {
     }
   });
   
-  // 🔥 누락된 핸들러: 텍스트 전송 수신 (레거시 - ACK 구조 이전)
+  // 텍스트 전송 수신 처리
   socket.on('text_sent', ({ accumulatedText: newAccumulated, sender }) => {
     if (sender !== myRole) {
       accumulatedText = newAccumulated;
       fullTextStorage = newAccumulated;
-      renderFromString(accumulatedText);
+      updateViewerContent();
       console.log(`[텍스트 전송 수신] ${sender}가 텍스트 전송`);
     }
   });
@@ -2237,19 +2204,14 @@ if (!isHtmlMode && socket) {
     exitEditMode();
   });
   
-  socket.on('viewer_content_updated', ({ accumulatedText: newAccumulated, editorRole, version }) => {
-    // 버전 체크
-    if (typeof version === 'number') {
-      lastAppliedVersion = version;
-    }
-    
+  socket.on('viewer_content_updated', ({ accumulatedText: newAccumulated, editorRole }) => {
     accumulatedText = newAccumulated;
     fullTextStorage = newAccumulated;
-    renderFromString(accumulatedText);
+    updateViewerContent();
     console.log(`[뷰어 편집] ${editorRole}가 뷰어 내용을 수정했습니다.`);
   });
   
-  // 🔥 누락된 핸들러: 동기화 체크 수신
+  // 동기화 체크 수신
   socket.on('sync_check', ({ activeStenographer: serverActive, accumulatedLength }) => {
     // 서버와 클라이언트 상태 비교
     if (accumulatedText.length !== accumulatedLength) {
@@ -2258,14 +2220,14 @@ if (!isHtmlMode && socket) {
     }
   });
   
-  // 🔥 누락된 핸들러: 백업 상태 저장 응답
+  // 백업 상태 저장 응답
   socket.on('backup_saved', ({ success }) => {
     if (success) {
       console.log('[백업] 서버에 상태 저장 완료');
     }
   });
   
-  // 🔥 누락된 핸들러: Keep-alive 응답
+  // Keep-alive 응답
   socket.on('keep_alive_ack', () => {
     // 연결 상태 확인됨
   });
@@ -2356,7 +2318,7 @@ if (!isHtmlMode && socket) {
         console.log('[복구] 로컬 백업 데이터 사용');
         accumulatedText = backupData.accumulated;
         fullTextStorage = backupData.full;
-        renderFromString(accumulatedText);
+        updateViewerContent();
       }
     }, 3000);
   });
@@ -2442,9 +2404,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 60000);
 });
 
-// 자동 저장 기능 (강화된 버전) - 그대로 유지
+// 자동 저장 기능 (강화된 버전)
 let lastSaveData = null;
-let lastBackupTime = 0;
+let lastBackupTime = 0;  // 백업 타이밍 추적
 let sessionStart = Date.now();
 
 function enableAutoSave() {
@@ -2546,7 +2508,7 @@ function checkAutoSave() {
       if (isHtmlMode) {
         updateViewerFromEditor();
       } else {
-        renderFromString(accumulatedText);
+        updateViewerContent();
       }
       
       console.log('[자동저장] 복구 완료!');
@@ -2572,7 +2534,7 @@ function checkAutoSave() {
         if (!accumulatedText || accumulatedText.length < eData.accumulated.length) {
           accumulatedText = eData.accumulated;
           fullTextStorage = eData.full;
-          renderFromString(accumulatedText);
+          updateViewerContent();
           console.log('[복구] 긴급 저장 데이터 복구');
         }
       }
