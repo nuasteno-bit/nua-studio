@@ -861,22 +861,22 @@ function sendInput() {
   }
 }
 
-// 뷰어 업데이트 with 입력 (권한자의 입력만 반영)
+// updateViewerWithCurrentInput 
 function updateViewerWithCurrentInput() {
   if (isViewerEditing) return;
-  if (myRole !== activeStenographer) return; // 권한자만 뷰어 업데이트
+  if (myRole !== activeStenographer) return;
   
   const viewerContent = document.getElementById('viewerContent');
   if (!viewerContent) return;
   
   let displayText = accumulatedText;
   
-  // 현재 입력 중인 텍스트 추가 (단어 단위로)
+  // 현재 입력 중인 텍스트 추가
   if (myEditor.value) {
     if (myEditor.value.endsWith(' ')) {
       // 공백으로 끝나면 전체 추가
       displayText = accumulatedText + 
-        (accumulatedText && !accumulatedText.endsWith(' ') ? ' ' : '') + 
+        (accumulatedText && !accumulatedText.endsWith('\n') && !accumulatedText.endsWith(' ') ? ' ' : '') + 
         myEditor.value.trim();
     } else {
       // 아직 입력 중인 마지막 단어는 제외
@@ -884,7 +884,7 @@ function updateViewerWithCurrentInput() {
       if (words.length > 1) {
         const completeWords = words.slice(0, -1).join(' ');
         displayText = accumulatedText + 
-          (accumulatedText && !accumulatedText.endsWith(' ') ? ' ' : '') + 
+          (accumulatedText && !accumulatedText.endsWith('\n') && !accumulatedText.endsWith(' ') ? ' ' : '') + 
           completeWords;
       }
     }
@@ -909,18 +909,17 @@ function updateViewerWithOtherInput(otherText) {
   
   let displayText = accumulatedText;
   
-  // 권한자의 입력 추가
   if (otherText) {
     if (otherText.endsWith(' ')) {
       displayText = accumulatedText + 
-        (accumulatedText && !accumulatedText.endsWith(' ') ? ' ' : '') + 
+        (accumulatedText && !accumulatedText.endsWith('\n') && !accumulatedText.endsWith(' ') ? ' ' : '') + 
         otherText.trim();
     } else {
       const words = otherText.trim().split(' ').filter(Boolean);
       if (words.length > 1) {
         const completeWords = words.slice(0, -1).join(' ');
         displayText = accumulatedText + 
-          (accumulatedText && !accumulatedText.endsWith(' ') ? ' ' : '') + 
+          (accumulatedText && !accumulatedText.endsWith('\n') && !accumulatedText.endsWith(' ') ? ' ' : '') + 
           completeWords;
       }
     }
