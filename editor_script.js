@@ -856,26 +856,28 @@ function sendInput() {
 // 뷰어 업데이트 with 입력 (권한자의 입력만 반영)
 function updateViewerWithCurrentInput() {
   if (isViewerEditing) return;
-  if (myRole !== activeStenographer) return;
+  if (myRole !== activeStenographer) return; // 권한자만 뷰어 업데이트
   
   const viewerContent = document.getElementById('viewerContent');
   if (!viewerContent) return;
   
-  // 누적 텍스트 그대로 사용 (재구성하지 않음)
-  let displayText = accumulatedText || '';
+  let displayText = accumulatedText;
   
-  // 현재 입력 중인 텍스트 추가
+  // 현재 입력 중인 텍스트 추가 (단어 단위로)
   if (myEditor.value) {
-    // 마지막 단어가 완성되었을 때만 추가
     if (myEditor.value.endsWith(' ')) {
-      displayText += myEditor.value.trim();
+      // 공백으로 끝나면 전체 추가
+      displayText = accumulatedText + 
+        (accumulatedText && !accumulatedText.endsWith(' ') ? ' ' : '') + 
+        myEditor.value.trim();
     } else {
+      // 아직 입력 중인 마지막 단어는 제외
       const words = myEditor.value.trim().split(' ').filter(Boolean);
       if (words.length > 1) {
         const completeWords = words.slice(0, -1).join(' ');
-        if (completeWords) {
-          displayText += (displayText && !displayText.endsWith(' ') && !displayText.endsWith('\n') ? ' ' : '') + completeWords;
-        }
+        displayText = accumulatedText + 
+          (accumulatedText && !accumulatedText.endsWith(' ') ? ' ' : '') + 
+          completeWords;
       }
     }
   }
@@ -2602,5 +2604,3 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault();
   }
 });
-
-
