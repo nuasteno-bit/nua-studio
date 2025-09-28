@@ -12,6 +12,12 @@ let sendInputTimeout = null;
 let lastSentText = '';
 let lastSendTime = Date.now();
 
+// 🆕 ACK 기반 렌더링 제어 변수
+let lastAppliedVersion = 0;  // 마지막 적용된 버전
+let pendingSendText = '';     // 전송 대기 중인 텍스트
+let isWaitingForAck = false;  // ACK 대기 상태
+let enableOptimisticRender = false; // 낙관적 렌더링 옵션 (기본 OFF)
+
 // 엔터키 모드 - 전송 모드로 고정
 const enterMode = 'send'; // 항상 전송 모드
 
@@ -130,17 +136,30 @@ function initializeComponents() {
       }
     };
     
-    // 엔터키 처리 - 권한자만 전송 가능
+    // 엔터키 처리 - 권한자만 전송 가능 (ACK 개선)
     myEditor.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
+        // IME 조합 중이면 전송 방지
+        if (e.isComposing === true) {
+          console.log('[엔터키] IME 조합 중 - 전송 차단');
+          return;
+        }
+        
         e.preventDefault();
         
         // HTML 모드 또는 권한자일 때만 뷰어로 전송
-        if (isHtmlMode || myRole === activeStenographer) {
+        if (isHtmlMode || myRole === activeStenographer || isSoloMode()) {
+          // ACK 대기 중이면 전송 차단 (옵션)
+          if (isWaitingForAck && !enableOptimisticRender) {
+            console.log('[엔터키] ACK 대기 중 - 전송 지연');
+            pendingSendText = myEditor.value;
+            return;
+          }
           sendToMonitor();
         } else {
           console.log('[엔터키] 대기자는 뷰어로 전송할 수 없습니다. 입력은 계속 가능합니다.');
           // 대기자는 엔터를 눌러도 아무 일도 일어나지 않음 (입력창 유지)
+          showToast('대기자는 전송할 수 없습니다 (F7로 권한 요청)');
         }
       }
       // Shift+Enter는 줄바꿈 허용 (기본 동작)
@@ -180,6 +199,33 @@ function initializeComponents() {
   
   updateStatus();
   updateUtilityStatus();
+}
+
+// 토스트 메시지 표시 함수
+function showToast(message, duration = 2000) {
+  const existing = document.querySelector('.toast-message');
+  if (existing) existing.remove();
+  
+  const toast = document.createElement('div');
+  toast.className = 'toast-message';
+  toast.textContent = message;
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 4px;
+    z-index: 10000;
+    animation: fadeIn 0.3s ease;
+  `;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.animation = 'fadeOut 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
 }
 
 // 모드 업데이트 함수 (1인/2인 모드)
@@ -698,32 +744,52 @@ function updateViewerContent() {
   }
 }
 
-// 전송 모드에서 텍스트 전송 (수정됨: 줄바꿈 처리 개선)
+// 전송 모드에서 텍스트 전송 (ACK 기반 개선)
 function sendToMonitor() {
   if (!myEditor || myEditor.value.trim() === '') return;
   
   // 1인 모드이거나 권한자인 경우만 전송 가능
-  if (isSoloMode() || myRole === activeStenographer) {
+  if (isSoloMode() || myRole === activeStenographer || isHtmlMode) {
     const inputText = myEditor.value;
     
-    if (accumulatedText && accumulatedText.length > 0) {
-      // 엔터키로 전송했으므로 줄바꿈 추가
-      accumulatedText += '\n' + inputText;
-    } else {
-      accumulatedText = inputText;
+    // 낙관적 렌더링이 켜져있으면 즉시 렌더
+    if (enableOptimisticRender) {
+      if (accumulatedText && accumulatedText.length > 0) {
+        // 엔터키로 전송했으므로 줄바꿈 추가
+        accumulatedText += '\n' + inputText;
+      } else {
+        accumulatedText = inputText;
+      }
+      
+      fullTextStorage = accumulatedText;
+      updateViewerContent();
     }
     
-    fullTextStorage = accumulatedText;
-    myEditor.value = '';
+    // ACK 대기 상태로 전환
+    isWaitingForAck = true;
+    pendingSendText = '';
     
-    updateViewerContent();
+    myEditor.value = '';
     
     if (!isHtmlMode && socket && socket.connected) {
       socket.emit('text_sent', { 
         channel, 
-        accumulatedText,
-        sender: myRole 
+        accumulatedText: enableOptimisticRender ? accumulatedText : undefined,
+        sender: myRole,
+        inputText: inputText  // 원본 입력 텍스트 전송
       });
+    } else if (isHtmlMode) {
+      // HTML 모드는 ACK 없이 즉시 반영
+      if (!enableOptimisticRender) {
+        if (accumulatedText && accumulatedText.length > 0) {
+          accumulatedText += '\n' + inputText;
+        } else {
+          accumulatedText = inputText;
+        }
+        fullTextStorage = accumulatedText;
+        updateViewerContent();
+      }
+      isWaitingForAck = false;
     }
     
     console.log('[전송 모드] 텍스트 전송 완료 - 누적:', accumulatedText.length, '자');
@@ -1798,6 +1864,43 @@ if (!isHtmlMode && socket) {
     }
   });
 
+  // 🆕 ACK 기반 text_broadcast 처리
+  socket.on('text_broadcast', ({ version, text }) => {
+    console.log('[text_broadcast 수신]', {
+      버전: version,
+      텍스트길이: text?.length || 0,
+      현재버전: lastAppliedVersion
+    });
+    
+    // 버전 필터링
+    if (version <= lastAppliedVersion) {
+      console.log('[text_broadcast] 오래된 버전 무시:', version);
+      return;
+    }
+    
+    // 버전 업데이트
+    lastAppliedVersion = version;
+    
+    // 누적 텍스트 갱신
+    accumulatedText = text || '';
+    fullTextStorage = accumulatedText;
+    
+    // 뷰어 렌더링
+    updateMonitoringFromText(accumulatedText);
+    updateViewerContent();
+    
+    // ACK 대기 해제
+    isWaitingForAck = false;
+    
+    // 대기 중이던 텍스트가 있으면 전송
+    if (pendingSendText && myEditor) {
+      console.log('[ACK 수신] 대기 중이던 텍스트 전송');
+      myEditor.value = pendingSendText;
+      pendingSendText = '';
+      sendToMonitor();
+    }
+  });
+
   socket.on('sync_accumulated', ({ accumulatedText: serverAccum }) => {
     accumulatedText = serverAccum || '';
     fullTextStorage = accumulatedText;
@@ -1939,7 +2042,7 @@ if (!isHtmlMode && socket) {
       activeStenographer = newActiveNum;
       
       // 6. 입력창 처리 (핵심 로직)
-      // 6-1. 이전 권한자 → 새 대기자: 완전 하드 리셋 - 수정됨
+      // 6-1. 이전 권한자 → 새 대기자: 완전 하드 리셋
       if (wasIPreviousActive && !willIBeNewActive) {
         console.log('[권한 전환] 이전 권한자 → 대기자 전환: 완전 초기화');
         
@@ -1947,10 +2050,10 @@ if (!isHtmlMode && socket) {
           // 입력창 완전 비우기
           myEditor.value = '';
           
-          // 모든 버퍼 초기화 - 수정됨: 더 철저한 초기화
+          // 모든 버퍼 초기화
           lastSentText = '';
           lastMyInput = '';
-          lastSendTime = Date.now();  // 수정됨: 추가
+          lastSendTime = Date.now();
           
           // 전송 타이머 취소
           if (sendInputTimeout) {
@@ -1965,11 +2068,10 @@ if (!isHtmlMode && socket) {
           myEditor.scrollTop = 0;
           myEditor.setSelectionRange(0, 0);
           
-          
-          // 추가 보장: 100ms 후 재확인 - 수정됨
+          // 추가 보장: 100ms 후 재확인
           setTimeout(() => {
             if (myEditor && myEditor.value !== '') {
-              console.warn('[권한 전환] 재초기화 필요 - 수정됨');
+              console.warn('[권한 전환] 재초기화 필요');
               myEditor.value = '';
               lastSentText = '';
             }
@@ -2008,7 +2110,7 @@ if (!isHtmlMode && socket) {
               myEditor.value = tail;
               myEditor.setSelectionRange(tail.length, tail.length);
               lastSentText = tail;  // 새 권한자의 마지막 전송 텍스트 갱신
-              lastSendTime = Date.now();  // 수정됨: 추가
+              lastSendTime = Date.now();
             } else {
               // 매칭 정보 부족 시 입력창 유지
               console.log('[권한 전환] 매칭 정보 부족 - 입력창 유지');
@@ -2042,10 +2144,11 @@ if (!isHtmlMode && socket) {
       updateStatus();
       updateViewerContent();
 
-      // 포커스 자동 복구(교대 타이밍 중복 호출 대비 rAF)
+      // 포커스 자동 복구
       if (myEditor) requestAnimationFrame(() => { 
         if (document.activeElement !== myEditor) myEditor.focus();
       });
+      
       // 9. 교대 처리 플래그 해제
       isProcessingSwitch = false;
       lastSwitchTime = Date.now();
@@ -2069,8 +2172,7 @@ if (!isHtmlMode && socket) {
     }
   });
   
- 
-  // 채팅 메시지 수신 (통합된 단일 핸들러)
+  // 채팅 메시지 수신
   socket.on('chat_message', ({ sender, message, timestamp }) => {
     const mySenderName = `속기사${myRole}`;
     // 자기 자신이 보낸 메시지가 아닐 때만 추가
@@ -2079,7 +2181,7 @@ if (!isHtmlMode && socket) {
         sender: sender,
         message: message,
         timestamp: timestamp || new Date().toISOString(),
-        isMine: false,  // 다른 사람의 메시지
+        isMine: false,
         isQuick: message?.startsWith('[빠른 메시지]')
       };
       
@@ -2101,14 +2203,14 @@ if (!isHtmlMode && socket) {
     activeStenographer = newActiveNum;
     updateStatus();
     
-    // 이전 권한자였으면 완전 초기화 - 수정됨
+    // 이전 권한자였으면 완전 초기화
     if (myRole === prevActiveNum) {
       console.log('[강제 권한 상실] 권한이 이동했습니다.');
       if (myEditor) {
         myEditor.value = '';
         lastSentText = '';
         lastMyInput = '';
-        lastSendTime = Date.now();  // 수정됨: 추가
+        lastSendTime = Date.now();
         
         // 전송 타이머 취소
         if (sendInputTimeout) {
@@ -2162,13 +2264,13 @@ if (!isHtmlMode && socket) {
     }
   });
   
-  // 텍스트 전송 수신 처리
+  // 텍스트 전송 수신 처리 (레거시 호환)
   socket.on('text_sent', ({ accumulatedText: newAccumulated, sender }) => {
     if (sender !== myRole) {
       accumulatedText = newAccumulated;
       fullTextStorage = newAccumulated;
       updateViewerContent();
-      console.log(`[텍스트 전송 수신] ${sender}가 텍스트 전송`);
+      console.log(`[text_sent 수신] ${sender}가 텍스트 전송`);
     }
   });
   
@@ -2404,9 +2506,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 60000);
 });
 
-// 자동 저장 기능 (강화된 버전)
+// 자동 저장 기능
 let lastSaveData = null;
-let lastBackupTime = 0;  // 백업 타이밍 추적
+let lastBackupTime = 0;
 let sessionStart = Date.now();
 
 function enableAutoSave() {
@@ -2444,7 +2546,7 @@ function enableAutoSave() {
         console.log(`[자동저장] ${new Date().toLocaleTimeString()}`);
       }
       
-      // 5분마다 서버 백업 (정확한 타이밍)
+      // 5분마다 서버 백업
       if (socket?.connected && Date.now() - lastBackupTime >= 300000) {
         socket.emit('backup_state', {
           channel,
@@ -2458,7 +2560,7 @@ function enableAutoSave() {
     } catch (error) {
       console.error('[자동저장 실패]', error);
     }
-  }, 30000); // 30초
+  }, 30000);
 }
 
 function checkAutoSave() {
@@ -2582,7 +2684,6 @@ setInterval(() => {
 window.adjustFontSize = adjustFontSize;
 window.adjustViewerFontSize = adjustViewerFontSize;
 window.switchTab = function(tabName) {
-  // onclick에서 호출될 때 event 객체 전달
   switchTab(tabName, window.event);
 };
 window.updateTextSettings = updateTextSettings;
@@ -2611,3 +2712,19 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
+// 토스트 메시지용 CSS 애니메이션 추가
+if (!document.getElementById('toast-styles')) {
+  const style = document.createElement('style');
+  style.id = 'toast-styles';
+  style.textContent = `
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(20px); }
+    }
+  `;
+  document.head.appendChild(style);
+}
