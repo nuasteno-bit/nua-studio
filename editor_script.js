@@ -708,17 +708,13 @@ function sendToMonitor() {
     const inputText = myEditor.value.trim();
     
     if (accumulatedText && accumulatedText.length > 0) {
-      // 마지막이 개행으로 끝나면 그냥 추가
+      // 마지막이 개행으로 끝나면 새 줄로 시작
       if (accumulatedText.endsWith('\n')) {
-        accumulatedText += inputText;
+        accumulatedText += inputText + '\n';  // ← 여기 수정: 개행 한 번에 추가
       } else {
         // 개행으로 끝나지 않으면 공백으로 이어붙이기
         const needsSpacer = !accumulatedText.endsWith(' ');
-        accumulatedText += (needsSpacer ? ' ' : '') + inputText;
-      }
-      // 엔터 쳤으니 끝에 개행 추가 (다음 입력은 새 줄)
-     if (!accumulatedText.endsWith('\n')) {
-        accumulatedText += '\n';
+        accumulatedText += (needsSpacer ? ' ' : '') + inputText + '\n';  // ← 여기도 수정
       }
     } else {
       // 첫 입력
@@ -2621,6 +2617,7 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault();
   }
 });
+
 
 
 
