@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>녹취록 서비스 - NUA STENO</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    /* 스크롤 진행률 표시 */
+    .scroll-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 0%;
+      height: 4px;
+      background: #2b6cb0;
+      z-index: 10000;
+      transition: width 0.1s ease;
+      box-shadow: 0 2px 4px rgba(43, 108, 176, 0.3);
+    }
+    
+    body {
+      font-family: 'Noto Sans KR', 'Inter', sans-serif;
+      background: #fafafa;
+      color: #2d3748;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    
+    header {
+      background: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      position: fixed;
+      width: 100%;
+      top: 0;
+      z-index: 1000;
+      height: 76px;
+    }
+    
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.2rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #1a365d;
+      text-decoration: none;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .logo span {
+      color: #2b6cb0;
+    }
+    
+    .back-link {
+      font-size: 0.9rem;
+      color: #64748b;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: color 0.2s;
+    }
+    
+    .back-link:hover {
+      color: #2b6cb0;
+    }
+    
+    .contact-header {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+      font-size: 0.95rem;
+    }
+    
+    .contact-header a {
+      color: #2b6cb0;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    
+    .contact-header a:hover {
+      color: #1a365d;
+    }
+    
+    .hero {
+      margin-top: 0;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      padding: 3rem 2rem 3.5rem 2rem;
+      padding-top: calc(2.5rem + 76px);
+      text-align: center;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .hero-container {
+      width: 100%;
+    }
+    
+    .hero h1 {
+      font-size: 2.6rem;
+      font-weight: 700;
+      color: #1a365d;
+      margin-bottom: 1.2rem;
+      font-family: 'Noto Serif KR', serif;
+      line-height: 1.3;
+    }
+    
+    .hero-subtitle {
+      font-size: 1.3rem;
+      color: #64748b;
+      margin-bottom: 0.8rem;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+    
+    .hero-desc {
+      font-size: 1.05rem;
+      color: #94a3b8;
+      max-width: 650px;
+      margin: 0 auto 2rem;
+      line-height: 1.7;
+    }
+    
+    .target-section {
+      background: #fff;
+      padding: 2rem 2rem 3rem 2rem;
+      text-align: center;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .section-title {
+      font-size: 1.8rem;
+      color: #1a365d;
+      margin-bottom: 3rem;
+      font-weight: 600;
+    }
+    
+    .target-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 280px);
+      gap: 2rem;
+      justify-content: center;
+      margin: 0 auto;
+    }
+    
+    .target-card {
+      background: #f8f9fa;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 2rem;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      color: inherit;
+      cursor: default;
+    }
+    
+    .target-card:hover {
+      border-color: #cbd5e1;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    .target-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .target-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #1a365d;
+      margin-bottom: 0.5rem;
+    }
+    
+    .target-desc {
+      font-size: 0.95rem;
+      color: #64748b;
+      line-height: 1.5;
+    }
+    
+    .partnership-note {
+      font-size: 0.85rem;
+      color: #2b6cb0;
+      margin-top: 0.8rem;
+      font-weight: 500;
+      letter-spacing: -0.2px;
+    }
+    
+    .target-card:hover .partnership-note {
+      color: #1a365d;
+      font-weight: 600;
+    }
+    
+    .center-cta {
+      margin-top: 3rem;
+      text-align: center;
+    }
+    
+    .center-cta .btn-primary {
+      background: #2b6cb0;
+      color: white;
+      padding: 1rem 3rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(43, 108, 176, 0.25);
+    }
+    
+    .center-cta .btn-primary:hover {
+      background: #1a365d;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(43, 108, 176, 0.35);
+    }
+    
+    .cta-desc {
+      margin-top: 1rem;
+      color: #64748b;
+      font-size: 0.95rem;
+    }
+    
+    .service-detail {
+      background: #fff;
+      padding: 4rem 2rem;
+    }
+    
+    .service-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .service-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    
+    .service-header h2 {
+      font-size: 2rem;
+      color: #1a365d;
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+    
+    .service-header p {
+      font-size: 1.1rem;
+      color: #64748b;
+    }
+    
+    .consult-section {
+      background: white;
+      border-radius: 16px;
+      padding: 3rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    .consult-title {
+      font-size: 1.5rem;
+      color: #1a365d;
+      margin-bottom: 2rem;
+      text-align: center;
+      font-weight: 600;
+    }
+    
+    .consult-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .consult-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8rem;
+      padding: 1.5rem;
+      background: #fff;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      text-decoration: none;
+      color: #2d3748;
+      font-weight: 600;
+      font-size: 1.1rem;
+      transition: all 0.2s ease;
+    }
+    
+    .consult-btn:hover {
+      border-color: #2b6cb0;
+      background: #f0f9ff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(43, 108, 176, 0.15);
+    }
+    
+    .consult-btn-icon {
+      font-size: 1.5rem;
+    }
+    
+    .consult-btn-text {
+      text-align: left;
+    }
+    
+    .consult-btn-text small {
+      display: block;
+      font-size: 0.85rem;
+      color: #64748b;
+      font-weight: 400;
+      margin-top: 0.2rem;
+    }
+    
+    .download-section {
+      background: #fff;
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 3rem;
+    }
+    
+    .download-title {
+      font-size: 1.3rem;
+      color: #1a365d;
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+    }
+    
+    .download-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+    
+    .download-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.2rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      text-decoration: none;
+      color: #2d3748;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+    
+    .download-item:hover {
+      background: #e6f2ff;
+      border-color: #2b6cb0;
+    }
+    
+    .download-icon {
+      font-size: 2rem;
+      color: #2b6cb0;
+    }
+    
+    .download-text h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.2rem;
+    }
+    
+    .download-text p {
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+    
+    .process-section {
+      background: #fff;
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 3rem;
+    }
+    
+    .process-title {
+      font-size: 1.3rem;
+      color: #1a365d;
+      margin-bottom: 2rem;
+      font-weight: 600;
+      text-align: center;
+    }
+    
+    .process-steps {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 900px;
+      margin: 0 auto;
+      position: relative;
+    }
+    
+    .process-step {
+      text-align: center;
+      flex: 1;
+      position: relative;
+      z-index: 2;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.6s ease forwards;
+    }
+    
+    .process-step:nth-child(2) { animation-delay: 0.2s; }
+    .process-step:nth-child(3) { animation-delay: 0.4s; }
+    .process-step:nth-child(4) { animation-delay: 0.6s; }
+    .process-step:nth-child(5) { animation-delay: 0.8s; }
+    .process-step:nth-child(6) { animation-delay: 1s; }
+    
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .process-step-number {
+      width: 60px;
+      height: 60px;
+      background: #e2e8f0;
+      color: #64748b;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0 auto 1rem;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+    
+    .process-step-number.active {
+      background: #2b6cb0;
+      color: white;
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(43, 108, 176, 0.3);
+    }
+    
+    .process-step-number::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 3px solid #2b6cb0;
+      opacity: 0;
+      animation: pulse 2s infinite;
+    }
+    
+    .process-step-number.active::after {
+      animation: pulseActive 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+        opacity: 0;
+      }
+      50% {
+        transform: scale(1.2);
+        opacity: 0.3;
+      }
+      100% {
+        transform: scale(1.4);
+        opacity: 0;
+      }
+    }
+    
+    @keyframes pulseActive {
+      0% {
+        transform: scale(1);
+        opacity: 0.8;
+      }
+      50% {
+        transform: scale(1.3);
+        opacity: 0.4;
+      }
+      100% {
+        transform: scale(1.5);
+        opacity: 0;
+      }
+    }
+    
+    .process-step-title {
+      font-weight: 600;
+      color: #1a365d;
+      margin-bottom: 0.5rem;
+      transition: color 0.3s ease;
+    }
+    
+    .process-step.active .process-step-title {
+      color: #2b6cb0;
+    }
+    
+    .process-step-desc {
+      font-size: 0.9rem;
+      color: #64748b;
+    }
+    
+    .process-line {
+      position: absolute;
+      top: 30px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #e2e8f0;
+      z-index: 1;
+    }
+    
+    .process-line::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0;
+      background: #2b6cb0;
+      animation: progressLine 5s ease-in-out infinite;
+    }
+    
+    @keyframes progressLine {
+      0% { width: 0%; }
+      20% { width: 20%; }
+      40% { width: 40%; }
+      60% { width: 60%; }
+      80% { width: 80%; }
+      100% { width: 100%; }
+    }
+    
+    .faq-section {
+      background: #fff;
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 3rem;
+    }
+    
+    .faq-title {
+      font-size: 1.3rem;
+      color: #1a365d;
+      margin-bottom: 2rem;
+      font-weight: 600;
+    }
+    
+    .faq-item {
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .faq-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    
+    .faq-question {
+      font-weight: 600;
+      color: #1a365d;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .faq-answer {
+      color: #64748b;
+      line-height: 1.6;
+      padding-left: 1.5rem;
+    }
+    
+    .trust-section {
+      background: #f8f9fa;
+      border-top: 1px solid #e2e8f0;
+      padding: 4rem 2rem;
+    }
+    
+    .trust-container {
+      max-width: 900px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    
+    .trust-title {
+      font-size: 1.8rem;
+      color: #1a365d;
+      margin-bottom: 3rem;
+      font-weight: 600;
+      font-family: 'Noto Serif KR', serif;
+    }
+    
+    .trust-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+    }
+    
+    .trust-item {
+      text-align: left;
+      padding: 1.5rem 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .trust-item-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #1a365d;
+      margin-bottom: 0.5rem;
+    }
+    
+    .trust-item-desc {
+      font-size: 0.95rem;
+      color: #64748b;
+      line-height: 1.6;
+    }
+    
+    .floating-cta {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #2b6cb0;
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 50px;
+      box-shadow: 0 4px 16px rgba(43, 108, 176, 0.3);
+      text-decoration: none;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+      z-index: 999;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    
+    .floating-cta.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .floating-cta:hover {
+      background: #1a365d;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(43, 108, 176, 0.4);
+    }
+    
+    /* 업무 상태 표시 */
+    .business-status {
+      position: fixed;
+      bottom: 2rem;
+      left: 2rem;
+      background: white;
+      padding: 0.8rem 1.2rem;
+      border-radius: 50px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      z-index: 998;
+      border: 1px solid #e2e8f0;
+      transition: all 0.3s ease;
+    }
+    
+    .business-status:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #94a3b8;
+      animation: pulse 2s infinite;
+    }
+    
+    .status-dot.active {
+      background: #10b981;
+    }
+    
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+      }
+    }
+    
+    .status-text {
+      color: #64748b;
+      font-weight: 500;
+    }
+    
+    .status-text.active {
+      color: #1a365d;
+    }
+    
+    footer {
+      background: #0a0a0a;
+      color: #e2e8f0;
+      padding: 2rem;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 2000;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+    
+    .modal.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 16px;
+      padding: 3rem;
+      max-width: 500px;
+      width: 100%;
+      position: relative;
+    }
+    
+    .modal-close {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      width: 32px;
+      height: 32px;
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    
+    .modal-close:hover {
+      background: #f1f5f9;
+      color: #1a365d;
+    }
+    
+    .modal-title {
+      font-size: 1.5rem;
+      color: #1a365d;
+      margin-bottom: 2rem;
+      font-weight: 700;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+      display: block;
+      font-weight: 600;
+      color: #1a365d;
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+    
+    .form-input, .form-select {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: all 0.2s;
+      background: #fafafa;
+    }
+    
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      border-color: #2b6cb0;
+      background: white;
+    }
+    
+    .form-radio-group {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    
+    .form-radio {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+    
+    .form-radio input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #2b6cb0;
+    }
+    
+    .form-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    
+    .form-checkbox input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #2b6cb0;
+    }
+    
+    textarea.form-input {
+      resize: vertical;
+      min-height: 80px;
+      font-family: inherit;
+    }
+    
+    .form-submit {
+      width: 100%;
+      padding: 1rem;
+      background: #2b6cb0;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 1rem;
+    }
+    
+    .form-submit:hover {
+      background: #1a365d;
+      transform: translateY(-1px);
+    }
+    
+    .target-cards, 
+    .process-steps, 
+    .consult-buttons, 
+    .download-grid, 
+    .trust-grid {
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+    
+    .service-container,
+    .trust-container {
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+    
+    @media (max-width: 768px) {
+      .hero {
+        padding: 2rem 1.5rem 2.5rem 1.5rem;
+        padding-top: calc(2rem + 76px);
+      }
+      
+      .hero h1 {
+        font-size: 2rem;
+      }
+      
+      .hero-subtitle {
+        font-size: 1.15rem;
+      }
+      
+      .hero-desc {
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+      }
+      
+      .target-cards {
+        grid-template-columns: 1fr;
+        max-width: 100%;
+      }
+      
+      .process-steps {
+        flex-direction: column;
+        gap: 2rem;
+        max-width: 100%;
+      }
+      
+      .process-line {
+        display: none;
+      }
+      
+      .trust-grid {
+        gap: 2rem;
+      }
+      
+      .floating-cta {
+        bottom: 1rem;
+        right: 1rem;
+        padding: 0.8rem 1.5rem;
+        font-size: 0.95rem;
+      }
+      
+      .business-status {
+        bottom: 1rem;
+        left: 1rem;
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+      }
+      
+      .contact-header {
+        display: none;
+      }
+      
+      .header-content {
+        padding: 1rem;
+      }
+      
+      .consult-buttons {
+        grid-template-columns: 1fr;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 스크롤 진행률 표시 -->
+  <div class="scroll-progress" id="scrollProgress"></div>
+  
+  <header>
+    <div class="header-content">
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <a href="index.html" class="logo">
+          <span>[NUA]</span> STENO
+        </a>
+        <a href="index.html" class="back-link">
+          ← 메인으로
+        </a>
+      </div>
+      <div class="contact-header">
+        <span>📞 <a href="tel:02-1234-5678">02-1234-5678</a></span>
+        <span>⏰ 평일 09:00 - 18:00</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-container">
+      <h1>전문 녹취록 서비스</h1>
+      <p class="hero-subtitle">민감한 자료는 상담 후 안전하게 접수하세요</p>
+      <p class="hero-desc">15년 경력의 전문 속기사가 법원 제출용 양식에 맞춰 정확하게 작업해드립니다</p>
+    </div>
+  </section>
+
+  <section class="target-section">
+    <h2 class="section-title">어떤 용도로 필요하신가요?</h2>
+    <div class="target-cards">
+      <a href="#" class="target-card">
+        <div class="target-icon">👤</div>
+        <h3 class="target-title">개인 의뢰</h3>
+        <p class="target-desc">
+          민사·형사 사건 녹취<br>
+          개인 면담·상담 기록
+        </p>
+      </a>
+      
+      <a href="#" class="target-card">
+        <div class="target-icon">⚖️</div>
+        <h3 class="target-title">법률사무소</h3>
+        <p class="target-desc">
+          변호사 상담 녹취<br>
+          법정 녹음 전문<br>
+          담당자 전용 빠른 처리
+        </p>
+        <p class="partnership-note">※ B2B 파트너십 문의</p>
+      </a>
+      
+      <a href="#" class="target-card">
+        <div class="target-icon">🏢</div>
+        <h3 class="target-title">기업/기관</h3>
+        <p class="target-desc">
+          회의록 작성<br>
+          인터뷰·세미나 기록
+        </p>
+      </a>
+    </div>
+    
+    <div class="center-cta">
+      <button class="btn-primary" onclick="openModal()">
+        <span>상담 신청하기</span>
+      </button>
+      <p class="cta-desc">모든 고객님께 맞춤형 서비스를 제공합니다</p>
+    </div>
+  </section>
+
+  <section class="service-detail" id="service-detail">
+    <div class="service-container">
+      <div class="service-header">
+        <h2>전문 녹취 서비스의 모든 것</h2>
+        <p>개인, 법률사무소, 기업 모두를 위한 맞춤형 서비스</p>
+        <p style="font-size: 0.9rem; color: #2b6cb0; margin-top: 0.5rem;">
+          법률사무소 B2B 제휴 상담: <a href="tel:02-1234-5678" style="color: #2b6cb0;">02-1234-5678</a>
+        </p>
+      </div>
+
+      <div class="consult-section">
+        <h3 class="consult-title">먼저 상담을 통해 안전한 접수 방법을 안내드립니다</h3>
+        <div class="consult-buttons">
+          <a href="tel:02-1234-5678" class="consult-btn">
+            <span class="consult-btn-icon">📞</span>
+            <div class="consult-btn-text">
+              전화 상담
+              <small>02-1234-5678</small>
+            </div>
+          </a>
+          
+          <a href="#" class="consult-btn" onclick="openKakao(); return false;">
+            <span class="consult-btn-icon">💬</span>
+            <div class="consult-btn-text">
+              카카오톡 문의
+              <small>빠른 응답 가능</small>
+            </div>
+          </a>
+          
+          <a href="#" class="consult-btn" onclick="openModal(); return false;">
+            <span class="consult-btn-icon">📧</span>
+            <div class="consult-btn-text">
+              이메일 견적 요청
+              <small>1시간 내 회신</small>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <div class="download-section">
+        <h3 class="download-title">📁 필요한 서류를 미리 확인하세요</h3>
+        <div class="download-grid">
+          <a href="#" class="download-item">
+            <div class="download-icon">📄</div>
+            <div class="download-text">
+              <h4>표준 견적서 양식</h4>
+              <p>법인 결재용 PDF</p>
+            </div>
+          </a>
+          
+          <a href="#" class="download-item">
+            <div class="download-icon">📋</div>
+            <div class="download-text">
+              <h4>의뢰서 템플릿</h4>
+              <p>담당 변호사명·사건번호 입력</p>
+            </div>
+          </a>
+          
+          <a href="#" class="download-item">
+            <div class="download-icon">📑</div>
+            <div class="download-text">
+              <h4>납품 샘플</h4>
+              <p>법원 제출용 표지+본문</p>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <div class="process-section">
+        <h3 class="process-title">간단한 진행 절차</h3>
+        <div class="process-steps">
+          <div class="process-line"></div>
+          <div class="process-step">
+            <div class="process-step-number">1</div>
+            <div class="process-step-title">상담</div>
+            <div class="process-step-desc">파일 정보만<br>먼저 전달</div>
+          </div>
+          
+          <div class="process-step">
+            <div class="process-step-number">2</div>
+            <div class="process-step-title">견적</div>
+            <div class="process-step-desc">PDF 견적서<br>즉시 발송</div>
+          </div>
+          
+          <div class="process-step">
+            <div class="process-step-number">3</div>
+            <div class="process-step-title">전송</div>
+            <div class="process-step-desc">안전한 방법으로<br>파일 전달</div>
+          </div>
+          
+          <div class="process-step">
+            <div class="process-step-number">4</div>
+            <div class="process-step-title">작업</div>
+            <div class="process-step-desc">진행상황<br>실시간 안내</div>
+          </div>
+          
+          <div class="process-step">
+            <div class="process-step-number">5</div>
+            <div class="process-step-title">납품</div>
+            <div class="process-step-desc">법원 양식<br>완벽 적용</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-section">
+        <h3 class="faq-title">📋 필요한 자료가 있으신가요?</h3>
+        <div class="download-grid" style="margin-bottom: 2rem;">
+          <a href="#" class="download-item">
+            <div class="download-icon">📄</div>
+            <div class="download-text">
+              <h4>표준 견적서 양식</h4>
+              <p>법인 결재용 PDF</p>
+            </div>
+          </a>
+          
+          <a href="#" class="download-item">
+            <div class="download-icon">📋</div>
+            <div class="download-text">
+              <h4>의뢰서 템플릿</h4>
+              <p>작성 예시 포함</p>
+            </div>
+          </a>
+          
+          <a href="#" class="download-item">
+            <div class="download-icon">📑</div>
+            <div class="download-text">
+              <h4>납품 샘플</h4>
+              <p>결과물 예시</p>
+            </div>
+          </a>
+        </div>
+        
+        <h3 class="faq-title">자주 묻는 질문</h3>
+        
+        <div class="faq-item">
+          <div class="faq-question">
+            Q. 파일을 바로 보내야 하나요?
+          </div>
+          <div class="faq-answer">
+            아닙니다. 먼저 상담을 통해 내용을 확인한 뒤, 택배·이메일·카톡 중 가장 안전하고 편리한 방법으로 접수하실 수 있도록 안내드립니다.
+          </div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">
+            Q. 견적은 어떻게 받나요?
+          </div>
+          <div class="faq-answer">
+            녹음 분량과 희망 납기만 알려주시면 즉시 PDF 견적서를 발송해드립니다. 법인 내부 결재에 바로 사용하실 수 있습니다.
+          </div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">
+            Q. 법원 제출용 양식에 맞춰주시나요?
+          </div>
+          <div class="faq-answer">
+            네, 법원 제출용 표준 양식으로 작업합니다. 표지, 쪽 번호, 서식 등 모든 요구사항을 충족하도록 제작해드립니다.
+          </div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">
+            Q. 당일 특급 서비스도 가능한가요?
+          </div>
+          <div class="faq-answer">
+            가능합니다. 오전 접수 시 당일 오후, 오후 접수 시 익일 오전 납품이 가능합니다. (분량에 따라 상이)
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="trust-section">
+    <div class="trust-container">
+      <h2 class="trust-title">왜 NUA STENO인가?</h2>
+      <div class="trust-grid">
+        <div class="trust-item">
+          <h3 class="trust-item-title">서울중앙지방법원 인근</h3>
+          <p class="trust-item-desc">
+            법원에서 도보 5분 거리에 위치하여 긴급 서류 제출 및 직접 수령이 가능합니다.
+          </p>
+        </div>
+        
+        <div class="trust-item">
+          <h3 class="trust-item-title">15년 경력 전문 속기사</h3>
+          <p class="trust-item-desc">
+            국가공인 한글속기 자격을 보유한 전문가가 직접 작업하여 높은 정확도를 보장합니다.
+          </p>
+        </div>
+        
+        <div class="trust-item">
+          <h3 class="trust-item-title">철저한 보안 관리</h3>
+          <p class="trust-item-desc">
+            변호사 비밀유지 의무를 준수하며, 작업 완료 후 모든 파일을 안전하게 폐기합니다.
+          </p>
+        </div>
+        
+        <div class="trust-item">
+          <h3 class="trust-item-title">법원 제출용 표준 양식</h3>
+          <p class="trust-item-desc">
+            각 법원의 제출 양식 요구사항을 완벽히 숙지하여 반려 없는 문서를 제작합니다.
+          </p>
+        </div>
+        
+        <div class="trust-item">
+          <h3 class="trust-item-title">신속한 당일 처리</h3>
+          <p class="trust-item-desc">
+            긴급 사건의 경우 당일 특급 서비스로 빠른 처리가 가능합니다.
+          </p>
+        </div>
+        
+        <div class="trust-item">
+          <h3 class="trust-item-title">투명한 견적 시스템</h3>
+          <p class="trust-item-desc">
+            분량별 표준 단가를 적용하여 명확한 견적을 제공하며, 추가 비용이 발생하지 않습니다.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div>
+      <strong>NUA STENO</strong> | 사업자등록번호: 123-45-67890 | 대표: 홍길동
+    </div>
+    <div style="margin-top: 0.5rem;">
+      서울특별시 서초구 법원로 1길 23, 4층 | © 2025 NUA STENO. All rights reserved.
+    </div>
+  </footer>
+
+  <!-- 업무 상태 표시 -->
+  <div class="business-status" id="businessStatus">
+    <div class="status-dot" id="statusDot"></div>
+    <span class="status-text" id="statusText">업무시간 확인 중...</span>
+  </div>
+
+  <a href="#" class="floating-cta" onclick="openModal(); return false;">
+    <span>📞</span>
+    <span>상담 신청하기</span>
+  </a>
+
+  <div class="modal" id="consultModal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <h3 class="modal-title">견적 요청하기</h3>
+      
+      <form onsubmit="submitForm(event)">
+        <div class="form-group">
+          <label class="form-label">의뢰 주체 *</label>
+          <select class="form-select" id="clientType" required onchange="updateFormFields()">
+            <option value="">선택해주세요</option>
+            <option value="personal">개인</option>
+            <option value="law">법률사무소</option>
+            <option value="corporate">기업/기관</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">성함/담당자명 *</label>
+          <input type="text" class="form-input" required>
+        </div>
+        
+        <div class="form-group" id="companyField" style="display: none;">
+          <label class="form-label">회사/사무소명 *</label>
+          <input type="text" class="form-input" id="companyName">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">연락처 *</label>
+          <input type="tel" class="form-input" placeholder="010-0000-0000" required>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">이메일</label>
+          <input type="email" class="form-input" placeholder="이메일 주소 (견적서 수신용)">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">녹취 용도 *</label>
+          <select class="form-select" required>
+            <option value="">선택해주세요</option>
+            <option value="court">법원 제출용</option>
+            <option value="legal">법률 상담 기록</option>
+            <option value="meeting">회의록</option>
+            <option value="interview">인터뷰</option>
+            <option value="personal">개인 보관용</option>
+            <option value="other">기타</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">예상 분량 *</label>
+          <div class="form-radio-group">
+            <label class="form-radio">
+              <input type="radio" name="duration" value="30분 이하" required>
+              <span>30분 이하</span>
+            </label>
+            <label class="form-radio">
+              <input type="radio" name="duration" value="30분-1시간" required>
+              <span>30분-1시간</span>
+            </label>
+            <label class="form-radio">
+              <input type="radio" name="duration" value="1시간 이상" required>
+              <span>1시간 이상</span>
+            </label>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">희망 납기 *</label>
+          <select class="form-select" required>
+            <option value="">선택해주세요</option>
+            <option value="당일 특급">당일 특급</option>
+            <option value="24시간 내">24시간 내</option>
+            <option value="일반 (2-3일)">일반 (2-3일)</option>
+          </select>
+        </div>
+        
+        <div class="form-group" id="taxInvoiceField" style="display: none;">
+          <label class="form-checkbox">
+            <input type="checkbox" id="taxInvoice">
+            <span>세금계산서 필요</span>
+          </label>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">추가 요청사항</label>
+          <textarea class="form-input" rows="3" placeholder="특별한 요청사항이 있으시면 적어주세요"></textarea>
+        </div>
+        
+        <button type="submit" class="form-submit">견적 요청하기</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // 스크롤 진행률 표시
+    function updateScrollProgress() {
+      const scrollProgress = document.getElementById('scrollProgress');
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrollPercentage = (scrollTop / scrollHeight) * 100;
+      scrollProgress.style.width = scrollPercentage + '%';
+    }
+    
+    window.addEventListener('scroll', updateScrollProgress);
+    window.addEventListener('resize', updateScrollProgress);
+    
+    // 업무 상태 표시
+    function updateBusinessStatus() {
+      const statusDot = document.getElementById('statusDot');
+      const statusText = document.getElementById('statusText');
+      
+      const now = new Date();
+      const day = now.getDay();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const time = hours + minutes / 60;
+      
+      // 평일(월-금) 09:00-18:00
+      const isBusinessHours = day >= 1 && day <= 5 && time >= 9 && time < 18;
+      
+      if (isBusinessHours) {
+        statusDot.classList.add('active');
+        statusText.classList.add('active');
+        statusText.textContent = '현재 상담 가능합니다';
+      } else {
+        statusDot.classList.remove('active');
+        statusText.classList.remove('active');
+        statusText.textContent = '업무시간: 평일 09:00-18:00';
+      }
+    }
+    
+    // 초기 실행 및 1분마다 업데이트
+    updateBusinessStatus();
+    setInterval(updateBusinessStatus, 60000); // 1분마다 업데이트
+    
+    function updateFormFields() {
+      const clientType = document.getElementById('clientType').value;
+      const companyField = document.getElementById('companyField');
+      const taxInvoiceField = document.getElementById('taxInvoiceField');
+      const companyNameInput = document.getElementById('companyName');
+      
+      if (clientType === 'law' || clientType === 'corporate') {
+        companyField.style.display = 'block';
+        companyNameInput.required = true;
+        taxInvoiceField.style.display = 'block';
+      } else {
+        companyField.style.display = 'none';
+        companyNameInput.required = false;
+        taxInvoiceField.style.display = 'none';
+      }
+    }
+
+    window.addEventListener('scroll', function() {
+      const floatingCta = document.querySelector('.floating-cta');
+      if (window.scrollY > 300) {
+        floatingCta.classList.add('visible');
+      } else {
+        floatingCta.classList.remove('visible');
+      }
+    });
+
+    function openModal() {
+      document.getElementById('consultModal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      document.getElementById('consultModal').classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('consultModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeModal();
+      }
+    });
+
+    function submitForm(event) {
+      event.preventDefault();
+      alert('견적 요청이 접수되었습니다. 1시간 내에 연락드리겠습니다.');
+      closeModal();
+    }
+
+    function openKakao() {
+      alert('카카오톡 채널로 연결됩니다.');
+    }
+
+    function animateProcess() {
+      const steps = document.querySelectorAll('.process-step');
+      let currentStep = 0;
+      
+      const processSection = document.querySelector('.process-section');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            startStepAnimation();
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.5 });
+      
+      if (processSection) {
+        observer.observe(processSection);
+      }
+      
+      function startStepAnimation() {
+        setInterval(() => {
+          steps.forEach(step => {
+            step.classList.remove('active');
+            step.querySelector('.process-step-number').classList.remove('active');
+          });
+          
+          if (steps[currentStep]) {
+            steps[currentStep].classList.add('active');
+            steps[currentStep].querySelector('.process-step-number').classList.add('active');
+          }
+          
+          currentStep = (currentStep + 1) % steps.length;
+        }, 1000);
+      }
+    }
+    
+    document.addEventListener('DOMContentLoaded', animateProcess);
+    
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        const href = this.getAttribute('href');
+        if (href !== '#') {
+          e.preventDefault();
+          const target = document.querySelector(href);
+          if (target) {
+            target.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
