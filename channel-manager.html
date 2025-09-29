@@ -1669,11 +1669,12 @@
       showToast('전체 데이터가 내보내졌습니다', 'success');
     }
     
-    // Delete channel
+    // Delete channel - 수정된 부분
     async function deleteChannel(code) {
       if (confirm(`채널 ${code}를 삭제하시겠습니까?`)) {
         try {
-          const response = await fetch(`${API_BASE_URL}/api/channel/${code}`, {
+          // API 경로 수정: /api/admin/channel/
+          const response = await fetch(`${API_BASE_URL}/api/admin/channel/${code}`, {
             method: 'DELETE',
             headers: headersFor('DELETE')
           });
