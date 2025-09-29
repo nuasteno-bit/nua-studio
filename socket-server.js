@@ -196,12 +196,12 @@ const corsOptions = IS_PRODUCTION ? {
     /\.onrender\.com$/
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS', 'DELETE', 'PUT'],
+  methods: ['GET', 'POST', 'OPTIONS', 'DELETE', 'PUT', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
 } : {
   origin: '*',
   credentials: false,
-  methods: ['GET', 'POST', 'OPTIONS', 'DELETE', 'PUT'],
+  methods: ['GET', 'POST', 'OPTIONS', 'DELETE', 'PUT', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
 
@@ -518,6 +518,129 @@ app.delete('/api/admin/channel/:code', requireAuth, (req, res) => {
   } catch (error) {
     console.error('[채널 삭제 오류]', error);
     res.status(500).json({ error: 'Failed to delete channel' });
+  }
+});
+
+// 채널 타입 변경 (관리자 전용) - 새로 추가
+app.patch('/api/channel/:code/type', requireAuth, (req, res) => {
+  try {
+    const { code } = req.params;
+    const { type, passkey } = req.body;
+    
+    const ch = DB.loadChannel(code);
+    if (!ch) return res.status(404).json({ error: 'Channel not found' });
+    
+    // 타입 변경
+    ch.type = type;
+    
+    // 공개로 변경시 패스키 제거, 비공개로 변경시 패스키 설정
+    if (type === 'public') {
+      ch.passkey = null;
+    } else if (type === 'secured' && passkey) {
+      ch.passkey = passkey;
+    }
+    
+    ch.lastActivity = Date.now();
+    
+    // DB 저장
+    if (!DB.saveChannel(ch)) {
+      return res.status(500).json({ error: 'DB save failed' });
+    }
+    
+    // 메모리 캐시 업데이트
+    if (channelDatabase.has(code)) {
+      const cached = channelDatabase.get(code);
+      cached.type = type;
+      cached.passkey = ch.passkey;
+    }
+    
+    console.log(`[관리자] 채널 ${code} 타입 변경: ${type}`);
+    res.json({ success: true, channel: ch });
+    
+  } catch (error) {
+    console.error('[채널 타입 변경 오류]', error);
+    res.status(500).json({ error: 'Failed to change channel type' });
+  }
+});
+
+// 채널 패스키 변경 (관리자 전용) - 새로 추가
+app.patch('/api/channel/:code/passkey', requireAuth, (req, res) => {
+  try {
+    const { code } = req.params;
+    const { passkey } = req.body;
+    
+    const ch = DB.loadChannel(code);
+    if (!ch) return res.status(404).json({ error: 'Channel not found' });
+    
+    // 비공개 채널만 패스키 변경 가능
+    if (ch.type !== 'secured') {
+      return res.status(400).json({ error: 'Only secured channels can have passkeys' });
+    }
+    
+    // 패스키 유효성 검사 (4자리 숫자)
+    if (!/^\d{4}$/.test(passkey)) {
+      return res.status(400).json({ error: 'Passkey must be 4 digits' });
+    }
+    
+    ch.passkey = passkey;
+    ch.lastActivity = Date.now();
+    
+    // DB 저장
+    if (!DB.saveChannel(ch)) {
+      return res.status(500).json({ error: 'DB save failed' });
+    }
+    
+    // 메모리 캐시 업데이트
+    if (channelDatabase.has(code)) {
+      channelDatabase.get(code).passkey = passkey;
+    }
+    
+    console.log(`[관리자] 채널 ${code} 패스키 변경`);
+    res.json({ success: true });
+    
+  } catch (error) {
+    console.error('[패스키 변경 오류]', error);
+    res.status(500).json({ error: 'Failed to change passkey' });
+  }
+});
+
+// 채널 연장 (관리자 전용) - 새로 추가
+app.post('/api/channel/:code/extend', requireAuth, (req, res) => {
+  try {
+    const { code } = req.params;
+    const { hours } = req.body;
+    
+    const ch = DB.loadChannel(code);
+    if (!ch) return res.status(404).json({ error: 'Channel not found' });
+    
+    // 자동 종료 시간 연장
+    if (ch.expiresAt) {
+      const currentExpire = new Date(ch.expiresAt);
+      currentExpire.setHours(currentExpire.getHours() + hours);
+      ch.expiresAt = currentExpire.toISOString();
+    } else {
+      // 만료 시간이 없으면 현재 시간부터 연장
+      const newExpire = new Date();
+      newExpire.setHours(newExpire.getHours() + hours);
+      ch.expiresAt = newExpire.toISOString();
+    }
+    
+    ch.lastActivity = Date.now();
+    
+    // DB 저장
+    if (!DB.saveChannel(ch)) {
+      return res.status(500).json({ error: 'DB save failed' });
+    }
+    
+    console.log(`[관리자] 채널 ${code} ${hours}시간 연장`);
+    res.json({ 
+      success: true, 
+      newExpiresAt: ch.expiresAt 
+    });
+    
+  } catch (error) {
+    console.error('[채널 연장 오류]', error);
+    res.status(500).json({ error: 'Failed to extend channel' });
   }
 });
 
