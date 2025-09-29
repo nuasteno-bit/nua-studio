@@ -1097,123 +1097,115 @@ io.on('connection', (socket) => {
     return originalEmit.apply(this, args);
   };
 
-  // 채널 입장
-  socket.on('join_channel', ({ channel, role, requestSync, currentInput, lastData }) => {
-    try {
-      console.log(`[${channel}] Join request - Role: ${role}, Socket: ${socket.id}`);
-      
-      socket.join(channel);
-      socket.data.channel = channel;
-      
-      // 채널 상태 초기화 또는 복구
-      if (!channelStates[channel]) {
-        if (!restoreChannelState(channel)) {
-          channelStates[channel] = {
-            activeStenographer: 'steno1',
-            accumulatedText: '',
-            lastSwitchText: '',
-            lastActivity: Date.now(),
-            lastSwitchTime: 0
-          };
-        }
+// 채널 입장
+socket.on('join_channel', ({ channel, role, requestSync, currentInput, lastData }) => {
+  try {
+    console.log(`[${channel}] Join request - Role: ${role}, Socket: ${socket.id}`);
+    socket.join(channel);
+    socket.data.channel = channel;
+
+    if (!channelStates[channel]) {
+      if (!restoreChannelState(channel)) {
+        channelStates[channel] = {
+          activeStenographer: 'steno1',
+          accumulatedText: '',
+          lastSwitchText: '',
+          lastActivity: Date.now(),
+          lastSwitchTime: 0
+        };
       }
-      
-      channelStates[channel].lastActivity = Date.now();
-      
-      // [영속화: 초기 로드] 메모리에 누적본이 없으면 DB에서 최신본 복원
-      try {
-        if (!channelStates[channel]?.accumulatedText) {
-          const rows = DB.loadRecentViewerTexts(channel, 10000); // 최근 로그 병합
-          const restored = Array.isArray(rows) ? rows.map(r => r.content).join('\n') : '';
-          if (!channelStates[channel]) channelStates[channel] = {};
-          channelStates[channel].accumulatedText = restored || '';
-          if (restored && restored.length) {
-            socket.emit('sync_accumulated', { accumulatedText: channelStates[channel].accumulatedText, source: 'db-restore' });
-          }
-        }
-      } catch (e) {
-        console.error('[join_channel] DB restore failed:', e);
-      }
-      
-      const isStenoJoin = role === 'steno' || role === 'steno1' || role === 'steno2';
-      
-      if (isStenoJoin) {
-        if (!stenoChannels[channel]) {
-          stenoChannels[channel] = [];
-          channelEditStates[channel] = { isEditing: false, editorId: null, editorRole: null };
-        }
-        
-        // 최대 2명 제한
-        if (stenoChannels[channel].length >= 2) {
-          socket.emit('join_reject', { reason: 'Channel full (max 2 stenographers)' });
-          console.log(`[${channel}] Join rejected: capacity exceeded`);
-          return;
-        }
-        
-        // 역할 할당
-        let myRole;
-        const hasSteno1 = hasRole(channel, 'steno1');
-        const hasSteno2 = hasRole(channel, 'steno2');
-        
-        if (!hasSteno1) {
-          myRole = 'steno1';
-        } else if (!hasSteno2) {
-          myRole = 'steno2';
-        } else {
-          myRole = 'steno1';
-        }
-        
-        stenoChannels[channel].push({ id: socket.id, role: myRole });
-        socket.data.role = myRole;
-        
-        console.log(`[${channel}] Role assigned: ${myRole} to ${socket.id}`);
-        
-        const stenos = listRolesPresent(channel);
-        io.to(channel).emit('steno_list', { stenos });
-        socket.emit('role_assigned', { role: myRole });
-        broadcastActiveRole(io, channel);
-        
-        if (requestSync || channelStates[channel]?.accumulatedText) {
-          socket.emit('sync_accumulated', {
-            accumulatedText: channelStates[channel]?.accumulatedText || ''
-          });
-        }
-        
-        if (stenoChannels[channel].length === 2) {
-          const otherSteno = stenoChannels[channel].find(s => s.id !== socket.id);
-          if (otherSteno) {
-            io.to(otherSteno.id).emit('partner_joined', {
-              newPartner: myRole,
-              requestSync: true
-            });
-          }
-        }
-        
-        if (channelEditStates[channel]?.isEditing) {
-          socket.emit('viewer_edit_state', {
-            isEditing: true,
-            editorRole: channelEditStates[channel].editorRole
-          });
-        }
-        
-      } else {
-        socket.data.role = 'viewer';
-        io.to(channel).emit('user_joined', { role: 'viewer' });
-        broadcastActiveRole(io, channel);
-        
-        if (channelStates[channel]?.accumulatedText) {
-          socket.emit('sync_accumulated', {
-            accumulatedText: channelStates[channel].accumulatedText
-          });
-        }
-        
-        console.log(`[${channel}] Viewer joined: ${socket.id}`);
-      }
-    } catch (error) {
-      console.error('[join_channel] Error:', error);
-      socket.emit('error', { message: 'Failed to join channel' });
     }
-  });
+    channelStates[channel].lastActivity = Date.now();
+
+    try {
+      if (!channelStates[channel]?.accumulatedText) {
+        const rows = DB.loadRecentViewerTexts(channel, 10000);
+        const restored = Array.isArray(rows) ? rows.map(r => r.content).join('\n') : '';
+        if (!channelStates[channel]) channelStates[channel] = {};
+        channelStates[channel].accumulatedText = restored || '';
+        if (restored && restored.length) {
+          socket.emit('sync_accumulated', { accumulatedText: channelStates[channel].accumulatedText, source: 'db-restore' });
+        }
+      }
+    } catch (e) {
+      console.error('[join_channel] DB restore failed:', e);
+    }
+
+    const isStenoJoin = role === 'steno' || role === 'steno1' || role === 'steno2';
+    if (isStenoJoin) {
+      if (!stenoChannels[channel]) {
+        stenoChannels[channel] = [];
+        channelEditStates[channel] = { isEditing: false, editorId: null, editorRole: null };
+      }
+      if (stenoChannels[channel].length >= 2) {
+        socket.emit('join_reject', { reason: 'Channel full (max 2 stenographers)' });
+        return;
+      }
+
+      let myRole;
+      const hasSteno1 = hasRole(channel, 'steno1');
+      const hasSteno2 = hasRole(channel, 'steno2');
+      if (!hasSteno1) {
+        myRole = 'steno1';
+      } else if (!hasSteno2) {
+        myRole = 'steno2';
+      } else {
+        socket.emit('join_reject', { reason: 'Channel full (max 2 stenographers)' });
+        return;
+      }
+
+      const alreadyTaken = stenoChannels[channel].some(s => s.role === myRole);
+      if (alreadyTaken) {
+        socket.emit('join_reject', { reason: 'Role already taken' });
+        return;
+      }
+
+      stenoChannels[channel].push({ id: socket.id, role: myRole });
+      socket.data.role = myRole;
+
+      console.log(`[${channel}] Role assigned: ${myRole} to ${socket.id}`);
+      const stenos = listRolesPresent(channel);
+      io.to(channel).emit('steno_list', { stenos });
+      socket.emit('role_assigned', { role: myRole });
+      broadcastActiveRole(io, channel);
+
+      if (requestSync || channelStates[channel]?.accumulatedText) {
+        socket.emit('sync_accumulated', {
+          accumulatedText: channelStates[channel]?.accumulatedText || ''
+        });
+      }
+
+      if (stenoChannels[channel].length === 2) {
+        const otherSteno = stenoChannels[channel].find(s => s.id !== socket.id);
+        if (otherSteno) {
+          io.to(otherSteno.id).emit('partner_joined', {
+            newPartner: myRole,
+            requestSync: true
+          });
+        }
+      }
+
+      if (channelEditStates[channel]?.isEditing) {
+        socket.emit('viewer_edit_state', {
+          isEditing: true,
+          editorRole: channelEditStates[channel].editorRole
+        });
+      }
+    } else {
+      socket.data.role = 'viewer';
+      io.to(channel).emit('user_joined', { role: 'viewer' });
+      broadcastActiveRole(io, channel);
+      if (channelStates[channel]?.accumulatedText) {
+        socket.emit('sync_accumulated', {
+          accumulatedText: channelStates[channel].accumulatedText
+        });
+      }
+    }
+  } catch (error) {
+    console.error('[join_channel] Error:', error);
+    socket.emit('error', { message: 'Failed to join channel' });
+  }
+});
 
   // 입력 처리 (커밋 직후 노이즈 필터 추가)
   socket.on('steno_input', ({ channel, role, text, isSync }) => {
