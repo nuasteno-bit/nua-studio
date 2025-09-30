@@ -25,7 +25,20 @@
             overflow-x: hidden;
         }
 
-        /* 헤더 */
+        /* Variables */
+        :root {
+            --primary-color: #9333ea;
+            --secondary-color: #ec4899;
+            --gradient: linear-gradient(131deg, var(--primary-color), var(--secondary-color));
+            --white: #ffffff;
+            --black: #000000;
+            --gray: #666666;
+            --neon-blue: #00f0ff;
+            --neon-purple: #a259ff;
+            --kakao-yellow: #FEE500;
+        }
+
+        /* 헤더 - about.html과 동일하게 수정 */
         .header {
             position: fixed; 
             top: 0; 
@@ -34,6 +47,7 @@
             background: transparent; 
             z-index: 1000; 
             padding-top: 32px;
+            transition: filter 0.3s ease;
         }
         
         .header .wrap {
@@ -52,13 +66,7 @@
             z-index: 101;
         }
         
-        .header .logo svg path {
-            fill: #000;
-        }
-        
-        .header .logo svg text {
-            fill: #fff;
-        }
+        .header .logo img {width: 100%;}
         
         .header .menu {
             font-size: 24px; 
@@ -90,6 +98,20 @@
             color: inherit;
             text-decoration: none;
         }
+
+        .header .menu li.menu-join a {
+            background: linear-gradient(var(--white), var(--white)) padding-box,
+                        linear-gradient(90deg, var(--neon-blue), var(--neon-purple)) border-box;
+            border: 1px solid transparent;
+            padding: 8px 20px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .header .menu li.menu-join:hover a {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 240, 255, 0.3);
+        }
         
         .header .menu li::before {
             content: ''; 
@@ -104,7 +126,7 @@
             transition: .4s;
         }
         
-        .header .menu li:hover::before {
+        .header .menu li:not(.menu-join):hover::before {
             width: 100%;
         }
         
@@ -198,6 +220,152 @@
         
         .header.HmActive .hamburger span:last-child {
             transform: rotate(-45deg);
+        }
+
+        /* Quick Contact Buttons - about.html과 동일 */
+        .quick-contact {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+        
+        .quick-contact.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .quick-contact .btn-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quick-contact .btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+        }
+
+        .quick-contact .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: inherit;
+            filter: brightness(1.2);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .quick-contact .btn:hover::before {
+            opacity: 1;
+        }
+
+        .quick-contact .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .quick-contact .btn i,
+        .quick-contact .btn svg {
+            font-size: 24px;
+            width: 24px;
+            height: 24px;
+            color: #fff;
+            z-index: 1;
+            position: relative;
+        }
+
+        /* KakaoTalk Button */
+        .quick-contact .btn-kakao {
+            background: linear-gradient(135deg, #FEE500, #FFD700);
+        }
+
+        .quick-contact .btn-kakao svg {
+            width: 24px;
+            height: 24px;
+            fill: #381E1F;
+        }
+
+        /* Phone Button */
+        .quick-contact .btn-phone {
+            background: var(--gradient);
+        }
+
+        /* Tooltip */
+        .quick-contact .tooltip {
+            position: absolute;
+            right: calc(100% + 10px);
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            font-family: 'Pretendard';
+            font-weight: 500;
+        }
+
+        .quick-contact .tooltip::after {
+            content: '';
+            position: absolute;
+            right: -4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 4px 0 4px 4px;
+            border-color: transparent transparent transparent rgba(0, 0, 0, 0.85);
+        }
+
+        .quick-contact .btn-wrapper:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(-50%) translateX(-5px);
+        }
+
+        /* Pulse Animation */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(147, 51, 234, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(147, 51, 234, 0);
+            }
+        }
+
+        .quick-contact .btn-phone {
+            animation: pulse 2s infinite;
         }
 
         /* 히어로 섹션 */
@@ -583,6 +751,21 @@
                 width: 100%;
                 color: #fff;
             }
+
+            .header .menu li.menu-join {
+                border: none;
+                margin: 20px 2.5%;
+                width: auto;
+            }
+
+            .header .menu li.menu-join a {
+                background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+                color: #fff;
+                padding: 12px 24px;
+                border-radius: 25px;
+                display: inline-block;
+                width: auto;
+            }
             
             .header .menu li a {
                 padding: 10px 2.5%; 
@@ -616,6 +799,29 @@
 
             .channel-form {
                 padding: 30px 20px;
+            }
+
+            .quick-contact {
+                bottom: 20px;
+                right: 20px;
+            }
+
+            .quick-contact.visible {
+                opacity: 1;
+                visibility: visible;
+                transform: translateY(0);
+            }
+
+            .quick-contact .btn {
+                width: 50px;
+                height: 50px;
+            }
+
+            .quick-contact .btn i,
+            .quick-contact .btn svg {
+                font-size: 20px;
+                width: 20px;
+                height: 20px;
             }
         }
 
@@ -947,7 +1153,7 @@
         }
     </script>
 
-    <!-- 헤더 -->
+    <!-- 헤더 - about.html과 동일한 메뉴 구조 -->
     <header class="header">
         <div class="wrap">
             <div class="logo">
@@ -960,9 +1166,10 @@
             </div>
             <div class="menu">
                 <ul>
+                    <li class="menu-join"><a href="join.html">채널 참가</a></li>
                     <li><a href="about.html">소개</a></li>
+                    <li><a href="price.html">요금</a></li>
                     <li><a href="contact.html">접수</a></li>
-                    <li><a href="recruit.html">모집</a></li>
                 </ul>
                 <div class="lang">
                     <div class="lang_current">
@@ -972,8 +1179,8 @@
                     </div>
                     <div class="lang_list_wrap">
                         <div class="lang_list">
-                            <a href="#">EN</a>
-                            <a href="#">JP</a>
+                            <a href="javascript:void(0)" onclick="alert('준비중입니다.')">EN</a>
+                            <a href="javascript:void(0)" onclick="alert('준비중입니다.')">JP</a>
                         </div>
                     </div>
                 </div>
@@ -986,6 +1193,26 @@
             </div>
         </div>
     </header>
+
+    <!-- Quick Contact Buttons - about.html과 동일 -->
+    <aside class="quick-contact">
+        <div class="btn-wrapper">
+            <div class="tooltip">카톡 상담</div>
+            <a href="https://pf.kakao.com/_xjxeXxj" target="_blank" class="btn btn-kakao">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.707 4.8 4.27 6.054-.188.702-.682 2.545-.78 2.94-.123.49.18.483.376.351.155-.103 2.466-1.675 3.464-2.353.541.08 1.1.123 1.67.123 4.97 0 9-3.185 9-7.115S16.97 3 12 3z"/>
+                </svg>
+            </a>
+        </div>
+        <div class="btn-wrapper">
+            <div class="tooltip">전화 상담</div>
+            <a href="tel:010-1234-5678" class="btn btn-phone">
+                <svg viewBox="0 0 24 24" fill="white">
+                    <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/>
+                </svg>
+            </a>
+        </div>
+    </aside>
 
     <!-- 관리자 로그인 모달 -->
     <div class="admin-modal" id="adminModal">
@@ -1231,6 +1458,21 @@
                 webEnterBtn.classList.remove('full-width');
                 webEnterBtn.innerHTML = 'WEB →';
             }
+
+            // Quick Contact 버튼 표시 (스크롤 감지)
+            const quickContact = document.querySelector('.quick-contact');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > window.innerHeight * 0.5) {
+                    quickContact.classList.add('visible');
+                } else {
+                    quickContact.classList.remove('visible');
+                }
+            });
+
+            // 페이지 로드 시 바로 표시 (히어로 섹션만 있으므로)
+            setTimeout(() => {
+                quickContact.classList.add('visible');
+            }, 1000);
         });
 
         // Hamburger 메뉴
