@@ -63,13 +63,26 @@
         html::-webkit-scrollbar {width: 8px;}
         html::-webkit-scrollbar-thumb {background-color: #2f3542; border-radius: 10px;}
 
+        /* Variables */
+        :root {
+            --primary-color: #9333ea;
+            --secondary-color: #ec4899;
+            --gradient: linear-gradient(131deg, var(--primary-color), var(--secondary-color));
+            --white: #ffffff;
+            --black: #000000;
+            --gray: #666666;
+            --neon-blue: #00f0ff;
+            --neon-purple: #a259ff;
+            --kakao-yellow: #FEE500;
+        }
+
         /* General styles */
         .wrap {margin: 0 auto; width: 95%;}
         .wrap[max='1708'] {max-width: 1708px;}
         .wrap[max='1440'] {max-width: 1440px;}
         .wrap[max='1920'] {max-width: 1920px;}
 
-        /* Header styles */
+        /* Header styles - Updated to match about.html */
         .header {
             position: fixed; 
             top: 0; 
@@ -78,6 +91,7 @@
             background: transparent; 
             z-index: 100; 
             padding-top: 32px;
+            transition: filter 0.3s ease;
         }
         .header .wrap {display: flex; align-items: center; justify-content: space-between;}
         .header .logo {width: 122px; flex-shrink: 0; position: relative; z-index: 101;}
@@ -94,6 +108,18 @@
             transition: .4s;
         }
         .header .menu li a {position: relative; z-index: 1; padding: 5px;}
+        .header .menu li.menu-join a {
+            background: linear-gradient(var(--white), var(--white)) padding-box,
+                        linear-gradient(90deg, var(--neon-blue), var(--neon-purple)) border-box;
+            border: 1px solid transparent;
+            padding: 8px 20px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        .header .menu li.menu-join:hover a {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 240, 255, 0.3);
+        }
         .header .menu li::before {
             content: ''; 
             z-index: -1; 
@@ -106,7 +132,7 @@
             background: #00f0ff; 
             transition: .4s;
         }
-        .header .menu li:hover::before {width: 100%;}
+        .header .menu li:not(.menu-join):hover::before {width: 100%;}
         .header .lang {
             margin-left: calc(80/20*1em); 
             position: relative; 
@@ -178,55 +204,149 @@
         .header.HmActive .hamburger span:nth-child(2) {opacity: 0;}
         .header.HmActive .hamburger span:last-child {transform: rotate(-45deg);}
 
-        /* Chat button */
-        aside.chat {
-            cursor: pointer; 
-            position: fixed; 
-            font-size: 26px; 
-            bottom: clamp(15px, 15/1920*100vw, 20px); 
-            right: clamp(15px, 30/1920*100vw, 30px); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
+        /* Quick Contact Buttons - Same as about.html */
+        .quick-contact {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
             z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
         }
-        aside.chat .logo {
-            position: relative; 
-            width: calc(78/26*1em); 
-            height: calc(78/26*1em); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
+        
+        .quick-contact.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .quick-contact .btn-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quick-contact .btn {
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
         }
-        aside.chat .logo::before, 
-        aside.chat .logo::after {
-            content: ''; 
-            position: absolute; 
-            top: 50%; 
-            left: 50%; 
-            transform: translate(-50%, -50%); 
-            display: block; 
-            border-radius: 50%;
+
+        .quick-contact .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: inherit;
+            filter: brightness(1.2);
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
-        aside.chat .logo::before {
-            width: 100%; 
-            height: 100%; 
-            background-image: linear-gradient(131deg, #00f0ff, #a259ff); 
-            background-clip: border-box; 
-            background-origin: border-box; 
-            border: 2px solid transparent;
+
+        .quick-contact .btn:hover::before {
+            opacity: 1;
         }
-        aside.chat .logo::after {
-            background: linear-gradient(131deg, #00f0ff, #a259ff); 
-            z-index: 1; 
-            width: calc(70/78*100%); 
-            height: calc(70/78*100%);
+
+        .quick-contact .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
         }
-        aside.chat .logo span {
-            position: relative; 
-            z-index: 2; 
+
+        .quick-contact .btn i,
+        .quick-contact .btn svg {
+            font-size: 24px;
+            width: 24px;
+            height: 24px;
             color: #fff;
+            z-index: 1;
+            position: relative;
+        }
+
+        /* KakaoTalk Button */
+        .quick-contact .btn-kakao {
+            background: linear-gradient(135deg, #FEE500, #FFD700);
+        }
+
+        .quick-contact .btn-kakao svg {
+            width: 24px;
+            height: 24px;
+            fill: #381E1F;
+        }
+
+        /* Phone Button */
+        .quick-contact .btn-phone {
+            background: var(--gradient);
+        }
+
+        /* Tooltip */
+        .quick-contact .tooltip {
+            position: absolute;
+            right: calc(100% + 10px);
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            font-family: 'Pretendard';
+            font-weight: 500;
+        }
+
+        .quick-contact .tooltip::after {
+            content: '';
+            position: absolute;
+            right: -4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 4px 0 4px 4px;
+            border-color: transparent transparent transparent rgba(0, 0, 0, 0.85);
+        }
+
+        .quick-contact .btn-wrapper:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(-50%) translateX(-5px);
+        }
+
+        /* Pulse Animation */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(147, 51, 234, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(147, 51, 234, 0);
+            }
+        }
+
+        .quick-contact .btn-phone {
+            animation: pulse 2s infinite;
         }
 
         /* Sub page SV section */
@@ -666,12 +786,8 @@
             100% {transform: rotate(-360deg);}
         }
 
-        /* Footer */
-        .footer {
-            background: #000; 
-            padding: 80px 0 40px; 
-            position: relative;
-        }
+        /* Footer - Updated to match about.html */
+        .footer {background: #000; padding: 80px 0 40px; position: relative;}
         .footer .toTop {
             position: absolute; 
             top: 0; 
@@ -680,40 +796,34 @@
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            font-size: 40px; 
-            width: calc(90/40*1em); 
-            height: calc(90/40*1em); 
+            width: 90px; 
+            height: 90px; 
             border-radius: 50%; 
             background: #000; 
-            z-index: 1; 
+            z-index: 10; 
             cursor: pointer;
-            border: 2px solid #00f0ff;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
+            border: 2px solid #00f0ff;
         }
         .footer .toTop:hover {
+            transform: translate(-50%, -45%);
             background: #00f0ff;
         }
-        .footer .toTop i {
+        .footer .toTop::after {
+            content: '↑';
             color: #00f0ff;
+            font-size: 32px;
+            font-weight: bold;
+            line-height: 1;
             transition: color 0.3s ease;
         }
-        .footer .toTop:hover i {
+        .footer .toTop:hover::after {
             color: #000;
         }
-        .footer .wrap {
-            display: flex; 
-            flex-direction: column; 
-            align-items: center;
-        }
-        .footer .logo {
-            padding-bottom: 50px;
-        }
-        .footer .logo svg path {
-            fill: #fff;
-        }
-        .footer .logo svg text {
-            fill: #000;
-        }
+        .footer .wrap {display: flex; flex-direction: column; align-items: center;}
+        .footer .logo {padding-bottom: 50px;}
+        .footer .logo img {width: 180px;}
         .footer .info {
             padding-bottom: calc(45/22*1em); 
             text-align: center; 
@@ -782,6 +892,19 @@
                 width: 100%;
                 color: #fff;
             }
+            .header .menu li.menu-join {
+                border: none;
+                margin: 20px 2.5%;
+                width: auto;
+            }
+            .header .menu li.menu-join a {
+                background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+                color: #fff;
+                padding: 12px 24px;
+                border-radius: 25px;
+                display: inline-block;
+                width: auto;
+            }
             .header .menu li a {
                 padding: 10px 2.5%; 
                 display: block; 
@@ -806,15 +929,29 @@
             .contact .flx .form {width: 100%;}
             .contact .flx .form dl {width: 100%;}
             .contact .flx .form dl dd {width: 100%;}
+            .quick-contact {
+                bottom: 20px;
+                right: 20px;
+            }
+            .quick-contact .btn {
+                width: 50px;
+                height: 50px;
+            }
+            .quick-contact .btn i,
+            .quick-contact .btn svg {
+                font-size: 20px;
+                width: 20px;
+                height: 20px;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
+    <!-- Header - Updated to match about.html -->
     <header class="header">
         <div class="wrap" max="1708">
             <div class="logo">
-                <a href="/">
+                <a href="index.html">
                     <svg viewBox="0 0 122 50" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M0 25C0 11.193 11.193 0 25 0h72c13.807 0 25 11.193 25 25s-11.193 25-25 25H25C11.193 50 0 38.807 0 25z" fill="#000"/>
                         <text x="61" y="32" text-anchor="middle" fill="white" font-family="Poppins" font-size="20" font-weight="700">NUA</text>
@@ -823,9 +960,10 @@
             </div>
             <div class="menu">
                 <ul>
+                    <li class="menu-join"><a href="join.html">채널 참가</a></li>
                     <li><a href="about.html">소개</a></li>
+                    <li><a href="price.html">요금</a></li>
                     <li><a href="contact.html">접수</a></li>
-                    <li><a href="recruit.html">모집</a></li>
                 </ul>
                 <div class="lang">
                     <div class="lang_current">
@@ -850,13 +988,24 @@
         </div>
     </header>
 
-    <!-- Chat button -->
-    <aside class="chat">
-        <a href="/kor/contact/" class="logo">
-            <span>
-                <i class="xi-message"></i>
-            </span>
-        </a>
+    <!-- Quick Contact Buttons - New addition -->
+    <aside class="quick-contact">
+        <div class="btn-wrapper">
+            <div class="tooltip">카톡 상담</div>
+            <a href="https://pf.kakao.com/_xjxeXxj" target="_blank" class="btn btn-kakao">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.707 4.8 4.27 6.054-.188.702-.682 2.545-.78 2.94-.123.49.18.483.376.351.155-.103 2.466-1.675 3.464-2.353.541.08 1.1.123 1.67.123 4.97 0 9-3.185 9-7.115S16.97 3 12 3z"/>
+                </svg>
+            </a>
+        </div>
+        <div class="btn-wrapper">
+            <div class="tooltip">전화 상담</div>
+            <a href="tel:010-1234-5678" class="btn btn-phone">
+                <svg viewBox="0 0 24 24" fill="white">
+                    <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/>
+                </svg>
+            </a>
+        </div>
     </aside>
 
     <div id="smooth-wrapper">
@@ -913,11 +1062,11 @@
                             <div class="info">
                                 <div class="flx_p">
                                     <small><i class="xi-mail-o"></i></small>
-                                    <p>contact@nua.studio</p>
+                                    <p>nuastudio@gmail.com</p>
                                 </div>
                                 <div class="flx_p">
                                     <small><i class="xi-maker"></i></small>
-                                    <p>서울특별시 금천구 가산디지털2로 173, 719</p>
+                                    <p>서울시 금천구 가산디지털2로 173</p>
                                 </div>
                             </div>
                         </div>
@@ -1016,11 +1165,9 @@
                 </div>
             </main>
 
-            <!-- Footer -->
+            <!-- Footer - Updated to match about.html -->
             <footer class="footer">
-                <div class="toTop">
-                    <i class="xi-arrow-up"></i>
-                </div>
+                <div class="toTop"></div>
                 <div class="wrap" max="1920">
                     <div class="logo">
                         <svg viewBox="0 0 122 50" fill="none" xmlns="http://www.w3.org/2000/svg" width="180">
@@ -1030,8 +1177,8 @@
                     </div>
                     
                     <div class="info">
-                        <p>contact@nua.studio</p>
-                        <p>Seoul, Republic of Korea</p>
+                        <p>nuastudio@gmail.com</p>
+                        <p>서울시 금천구 가산디지털2로 173</p>
                     </div>
                     <div class="copy">
                         <p>Copyright©2025 NUA STUDIO. All rights reserved.</p>
@@ -1085,6 +1232,16 @@
             duration: 1,
             delay: 1,
             ease: 'power2.out'
+        });
+
+        // Quick Contact Buttons - Show on scroll
+        const quickContact = document.querySelector('.quick-contact');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > window.innerHeight * 0.3) {
+                quickContact.classList.add('visible');
+            } else {
+                quickContact.classList.remove('visible');
+            }
         });
 
         // Checkbox functionality
@@ -1159,4 +1316,3 @@
 </body>
 
 </html>
-
