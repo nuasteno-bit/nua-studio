@@ -1141,6 +1141,7 @@ socket.on('join_channel', ({ channel, role, requestSync, currentInput, lastData 
         socket.emit('join_reject', { reason: 'Channel full (max 2 stenographers)' });
         return;
       }
+      
 
       let myRole;
       const hasSteno1 = hasRole(channel, 'steno1');
@@ -1153,7 +1154,21 @@ socket.on('join_channel', ({ channel, role, requestSync, currentInput, lastData 
         socket.emit('join_reject', { reason: 'Channel full (max 2 stenographers)' });
         return;
       }
-
+// 동일 역할의 기존 세션이 있으면 제거
+const existingSession = stenoChannels[channel].find(s => s.role === myRole);
+if (existingSession) {
+  console.log(`[유령 세션] ${channel}의 기존 ${myRole} 제거 (소켓: ${existingSession.id})`);
+  
+  // 기존 세션 제거
+  stenoChannels[channel] = stenoChannels[channel].filter(s => s.id !== existingSession.id);
+  
+  // 기존 소켓 강제 종료
+  const oldSocket = io.sockets.sockets.get(existingSession.id);
+  if (oldSocket) {
+    oldSocket.disconnect(true);
+  }
+}
+      
       const alreadyTaken = stenoChannels[channel].some(s => s.role === myRole);
       if (alreadyTaken) {
         socket.emit('join_reject', { reason: 'Role already taken' });
@@ -1659,24 +1674,6 @@ socket.on('disconnect', () => {
       const role = socket.data.role;
       
       console.log(`[연결 해제] Socket disconnected: ${socket.id}`);
-      
-      // ========= 새로 추가 시작 =========
-      setTimeout(() => {
-        if (ch && stenoChannels[ch]) {
-          const stillExists = stenoChannels[ch].some(s => s.id === socket.id);
-          if (stillExists) {
-            stenoChannels[ch] = stenoChannels[ch].filter(s => s.id !== socket.id);
-            console.log(`[세션 정리] ${role} 완전 제거`);
-            
-            if (channelEditStates[ch]) {
-              delete channelEditStates[ch];
-            }
-            
-            const stenos = listRolesPresent(ch);
-            io.to(ch).emit('steno_list', { stenos });
-          }
-        }
-      }, 3000);
       
       if (ch && (role === 'steno1' || role === 'steno2')) {
         if (stenoChannels[ch]) {
