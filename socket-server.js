@@ -1154,20 +1154,6 @@ socket.on('join_channel', ({ channel, role, requestSync, currentInput, lastData 
         socket.emit('join_reject', { reason: 'Channel full (max 2 stenographers)' });
         return;
       }
-// 동일 역할의 기존 세션이 있으면 제거
-const existingSession = stenoChannels[channel].find(s => s.role === myRole);
-if (existingSession) {
-  console.log(`[유령 세션] ${channel}의 기존 ${myRole} 제거 (소켓: ${existingSession.id})`);
-  
-  // 기존 세션 제거
-  stenoChannels[channel] = stenoChannels[channel].filter(s => s.id !== existingSession.id);
-  
-  // 기존 소켓 강제 종료
-  const oldSocket = io.sockets.sockets.get(existingSession.id);
-  if (oldSocket) {
-    oldSocket.disconnect(true);
-  }
-}
       
       const alreadyTaken = stenoChannels[channel].some(s => s.role === myRole);
       if (alreadyTaken) {
