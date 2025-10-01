@@ -1102,6 +1102,36 @@ function updateStatus() {
     return;
   }
   
+  // ========= 1인 모드 처리 추가 =========
+  if (isSoloMode()) {
+    statusInfo.textContent = '1인 속기 모드';
+    
+    // 내 쪽 무조건 활성화
+    myColDiv.classList.add('active');
+    myBadge.textContent = '입력권한';
+    myBadge.classList.add('live-badge');
+    myStatus.textContent = '입력 가능';
+    myDot.className = 'status-dot';
+    
+    // 상대쪽 무조건 비활성화
+    if (otherColDiv) {
+      otherColDiv.classList.remove('active');
+      otherBadge.textContent = '비활성';
+      otherBadge.classList.remove('live-badge');
+      otherStatus.textContent = '1인 모드';
+      otherDot.className = 'status-dot waiting';
+    }
+    
+    // 입력창 권한 강제 활성화
+    myEditor.removeAttribute('readonly');
+    myEditor.disabled = false;
+    myEditor.placeholder = '여기에 입력...';
+    
+    checkConnection();
+    applyEditorLocks();
+    return;  
+  }
+  
   if (isCollaborationMode()) {
     statusInfo.textContent = '2인 매칭 완료';
     if (activeStenographer === myRole) {
@@ -2669,6 +2699,7 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault();
   }
 });
+
 
 
 
