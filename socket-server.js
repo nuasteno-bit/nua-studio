@@ -1653,12 +1653,30 @@ socket.on('join_channel', ({ channel, role, requestSync, currentInput, lastData 
   });
 
   // 연결 해제
-  socket.on('disconnect', () => {
+socket.on('disconnect', () => {
     try {
       const ch = socket.data.channel;
       const role = socket.data.role;
       
       console.log(`[연결 해제] Socket disconnected: ${socket.id}`);
+      
+      // ========= 새로 추가 시작 =========
+      setTimeout(() => {
+        if (ch && stenoChannels[ch]) {
+          const stillExists = stenoChannels[ch].some(s => s.id === socket.id);
+          if (stillExists) {
+            stenoChannels[ch] = stenoChannels[ch].filter(s => s.id !== socket.id);
+            console.log(`[세션 정리] ${role} 완전 제거`);
+            
+            if (channelEditStates[ch]) {
+              delete channelEditStates[ch];
+            }
+            
+            const stenos = listRolesPresent(ch);
+            io.to(ch).emit('steno_list', { stenos });
+          }
+        }
+      }, 3000);
       
       if (ch && (role === 'steno1' || role === 'steno2')) {
         if (stenoChannels[ch]) {
@@ -1718,7 +1736,7 @@ setInterval(() => {
     global.gc();
     console.log('[GC] 가비지 컬렉션 실행');
   }
-}, 10 * 60 * 1000);
+}, 5 * 60 * 1000);
 
 // 통계 로깅 (1시간마다)
 setInterval(() => {
