@@ -11,7 +11,6 @@ let lastRenderTime = 0; // 렌더링 성능 추적용
 let sendInputTimeout = null;
 let lastSentText = '';
 let lastSendTime = Date.now();
-let noInputTimer = null;
 
 // 엔터키 모드 - 전송 모드로 고정
 const enterMode = 'send'; // 항상 전송 모드
@@ -751,23 +750,10 @@ function handleInputChange() {
   }
   
   inputOptimizationCounter++;
-  if (inputOptimizationCounter % 30 === 0) {
+  if (inputOptimizationCounter % 50 === 0) {
     trimEditorText(myEditor);
   }
- clearTimeout(noInputTimer);
-    noInputTimer = setTimeout(() => {
-        const text = myEditor.value;
-        if (text && text !== lastSentText) {
-            if (socket && socket.connected) {
-                socket.emit('steno_input', {
-                    channel, 
-                    role: `steno${myRole}`,
-                    text
-                });
-                lastSentText = text;
-            }
-        }
-    }, 1000);
+  
   if (isHtmlMode) {
     updateViewerFromEditor();  // HTML 모드에서는 직접 뷰어 업데이트
   } else {
@@ -780,43 +766,7 @@ function sendInput() {
   if (!socket || isHtmlMode) return;
   
   const currentText = myEditor.value;
-  // 빈 입력이면 전송 안 함
-    if (!currentText || currentText.trim() === '') {
-        return;
-    }
-    
-    // 변화 없으면 전송 안 함 (공백/엔터 제외)
-    if (currentText === lastSentText && 
-        !currentText.endsWith(' ') && 
-        !currentText.endsWith('\n')) {
-        return;
-    }
-    
-    // 즉시 전송 조건 확인
-    const punctuations = /[.!?…:;·—\-()[\]{}""''%]/;
-    const lastChar = currentText[currentText.length - 1];
-    const shouldSendNow = 
-        currentText.endsWith(' ') ||
-        currentText.endsWith('\n') ||
-        punctuations.test(lastChar) ||
-        currentText === '';
-    
-    if (sendInputTimeout) {
-        clearTimeout(sendInputTimeout);
-    }
-    
-    if (shouldSendNow) {
-        if (socket.connected) {
-            socket.emit('steno_input', { 
-                channel: channel, 
-                role: `steno${myRole}`, 
-                text: currentText 
-            });
-            lastSentText = currentText;
-            lastSendTime = Date.now();
-        }
-        return;
-    }
+  
   // 1인 모드이거나 권한자인 경우
   if (isSoloMode() || myRole === activeStenographer) {
     // 뷰어 업데이트 (한 단어 지연)
@@ -863,7 +813,7 @@ function sendInput() {
           lastSentText = currentText;
           lastSendTime = Date.now();
         }
-      }, 400);
+      }, 200);
     }
   } 
   // 2인 모드의 대기자인 경우
@@ -995,8 +945,8 @@ function updateViewerWithOtherInput(otherText) {
 }
 
 // 입력창 텍스트 최적화
-const EDITOR_MAX_CHARS = 3500;
-const EDITOR_TRIM_CHARS = 2200;
+const EDITOR_MAX_CHARS = 4000;
+const EDITOR_TRIM_CHARS = 2500;
 
 function trimEditorText(editor) {
   if (!editor || !editor.value) return;
@@ -1100,36 +1050,6 @@ function updateStatus() {
     }
     
     return;
-  }
-  
-  // ========= 1인 모드 처리 추가 =========
-  if (isSoloMode()) {
-    statusInfo.textContent = '1인 속기 모드';
-    
-    // 내 쪽 무조건 활성화
-    myColDiv.classList.add('active');
-    myBadge.textContent = '입력권한';
-    myBadge.classList.add('live-badge');
-    myStatus.textContent = '입력 가능';
-    myDot.className = 'status-dot';
-    
-    // 상대쪽 무조건 비활성화
-    if (otherColDiv) {
-      otherColDiv.classList.remove('active');
-      otherBadge.textContent = '비활성';
-      otherBadge.classList.remove('live-badge');
-      otherStatus.textContent = '1인 모드';
-      otherDot.className = 'status-dot waiting';
-    }
-    
-    // 입력창 권한 강제 활성화
-    myEditor.removeAttribute('readonly');
-    myEditor.disabled = false;
-    myEditor.placeholder = '여기에 입력...';
-    
-    checkConnection();
-    applyEditorLocks();
-    return;  
   }
   
   if (isCollaborationMode()) {
@@ -2699,9 +2619,6 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault();
   }
 });
-
-
-
 
 
 
