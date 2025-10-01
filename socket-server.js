@@ -1141,26 +1141,26 @@ socket.on('join_channel', ({ channel, role, requestSync, currentInput, lastData 
         socket.emit('join_reject', { reason: 'Channel full (max 2 stenographers)' });
         return;
       }
-      
 
       let myRole;
-const currentStenos = stenoChannels[channel] || [];
+      const hasSteno1 = hasRole(channel, 'steno1');
+      const hasSteno2 = hasRole(channel, 'steno2');
+      if (!hasSteno1) {
+        myRole = 'steno1';
+      } else if (!hasSteno2) {
+        myRole = 'steno2';
+      } else {
+        socket.emit('join_reject', { reason: 'Channel full (max 2 stenographers)' });
+        return;
+      }
 
-// 기존 세션이 있으면 그대로 유지
-if (currentStenos.length === 1) {
-  // 1명 있을 때: 다른 역할 할당
-  const existingRole = currentStenos[0].role;
-  myRole = existingRole === 'steno1' ? 'steno2' : 'steno1';
-} else if (currentStenos.length === 0) {
-  // 아무도 없을 때: steno1 할당
-  myRole = 'steno1';
-} else {
-  // 2명 이미 있음
-  socket.emit('join_reject', { reason: 'Channel full (max 2 stenographers)' });
-  return;
-}
+      const alreadyTaken = stenoChannels[channel].some(s => s.role === myRole);
+      if (alreadyTaken) {
+        socket.emit('join_reject', { reason: 'Role already taken' });
+        return;
+      }
 
-stenoChannels[channel].push({ id: socket.id, role: myRole });
+      stenoChannels[channel].push({ id: socket.id, role: myRole });
       socket.data.role = myRole;
 
       console.log(`[${channel}] Role assigned: ${myRole} to ${socket.id}`);
@@ -1653,7 +1653,7 @@ stenoChannels[channel].push({ id: socket.id, role: myRole });
   });
 
   // 연결 해제
-socket.on('disconnect', () => {
+  socket.on('disconnect', () => {
     try {
       const ch = socket.data.channel;
       const role = socket.data.role;
@@ -1718,7 +1718,7 @@ setInterval(() => {
     global.gc();
     console.log('[GC] 가비지 컬렉션 실행');
   }
-}, 5 * 60 * 1000);
+}, 10 * 60 * 1000);
 
 // 통계 로깅 (1시간마다)
 setInterval(() => {
