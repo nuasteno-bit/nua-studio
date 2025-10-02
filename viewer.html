@@ -1383,7 +1383,7 @@ function handleStenoInput(data) {
     
     // 깜빡임 방지: text_sent 직후 1초간 짧아진 입력 무시
     if (now < ignoreInputUntil && inputLength < lastAccumulatedLength - 10) {
-      console.log(⏭️ 빈 입력 무시:', inputLength, '<', lastAccumulatedLength);
+      console.log('⏭️ 빈 입력 무시:', inputLength, '<', lastAccumulatedLength);
       return;
     }
     
@@ -2186,3 +2186,4 @@ window.addEventListener('beforeunload', () => {
   </script>
 </body>
 </html>
+
