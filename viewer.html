@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>속기 뷰어 (단일 파일)</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Jua&family=Do+Hyeon&family=Nanum+Gothic&family=Nanum+Myeongjo&family=Nanum+Pen+Script&family=Gothic+A1&family=IBM+Plex+Sans+KR&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Jua&family=Do+Hyeon&family=Nanum+Gothic&family=Nanum+Myeongjo&family=Nanum+Pen+Script&family=Gothic+A1&family=IBM+Plex+Sans+KR&family=Pretendard:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     /* 기본 스타일 */
     html, body {
@@ -62,15 +62,16 @@
       font-size: 32px; line-height: 1.5; text-align: left;
       transition: background 0.3s;
       z-index: 1;
-      padding: 40px 30px;
+      padding: 10px 15px;
       box-sizing: border-box;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-start;
     }
     
     #viewer-text {
-      position: absolute;
-      top: 40px; left: 30px; right: 30px; bottom: 40px;
-      width: calc(100% - 60px);
-      height: calc(100% - 80px);
+      width: calc(100% - 30px);
+      height: calc(100% - 20px);
       overflow-y: auto;
       scrollbar-width: thin;
       scrollbar-color: #8884 #0000;
@@ -84,8 +85,25 @@
       text-align: inherit;
       line-height: inherit;
       letter-spacing: 0;
-      transition: color 0.2s, background 0.2s;
+      transition: color 0.2s, background 0.2s, opacity 0.5s ease;
       box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      scroll-behavior: smooth; /* 스무스 스크롤 */
+    }
+    
+    #viewer-text.hidden {
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    
+    #viewer-text.align-middle {
+      justify-content: center;
+    }
+    
+    #viewer-text.align-bottom {
+      justify-content: flex-end;
     }
     
     #viewer-text::-webkit-scrollbar {
@@ -96,512 +114,6 @@
     #viewer-text::-webkit-scrollbar-thumb {
       background: rgba(180,180,180,0.18);
       border-radius: 4px;
-    }
-    
-    /* 설정 아이콘 */
-    #setting-icon {
-      position: fixed;
-      top: 18px; left: 50%; transform: translateX(-50%);
-      width: 44px; height: 44px;
-      background: rgba(45,45,45,0.9);
-      border: 1px solid #444;
-      border-radius: 8px;
-      z-index: 1000;
-      transition: all 0.3s ease;
-      opacity: 0;
-      pointer-events: auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-family: 'Consolas', 'Courier New', monospace;
-    }
-    #setting-icon.visible {
-      opacity: 1;
-    }
-    #setting-icon:hover {
-      background: rgba(58,58,58,0.95);
-      border-color: #5a78ff;
-      box-shadow: 0 4px 16px rgba(90,120,255,0.2);
-    }
-    #setting-icon svg { 
-      width: 24px; height: 24px; 
-      fill: #a2c1ff; 
-      transition: fill 0.2s ease;
-    }
-    #setting-icon:hover svg { 
-      fill: #fff; 
-    }
-    #setting-icon.fullscreen {
-      top: 70px;
-      width: 56px; 
-      height: 56px;
-    }
-    #setting-icon.fullscreen svg {
-      width: 32px; 
-      height: 32px;
-    }
-    
-    /* 옵션 패널 */
-    #option-panel {
-      position: fixed;
-      top: -600%;
-      left: 50%; 
-      transform: translateX(-50%);
-      min-width: 420px;
-      max-width: 480px;
-      background: #1e1e1e;
-      border: 2px solid #333;
-      border-radius: 0 0 12px 12px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.8);
-      padding: 0;
-      display: flex; 
-      flex-direction: column;
-      transition: top 0.4s cubic-bezier(0.4,1.6,0.4,1);
-      z-index: 20;
-      pointer-events: auto;
-      font-family: 'Consolas', 'Courier New', monospace;
-      font-size: 13px;
-      color: #e0e0e0;
-    }
-    #option-panel.open { 
-      top: 0;
-    }
-    #option-panel.fullscreen {
-      top: -600%;
-    }
-    #option-panel.fullscreen.open {
-      top: 70px;
-    }
-    
-    /* 패널 헤더 */
-    .panel-header {
-      background: #252526;
-      padding: 12px 16px;
-      border-bottom: 1px solid #333;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .panel-header::before {
-      content: "⚙";
-      font-size: 16px;
-      color: #5a78ff;
-      margin-right: 8px;
-    }
-    .panel-title {
-      font-weight: 600;
-      color: #fff;
-      font-size: 14px;
-      letter-spacing: 0.5px;
-    }
-    .close-btn {
-      width: 24px;
-      height: 24px;
-      background: none;
-      border: none;
-      color: #888;
-      font-size: 18px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 4px;
-      transition: all 0.2s ease;
-    }
-    .close-btn:hover {
-      background: rgba(255,255,255,0.1);
-      color: #fff;
-    }
-    
-    /* 탭 네비게이션 */
-    .tab-nav {
-      display: flex;
-      background: #2d2d2d;
-      border-bottom: 1px solid #333;
-    }
-    .tab-btn {
-      flex: 1;
-      padding: 10px 16px;
-      background: none;
-      border: none;
-      color: #a0a0a0;
-      font-size: 12px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-family: inherit;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      position: relative;
-    }
-    .tab-btn:hover {
-      color: #fff;
-      background: #383838;
-    }
-    .tab-btn.active {
-      color: #5a78ff;
-      background: #1e1e1e;
-    }
-    .tab-btn.active::after {
-      content: "";
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: #5a78ff;
-    }
-    
-    /* 탭 콘텐츠 */
-    .tab-content {
-      display: none;
-      max-height: 50vh;
-      overflow-y: auto;
-      padding: 8px 0;
-    }
-    .tab-content.active {
-      display: block;
-    }
-    .tab-content::-webkit-scrollbar {
-      width: 8px;
-      background: #1e1e1e;
-    }
-    .tab-content::-webkit-scrollbar-thumb {
-      background: #444;
-      border-radius: 4px;
-    }
-    
-    fieldset.option-group {
-      border: 1px solid #444;
-      border-radius: 6px;
-      margin: 8px 16px;
-      padding: 12px 16px 8px 16px;
-      background: #232323;
-    }
-    legend {
-      color: #5a78ff; 
-      font-size: 12px; 
-      font-weight: 600;
-      padding: 4px 12px;
-      background: #2d2d2d;
-      border: 1px solid #444;
-      border-radius: 4px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .option-row {
-      display: grid;
-      grid-template-columns: 80px 1fr auto;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
-      padding: 8px 0;
-      border-bottom: 1px solid #2a2a2a;
-      min-height: 32px;
-    }
-    .option-row:last-child {
-      border-bottom: none;
-      margin-bottom: 0;
-    }
-    .option-row.wide {
-      grid-template-columns: 80px 1fr 50px 24px 24px;
-      gap: 8px;
-    }
-    .option-row label {
-      color: #a2c1ff; 
-      font-size: 12px;
-      font-weight: 500;
-      text-align: left;
-      white-space: nowrap;
-      text-transform: capitalize;
-      line-height: 1.2;
-    }
-    .option-row input[type="color"] {
-      width: 36px; 
-      height: 32px; 
-      border: 1px solid #444; 
-      background: #181818; 
-      cursor: pointer;
-      border-radius: 4px;
-      padding: 2px;
-      transition: border-color 0.2s ease;
-      vertical-align: middle;
-    }
-    .option-row input[type="checkbox"] {
-      width: 18px; 
-      height: 18px;
-      accent-color: #5a78ff;
-      cursor: pointer;
-      vertical-align: middle;
-    }
-    .option-row input[type="number"]::-webkit-inner-spin-button,
-    .option-row input[type="number"]::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-      appearance: none;
-      margin: 0;
-      display: none;
-    }
-    .option-row input[type="number"] {
-      width: 50px; 
-      height: 28px;
-      font-size: 12px; 
-      padding: 0 6px; 
-      border-radius: 4px; 
-      border: 1px solid #444;
-      background: #181818; 
-      color: #e0e0e0; 
-      text-align: center;
-      font-family: inherit;
-      transition: all 0.2s ease;
-      line-height: 1;
-      box-sizing: border-box;
-      -moz-appearance: textfield;
-    }
-    .option-row input[type="number"]:focus {
-      outline: none;
-      border-color: #5a78ff;
-      box-shadow: 0 0 0 2px rgba(90,120,255,0.2);
-    }
-    .option-row select {
-      height: 32px;
-      font-size: 12px; 
-      border-radius: 4px; 
-      border: 1px solid #444;
-      background: #181818; 
-      color: #e0e0e0; 
-      padding: 6px 8px;
-      font-family: inherit;
-      transition: all 0.2s ease;
-      box-sizing: border-box;
-    }
-    .option-row select:focus {
-      outline: none;
-      border-color: #5a78ff;
-      box-shadow: 0 0 0 2px rgba(90,120,255,0.2);
-    }
-    .option-row input[type="range"] {
-      width: 100px;
-      height: 6px;
-      -webkit-appearance: none;
-      appearance: none;
-      background: #444;
-      border-radius: 3px;
-      outline: none;
-      vertical-align: middle;
-    }
-    .option-row input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 16px;
-      height: 16px;
-      background: #5a78ff;
-      border-radius: 50%;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .option-row input[type="range"]::-webkit-slider-thumb:hover {
-      background: #7b9eff;
-      transform: scale(1.1);
-    }
-    .option-row .num-btns {
-      display: flex; 
-      flex-direction: column; 
-      gap: 1px;
-      justify-self: end;
-    }
-    .option-row .num-btns button {
-      width: 24px; 
-      height: 14px; 
-      font-size: 10px; 
-      border: none; 
-      background: #3a3a3a; 
-      color: #ccc;
-      border-radius: 2px; 
-      cursor: pointer; 
-      padding: 0;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: inherit;
-      line-height: 1;
-    }
-    .option-row .num-btns button:hover { 
-      background: #5a78ff; 
-      color: #fff;
-      transform: scale(1.05);
-    }
-    .unit-label {
-      color: #888;
-      font-size: 11px;
-      line-height: 1;
-      vertical-align: middle;
-      justify-self: start;
-    }
-    
-    /* 커스텀 버튼 */
-    .custom-btn {
-      padding: 6px 12px;
-      font-size: 11px;
-      background: #444;
-      color: #ccc;
-      border: 1px solid #666;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .custom-btn:hover {
-      background: #666;
-      color: #fff;
-    }
-    
-    /* Display 섹션 특별 처리 */
-    .display-group .option-row.wide {
-      display: grid;
-      grid-template-columns: 80px auto 50px 50px;
-      align-items: center;
-      gap: 8px;
-    }
-    .display-group .option-row.wide input[type="number"] {
-      grid-column: 2;
-      justify-self: start;
-      width: 50px;
-    }
-    .display-group .option-row.wide .unit-label {
-      grid-column: 3;
-      justify-self: start;
-    }
-    .display-group .option-row.wide .num-btns {
-      grid-column: 4;
-      justify-self: center;
-    }
-    
-    /* Layout 섹션 특별 처리 */
-    .layout-group .option-row.wide {
-      display: grid;
-      grid-template-columns: 80px auto 50px 50px;
-      align-items: center;
-      gap: 8px;
-    }
-    .layout-group .option-row.wide input[type="number"] {
-      grid-column: 2;
-      justify-self: start;
-      width: 50px;
-    }
-    .layout-group .option-row.wide .unit-label {
-      grid-column: 3;
-      justify-self: start;
-    }
-    .layout-group .option-row.wide .num-btns {
-      grid-column: 4;
-      justify-self: center;
-    }
-    
-    /* Effects 섹션 특별 처리 */
-    .effects-group .option-row {
-      display: grid;
-      grid-template-columns: 80px auto 50px;
-      align-items: center;
-      gap: 12px;
-    }
-    .effects-group .option-row.wide {
-      grid-template-columns: 80px auto 50px 50px;
-      gap: 8px;
-    }
-    .effects-group .option-row input[type="checkbox"] {
-      justify-self: start;
-    }
-    .effects-group .option-row input[type="color"] {
-      grid-column: 3;
-      justify-self: center;
-    }
-    .effects-group .option-row.wide input[type="number"] {
-      grid-column: 2;
-      justify-self: start;
-      width: 50px;
-    }
-    .effects-group .option-row.wide .unit-label {
-      grid-column: 3;
-      justify-self: start;
-    }
-    .effects-group .option-row.wide .num-btns {
-      grid-column: 4;
-      justify-self: center;
-    }
-    
-    /* 색상 프리셋 */
-    .preset-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin: 8px 16px;
-    }
-    .preset-item {
-      background: #232323;
-      border: 2px solid #444;
-      border-radius: 8px;
-      padding: 16px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      min-height: 80px;
-    }
-    .preset-item:hover {
-      border-color: #5a78ff;
-      background: #2a2a2a;
-    }
-    .preset-item.active {
-      border-color: #5a78ff;
-      background: #2d3748;
-      box-shadow: 0 0 0 2px rgba(90,120,255,0.3);
-    }
-    .preset-preview {
-      width: 200px;
-      height: 90px;
-      border: 1px solid #555;
-      border-radius: 6px;
-      position: relative;
-      overflow: hidden;
-      flex-shrink: 0;
-    }
-    .preset-bg {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-    }
-    .preset-text {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 12px;
-      font-weight: normal;
-      font-family: sans-serif;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-      text-align: center;
-      line-height: 1.3;
-      padding: 8px;
-      box-sizing: border-box;
-      width: 100%;
-    }
-    .preset-info {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      flex: 1;
-    }
-    .preset-name {
-      font-size: 13px;
-      color: #a2c1ff;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .preset-code {
-      font-size: 11px;
-      color: #888;
-      font-family: monospace;
     }
     
     /* 여백 조절기 */
@@ -618,17 +130,21 @@
       transition: all 0.2s ease;
       user-select: none;
     }
+    
     #margin-adjuster.active {
       display: block;
     }
+    
     #margin-adjuster:hover {
       background: linear-gradient(to bottom, transparent, rgba(90,120,255,0.4), rgba(90,120,255,0.7));
       border-top-color: #7b9eff;
     }
+    
     #margin-adjuster.dragging {
       background: linear-gradient(to bottom, transparent, rgba(90,120,255,0.6), rgba(90,120,255,0.8));
       border-top-color: #fff;
     }
+    
     #margin-adjuster::before {
       content: "⋮⋮⋮";
       position: absolute;
@@ -641,25 +157,565 @@
       pointer-events: none;
     }
     
+    /* 우클릭 메뉴 오버레이 */
+    .quick-wheel-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 10000;
+      opacity: 0;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s ease;
+    }
+    
+    .quick-wheel-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    
+    /* 우클릭 메뉴 - 일렉트론 스타일 */
+    .quick-wheel {
+      width: 480px;
+      max-width: 90vw;
+      max-height: 85vh;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: scaleIn 0.2s ease;
+    }
+    
+    @keyframes scaleIn {
+      from {
+        transform: scale(0.9);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+    
+    /* 헤더 영역 */
+    .quick-wheel-header {
+      padding: 20px 25px 15px;
+      border-bottom: 1px solid #e0e0e0;
+      position: relative;
+      background: #fff;
+      flex-shrink: 0;
+      cursor: move;
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+    }
+    
+    .quick-wheel-header:active {
+      cursor: grabbing;
+    }
+    
+    .quick-wheel-header h3 {
+      font-size: 20px;
+      color: #000;
+      font-weight: 700;
+      font-family: 'Poppins', sans-serif;
+      text-align: center;
+      margin: 0;
+      pointer-events: none;
+      user-select: none;
+    }
+    
+    .close-btn {
+      position: absolute;
+      top: 20px;
+      right: 25px;
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: #f5f5f5;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      font-size: 18px;
+      color: #666;
+    }
+    
+    .close-btn:hover {
+      background: #00f0ff;
+      color: #fff;
+      transform: scale(1.1);
+    }
+    
+    /* 탭 네비게이션 */
+    .tab-nav {
+      display: flex;
+      background: #f8f8f8;
+      padding: 5px;
+      margin: 15px 25px 0;
+      border-radius: 12px;
+      flex-shrink: 0;
+    }
+    
+    .tab-btn {
+      flex: 1;
+      padding: 12px 20px;
+      background: transparent;
+      border: none;
+      color: #999;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: 'Pretendard', sans-serif;
+      border-radius: 8px;
+      position: relative;
+    }
+    
+    .tab-btn:hover {
+      color: #333;
+    }
+    
+    .tab-btn.active {
+      color: #000;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    
+    /* 탭 콘텐츠 */
+    .tab-content {
+      display: none;
+      padding: 20px 25px;
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      background: #fff;
+      color: #333;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .tab-content::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .tab-content::-webkit-scrollbar-track {
+      background: #f8f8f8;
+      border-radius: 3px;
+    }
+    
+    .tab-content::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 3px;
+    }
+    
+    .tab-content::-webkit-scrollbar-thumb:hover {
+      background: #999;
+    }
+    
+    /* 옵션 그룹 */
+    .option-group {
+      margin-bottom: 20px;
+    }
+    
+    .option-group-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #00c4d4;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    .option-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+    
+    .option-row > label {
+      width: 80px;
+      flex-shrink: 0;
+      color: #666;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    /* 입력 요소들 - 일렉트론 스타일 */
+    input[type="color"] {
+      width: 40px;
+      height: 30px;
+      border: 1px solid #e0e0e0;
+      background: #fff;
+      cursor: pointer;
+      border-radius: 6px;
+      padding: 2px;
+    }
+    
+    input[type="text"].color-hex {
+      width: 75px;
+      height: 30px;
+      font-size: 11px;
+      padding: 0 8px;
+      border-radius: 6px;
+      border: 1px solid #e0e0e0;
+      background: #fff;
+      color: #333;
+      text-align: center;
+      font-family: 'Poppins', monospace;
+      text-transform: uppercase;
+      transition: border-color 0.2s;
+    }
+    
+    input[type="text"].color-hex:focus {
+      outline: none;
+      border-color: #00f0ff;
+    }
+    
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #00f0ff;
+      cursor: pointer;
+    }
+    
+    input[type="number"] {
+      width: 60px;
+      height: 30px;
+      font-size: 12px;
+      padding: 0 8px;
+      border-radius: 6px;
+      border: 1px solid #e0e0e0;
+      background: #fff;
+      color: #333;
+      text-align: center;
+      font-family: 'Pretendard', sans-serif;
+      transition: border-color 0.2s;
+    }
+    
+    input[type="number"]:focus {
+      outline: none;
+      border-color: #00f0ff;
+    }
+    
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      appearance: none;
+      margin: 0;
+      display: none;
+    }
+    
+    input[type="range"] {
+      width: 100px;
+      height: 5px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: #e0e0e0;
+      border-radius: 3px;
+      outline: none;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      background: linear-gradient(135deg, #00f0ff, #00c4d4);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    select {
+      flex: 1;
+      height: 30px;
+      font-size: 12px;
+      border-radius: 6px;
+      border: 1px solid #e0e0e0;
+      background: #fff;
+      color: #333;
+      padding: 0 8px;
+      font-family: 'Pretendard', sans-serif;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    
+    select:focus {
+      outline: none;
+      border-color: #00f0ff;
+    }
+    
+    .num-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    
+    .num-btns button {
+      width: 20px;
+      height: 12px;
+      font-size: 8px;
+      border: none;
+      background: #f0f0f0;
+      color: #666;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      line-height: 1;
+    }
+    
+    .num-btns button:hover {
+      background: #00f0ff;
+      color: #fff;
+    }
+    
+    .unit-label {
+      color: #999;
+      font-size: 12px;
+    }
+    
+    /* 색상 입력 그룹 */
+    .color-input-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex: 1;
+    }
+    
+    /* 정렬 버튼 */
+    .align-btn, .valign-btn {
+      width: 30px;
+      height: 30px;
+      border: 1px solid #e0e0e0;
+      background: #fff;
+      color: #666;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 12px;
+    }
+    
+    .align-btn:hover, .valign-btn:hover {
+      background: #f0f0f0;
+      border-color: #ccc;
+    }
+    
+    .align-btn.active, .valign-btn.active {
+      background: linear-gradient(135deg, #00f0ff, #00c4d4);
+      border-color: transparent;
+      color: #fff;
+    }
+    
+    /* 프리셋 그리드 */
+    .preset-grid {
+      display: grid;
+      gap: 10px;
+    }
+    
+    .preset-item {
+      display: flex;
+      align-items: center;
+      padding: 15px;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .preset-item:hover {
+      border-color: #00f0ff;
+      background: #f0fdff;
+      transform: translateX(5px);
+    }
+    
+    .preset-item.selected {
+      background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(0, 196, 212, 0.1));
+      border-color: #00f0ff;
+    }
+    
+    .preset-name {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+    }
+    
+    .preset-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .preset-btn {
+      padding: 6px 14px;
+      font-size: 11px;
+      border: 1px solid #e0e0e0;
+      background: #fff;
+      color: #666;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Pretendard', sans-serif;
+      font-weight: 500;
+    }
+    
+    .preset-btn:hover {
+      background: #f0f0f0;
+      border-color: #ccc;
+    }
+    
+    .preset-btn.apply {
+      background: linear-gradient(135deg, #00f0ff, #00c4d4);
+      border-color: transparent;
+      color: white;
+    }
+    
+    .preset-btn.apply:hover {
+      background: linear-gradient(135deg, #00c4d4, #00a0b0);
+    }
+    
+    /* 퀵 액션 그리드 */
+    .quick-actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+    
+    .quick-action-item {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 18px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    
+    .quick-action-item:hover {
+      background: linear-gradient(135deg, #00f0ff, #00c4d4);
+      border-color: transparent;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 240, 255, 0.3);
+    }
+    
+    .quick-action-item:hover .action-icon,
+    .quick-action-item:hover .action-label {
+      color: #fff;
+    }
+    
+    .action-icon {
+      font-size: 24px;
+      color: #333;
+      font-weight: 600;
+      font-family: 'Poppins', sans-serif;
+      transition: color 0.2s;
+    }
+    
+    .action-label {
+      font-size: 12px;
+      color: #666;
+      font-family: 'Pretendard', sans-serif;
+      transition: color 0.2s;
+    }
+    
+    /* 알림 메시지 */
+    .notification {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #000, #333);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 25px;
+      font-size: 13px;
+      font-family: 'Pretendard', sans-serif;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      z-index: 10002;
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+    
+    .notification.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-10px);
+    }
+    
+    /* 화자 구분 스타일 */
+    .speaker-line {
+      display: flex;
+      align-items: center;
+      margin: 3px 0;
+      line-height: 1.5;
+    }
+    
+    .speaker-name {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 3px 15px;
+      border-radius: 4px;
+      font-weight: 700;
+      margin-right: 20px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    
+    .speaker-divider {
+      width: 2px;
+      height: 1.2em;
+      background: rgba(255, 255, 255, 0.3);
+      margin-right: 20px;
+      flex-shrink: 0;
+      align-self: center;
+    }
+    
+    .speaker-pipe {
+      color: rgba(255, 255, 255, 0.4);
+      margin: 0 20px;
+      font-weight: 300;
+      align-self: center;
+      line-height: 1;
+    }
+    
+    .speaker-content {
+      flex: 1;
+      align-self: center;
+    }
+    
+    .speaker-line.no-speaker {
+      display: block;
+    }
+    
     /* 반응형 */
     @media (max-width: 600px) {
-      #option-panel { 
-        min-width: 280px; 
-        max-width: 320px;
-        font-size: 12px;
+      .quick-wheel {
+        width: 360px;
       }
-      #viewer { padding: 40px 20px; }
-      #viewer-text { 
-        top: 40px; left: 20px; right: 20px; bottom: 40px;
-        width: calc(100% - 40px);
-        height: calc(100% - 80px);
-      }
-      .preset-preview {
-        width: 150px;
-        height: 70px;
-      }
-      .preset-text {
-        font-size: 10px;
+      #viewer { padding: 10px; }
+      #viewer-text {
+        width: calc(100% - 20px);
+        height: calc(100% - 20px);
       }
     }
   </style>
@@ -673,44 +729,56 @@
   
   <div id="viewer">
     <div id="viewer-text">자막 대기 중...</div>
-    
-    <!-- 설정 아이콘 -->
-    <div id="setting-icon" title="설정">
-      <svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7zm7.43-2.9l1.77-1.02a1 1 0 0 0 .37-1.36l-1.68-2.92a1 1 0 0 0-1.28-.46l-1.77 1.02a7.03 7.03 0 0 0-1.52-.88l-.27-2A1 1 0 0 0 13.5 3h-3a1 1 0 0 0-1 .88l-.27 2a7.03 7.03 0 0 0-1.52.88l-1.77-1.02a1 1 0 0 0-1.36.37l-1.68 2.92a1 1 0 0 0 .37 1.36l1.77 1.02c-.09.32-.16.65-.22.99l-2 .27A1 1 0 0 0 3 10.5v3a1 1 0 0 0 .88 1l2 .27c.06.34.13.67.22.99l-1.77 1.02a1 1 0 0 0-.37 1.36l1.68 2.92a1 1 0 0 0 1.28.46l1.77-1.02c.47.34.97.64 1.52.88l.27 2A1 1 0 0 0 10.5 21h3a1 1 0 0 0 1-.88l.27-2c.55-.24 1.05-.54 1.52-.88l1.77 1.02a1 1 0 0 0 1.36-.37l1.68-2.92a1 1 0 0 0-.37-1.36l-1.77-1.02c.09-.32.16-.65.22-.99l2-.27A1 1 0 0 0 21 13.5v-3a1 1 0 0 0-.88-1l-2-.27a7.03 7.03 0 0 0-.22-.99zM12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
-    </div>
-    
-    <!-- 옵션 패널 -->
-    <div id="option-panel">
-      <div class="panel-header">
-        <span class="panel-title">Viewer Settings</span>
-        <button class="close-btn" id="closePanel">×</button>
+  </div>
+  
+  <!-- 여백 조절기 -->
+  <div id="margin-adjuster"></div>
+  
+  <!-- 우클릭 빠른 설정 휠 -->
+  <div class="quick-wheel-overlay" id="quickWheelOverlay">
+    <div class="quick-wheel">
+      <div class="quick-wheel-header">
+        <h3>Viewer Settings</h3>
+        <button class="close-btn" id="closeOptionsBtn">✕</button>
       </div>
       
       <div class="tab-nav">
-        <button class="tab-btn active" data-tab="tab1">설정</button>
-        <button class="tab-btn" data-tab="tab2">프리셋</button>
+        <button class="tab-btn active" data-tab="tab1">기본 설정</button>
+        <button class="tab-btn" data-tab="tab2">레이아웃</button>
+        <button class="tab-btn" data-tab="tab3">화자 구분</button>
+        <button class="tab-btn" data-tab="tab4">프리셋</button>
       </div>
       
       <!-- 탭 1: 기본 설정 -->
       <div id="tab1" class="tab-content active">
-        <fieldset class="option-group display-group">
-          <legend>Display</legend>
+        <div class="option-group">
+          <div class="option-group-title">Display</div>
+          
           <div class="option-row">
             <label>배경색</label>
-            <input type="color" id="bgColor" value="#000000">
-            <input type="range" id="bgAlpha" min="0" max="100" value="100">
+            <div class="color-input-group">
+              <input type="color" id="bgColor" value="#000000">
+              <input type="text" class="color-hex" id="bgColorHex" value="#000000" maxlength="7">
+              <input type="range" id="bgAlpha" min="0" max="100" value="100">
+              <span class="unit-label" id="bgAlphaLabel" style="min-width: 35px;">100%</span>
+            </div>
           </div>
+          
           <div class="option-row">
             <label>글자색</label>
-            <input type="color" id="fontColor" value="#ffffff">
+            <div class="color-input-group">
+              <input type="color" id="fontColor" value="#ffffff">
+              <input type="text" class="color-hex" id="fontColorHex" value="#FFFFFF" maxlength="7">
+            </div>
           </div>
+          
           <div class="option-row">
             <label>글꼴</label>
             <select id="fontFamily">
+              <option value="'Noto Sans KR', sans-serif">Noto Sans KR</option>
+              <option value="'Pretendard', sans-serif">Pretendard</option>
               <option value="sans-serif">기본 고딕</option>
               <option value="serif">기본 명조</option>
-              <option value="monospace">고정폭</option>
-              <option value="'Noto Sans KR', sans-serif">Noto Sans KR</option>
               <option value="'Nanum Gothic', sans-serif">나눔고딕</option>
               <option value="'Nanum Myeongjo', serif">나눔명조</option>
               <option value="'Nanum Pen Script', cursive">나눔펜체</option>
@@ -718,22 +786,10 @@
               <option value="'Do Hyeon', sans-serif">도현체</option>
               <option value="'Gothic A1', sans-serif">고딕 A1</option>
               <option value="'IBM Plex Sans KR', sans-serif">IBM Plex 한글</option>
-              <option value="'맑은 고딕', 'Malgun Gothic', sans-serif">맑은 고딕</option>
-              <option value="'굴림', Gulim, sans-serif">굴림</option>
-              <option value="'돋움', Dotum, sans-serif">돋움</option>
-              <option value="'바탕', Batang, serif">바탕</option>
-              <option value="Arial, sans-serif">Arial</option>
-              <option value="'Times New Roman', serif">Times New Roman</option>
-              <option value="Georgia, serif">Georgia</option>
-              <option value="Verdana, sans-serif">Verdana</option>
             </select>
           </div>
+          
           <div class="option-row">
-            <label>커스텀</label>
-            <button type="button" id="addFontBtn" class="custom-btn">폰트 추가</button>
-            <span style="color: #888; font-size: 11px;">직접 입력</span>
-          </div>
-          <div class="option-row wide">
             <label>글자크기</label>
             <input type="number" id="fontSize" min="10" max="200" value="32">
             <span class="unit-label">px</span>
@@ -742,7 +798,8 @@
               <button type="button" id="fontSizeDown">▼</button>
             </div>
           </div>
-          <div class="option-row wide">
+          
+          <div class="option-row">
             <label>자간</label>
             <input type="number" id="letterSpacing" min="-5" max="20" value="0" step="0.5">
             <span class="unit-label">px</span>
@@ -751,7 +808,8 @@
               <button type="button" id="letterSpacingDown">▼</button>
             </div>
           </div>
-          <div class="option-row wide">
+          
+          <div class="option-row">
             <label>행간</label>
             <input type="number" id="lineHeight" min="1" max="3" value="1.5" step="0.1">
             <span class="unit-label">배</span>
@@ -760,43 +818,21 @@
               <button type="button" id="lineHeightDown">▼</button>
             </div>
           </div>
-        </fieldset>
+        </div>
         
-        <fieldset class="option-group layout-group">
-          <legend>Layout</legend>
-          <div class="option-row">
-            <label>여백조절기</label>
-            <input type="checkbox" id="marginAdjusterToggle">
-            <span style="color: #888; font-size: 11px; margin-left: 8px;">하단 드래그바</span>
-          </div>
-          <div class="option-row wide">
-            <label>상단여백</label>
-            <input type="number" id="marginTop" min="0" max="200" step="1" value="0">
-            <span class="unit-label">px</span>
-            <div class="num-btns">
-              <button type="button" id="marginTopUp">▲</button>
-              <button type="button" id="marginTopDown">▼</button>
-            </div>
-          </div>
-          <div class="option-row wide">
-            <label>하단여백</label>
-            <input type="number" id="marginBottom" min="0" max="400" step="1" value="0">
-            <span class="unit-label">px</span>
-            <div class="num-btns">
-              <button type="button" id="marginBottomUp">▲</button>
-              <button type="button" id="marginBottomDown">▼</button>
-            </div>
-          </div>
-        </fieldset>
-        
-        <fieldset class="option-group effects-group">
-          <legend>Effects</legend>
+        <div class="option-group">
+          <div class="option-group-title">Effects</div>
+          
           <div class="option-row">
             <label>테두리</label>
-            <input type="checkbox" id="outlineOn">
-            <input type="color" id="outlineColor" value="#000000">
+            <div class="color-input-group">
+              <input type="checkbox" id="outlineOn">
+              <input type="color" id="outlineColor" value="#000000">
+              <input type="text" class="color-hex" id="outlineColorHex" value="#000000" maxlength="7">
+            </div>
           </div>
-          <div class="option-row wide">
+          
+          <div class="option-row">
             <label>굵기</label>
             <input type="number" id="outlineWidth" min="0" max="10" value="2" step="0.1">
             <span class="unit-label">px</span>
@@ -805,12 +841,17 @@
               <button type="button" id="outlineWidthDown">▼</button>
             </div>
           </div>
+          
           <div class="option-row">
             <label>그림자</label>
-            <input type="checkbox" id="shadowOn">
-            <input type="color" id="shadowColor" value="#000000">
+            <div class="color-input-group">
+              <input type="checkbox" id="shadowOn">
+              <input type="color" id="shadowColor" value="#000000">
+              <input type="text" class="color-hex" id="shadowColorHex" value="#000000" maxlength="7">
+            </div>
           </div>
-          <div class="option-row wide">
+          
+          <div class="option-row">
             <label>흐림</label>
             <input type="number" id="shadowBlur" min="0" max="20" value="3" step="0.5">
             <span class="unit-label">px</span>
@@ -819,104 +860,241 @@
               <button type="button" id="shadowBlurDown">▼</button>
             </div>
           </div>
-          <div class="option-row wide">
-            <label>거리</label>
-            <input type="number" id="shadowDistance" min="0" max="10" value="2" step="0.5">
+          
+          <div class="option-row">
+            <label>X 방향</label>
+            <input type="number" id="shadowX" min="-20" max="20" value="2" step="0.5">
             <span class="unit-label">px</span>
             <div class="num-btns">
-              <button type="button" id="shadowDistanceUp">▲</button>
-              <button type="button" id="shadowDistanceDown">▼</button>
+              <button type="button" id="shadowXUp">▲</button>
+              <button type="button" id="shadowXDown">▼</button>
             </div>
           </div>
-        </fieldset>
+          
+          <div class="option-row">
+            <label>Y 방향</label>
+            <input type="number" id="shadowY" min="-20" max="20" value="2" step="0.5">
+            <span class="unit-label">px</span>
+            <div class="num-btns">
+              <button type="button" id="shadowYUp">▲</button>
+              <button type="button" id="shadowYDown">▼</button>
+            </div>
+          </div>
+        </div>
       </div>
       
-      <!-- 탭 2: 색상 프리셋 -->
+      <!-- 탭 2: 레이아웃 -->
       <div id="tab2" class="tab-content">
-        <fieldset class="option-group">
-          <legend>Presets</legend>
+        <div class="option-group">
+          <div class="option-group-title">Display Control</div>
+          
           <div class="option-row">
-            <label>프리셋 적용</label>
-            <button type="button" id="resetPreset" class="custom-btn">해제</button>
-            <span style="color: #888; font-size: 11px; margin-left: 8px;">원클릭 적용</span>
+            <label>자막 표시</label>
+            <input type="checkbox" id="subtitleVisible" checked>
+            <span style="color: #888; font-size: 11px; margin-left: 8px;">체크 해제 시 자막 숨김 (단축키: H)</span>
           </div>
-        </fieldset>
+        </div>
         
+        <div class="option-group">
+          <div class="option-group-title">Alignment</div>
+          
+          <div class="option-row">
+            <label>가로정렬</label>
+            <div style="display: flex; gap: 5px;">
+              <button type="button" class="align-btn active" data-align="left" title="왼쪽">◀</button>
+              <button type="button" class="align-btn" data-align="center" title="가운데">■</button>
+              <button type="button" class="align-btn" data-align="right" title="오른쪽">▶</button>
+            </div>
+          </div>
+          
+          <div class="option-row">
+            <label>세로정렬</label>
+            <div style="display: flex; gap: 5px;">
+              <button type="button" class="valign-btn active" data-valign="top" title="상단">▲</button>
+              <button type="button" class="valign-btn" data-valign="middle" title="중앙">■</button>
+              <button type="button" class="valign-btn" data-valign="bottom" title="하단">▼</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="option-group">
+          <div class="option-group-title">Spacing</div>
+          
+          <div class="option-row">
+            <label>여백조절기</label>
+            <input type="checkbox" id="marginAdjusterToggle">
+            <span style="color: #888; font-size: 11px; margin-left: 8px;">하단 드래그바</span>
+          </div>
+          
+          <div class="option-row">
+            <label>상단여백</label>
+            <input type="number" id="marginTop" min="0" max="200" value="10" step="5">
+            <span class="unit-label">px</span>
+            <div class="num-btns">
+              <button type="button" id="marginTopUp">▲</button>
+              <button type="button" id="marginTopDown">▼</button>
+            </div>
+          </div>
+          
+          <div class="option-row">
+            <label>하단여백</label>
+            <input type="number" id="marginBottom" min="0" max="400" value="10" step="5">
+            <span class="unit-label">px</span>
+            <div class="num-btns">
+              <button type="button" id="marginBottomUp">▲</button>
+              <button type="button" id="marginBottomDown">▼</button>
+            </div>
+          </div>
+          
+          <div class="option-row">
+            <label>좌측여백</label>
+            <input type="number" id="marginLeft" min="0" max="200" value="15" step="5">
+            <span class="unit-label">px</span>
+            <div class="num-btns">
+              <button type="button" id="marginLeftUp">▲</button>
+              <button type="button" id="marginLeftDown">▼</button>
+            </div>
+          </div>
+          
+          <div class="option-row">
+            <label>우측여백</label>
+            <input type="number" id="marginRight" min="0" max="200" value="15" step="5">
+            <span class="unit-label">px</span>
+            <div class="num-btns">
+              <button type="button" id="marginRightUp">▲</button>
+              <button type="button" id="marginRightDown">▼</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 탭 3: 화자 구분 -->
+      <div id="tab3" class="tab-content">
+        <div class="option-group">
+          <div class="option-group-title">Speaker Identification</div>
+          
+          <div class="option-row">
+            <label>화자 구분</label>
+            <input type="checkbox" id="speakerEnabled" checked>
+            <span style="color: #888; font-size: 11px; margin-left: 8px;">활성화</span>
+          </div>
+          
+          <div class="option-row">
+            <label>구분 스타일</label>
+            <select id="speakerStyle">
+              <option value="divider">세로선 구분</option>
+              <option value="pipe">파이프 문자 ( | )</option>
+              <option value="minimal">미니멀 (은은하게)</option>
+              <option value="none">구분선 없음</option>
+            </select>
+          </div>
+          
+          <div class="option-row">
+            <label>화자 배경</label>
+            <div class="color-input-group">
+              <input type="checkbox" id="speakerBgEnabled" checked>
+              <input type="color" id="speakerBgColor" value="#ffffff">
+              <input type="range" id="speakerBgAlpha" min="0" max="30" value="8">
+              <span class="unit-label" id="speakerBgAlphaLabel" style="min-width: 35px;">8%</span>
+            </div>
+          </div>
+          
+          <div class="option-row">
+            <label>구분선 색상</label>
+            <input type="checkbox" id="colorDividerEnabled">
+            <span style="color: #888; font-size: 11px; margin-left: 8px;">순환 색상 사용</span>
+          </div>
+        </div>
+        
+        <div class="option-group">
+          <div class="option-group-title">순환 색상 설정 (5색)</div>
+          
+          <div class="option-row">
+            <label>색상 1</label>
+            <div class="color-input-group">
+              <input type="color" id="dividerColor1" value="#4A90E2">
+              <input type="text" class="color-hex" id="dividerColor1Hex" value="#4A90E2" maxlength="7">
+            </div>
+          </div>
+          
+          <div class="option-row">
+            <label>색상 2</label>
+            <div class="color-input-group">
+              <input type="color" id="dividerColor2" value="#7ED321">
+              <input type="text" class="color-hex" id="dividerColor2Hex" value="#7ED321" maxlength="7">
+            </div>
+          </div>
+          
+          <div class="option-row">
+            <label>색상 3</label>
+            <div class="color-input-group">
+              <input type="color" id="dividerColor3" value="#F5A623">
+              <input type="text" class="color-hex" id="dividerColor3Hex" value="#F5A623" maxlength="7">
+            </div>
+          </div>
+          
+          <div class="option-row">
+            <label>색상 4</label>
+            <div class="color-input-group">
+              <input type="color" id="dividerColor4" value="#BD10E0">
+              <input type="text" class="color-hex" id="dividerColor4Hex" value="#BD10E0" maxlength="7">
+            </div>
+          </div>
+          
+          <div class="option-row">
+            <label>색상 5</label>
+            <div class="color-input-group">
+              <input type="color" id="dividerColor5" value="#00D8FF">
+              <input type="text" class="color-hex" id="dividerColor5Hex" value="#00D8FF" maxlength="7">
+            </div>
+          </div>
+          
+          <div class="option-row">
+            <label>중립 색상</label>
+            <button type="button" id="neutralColorsBtn" class="preset-btn" style="padding: 6px 14px; font-size: 11px;">회색톤 설정</button>
+            <span style="color: #888; font-size: 11px; margin-left: 8px;">정치적 중립</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 탭 4: 프리셋 -->
+      <div id="tab4" class="tab-content">
         <div class="preset-grid">
-          <!-- 크로마키 프리셋 -->
-          <div class="preset-item" data-preset="green-white">
-            <div class="preset-preview">
-              <div class="preset-bg" style="background: #00FF00;"></div>
-              <div class="preset-text" style="color: #FFFFFF;">미리 보기<br>텍스트입니다.</div>
-            </div>
-            <div class="preset-info">
-              <div class="preset-name">크로마 그린</div>
-              <div class="preset-code">#00FF00 / #FFFFFF</div>
+          <div class="preset-item" data-preset="basic">
+            <div class="preset-name">기본 자막</div>
+            <div class="preset-actions">
+              <button class="preset-btn apply">적용</button>
             </div>
           </div>
-          
-          <div class="preset-item" data-preset="blue-white">
-            <div class="preset-preview">
-              <div class="preset-bg" style="background: #0000FF;"></div>
-              <div class="preset-text" style="color: #FFFFFF;">미리 보기<br>텍스트입니다.</div>
-            </div>
-            <div class="preset-info">
-              <div class="preset-name">크로마 블루</div>
-              <div class="preset-code">#0000FF / #FFFFFF</div>
+          <div class="preset-item" data-preset="official">
+            <div class="preset-name">공식 행사</div>
+            <div class="preset-actions">
+              <button class="preset-btn apply">적용</button>
             </div>
           </div>
-          
-          <div class="preset-item" data-preset="magenta-white">
-            <div class="preset-preview">
-              <div class="preset-bg" style="background: #FF00FF;"></div>
-              <div class="preset-text" style="color: #FFFFFF;">미리 보기<br>텍스트입니다.</div>
-            </div>
-            <div class="preset-info">
-              <div class="preset-name">크로마 마젠타</div>
-              <div class="preset-code">#FF00FF / #FFFFFF</div>
+          <div class="preset-item" data-preset="news">
+            <div class="preset-name">뉴스/보도</div>
+            <div class="preset-actions">
+              <button class="preset-btn apply">적용</button>
             </div>
           </div>
-          
-          <!-- 고대비 프리셋 -->
-          <div class="preset-item" data-preset="black-white">
-            <div class="preset-preview">
-              <div class="preset-bg" style="background: #000000;"></div>
-              <div class="preset-text" style="color: #FFFFFF;">미리 보기<br>텍스트입니다.</div>
-            </div>
-            <div class="preset-info">
-              <div class="preset-name">블랙 + 화이트</div>
-              <div class="preset-code">#000000 / #FFFFFF</div>
+          <div class="preset-item" data-preset="conference">
+            <div class="preset-name">컨퍼런스/세미나</div>
+            <div class="preset-actions">
+              <button class="preset-btn apply">적용</button>
             </div>
           </div>
-          
-          <div class="preset-item" data-preset="navy-white">
-            <div class="preset-preview">
-              <div class="preset-bg" style="background: #000080;"></div>
-              <div class="preset-text" style="color: #FFFFFF;">미리 보기<br>텍스트입니다.</div>
-            </div>
-            <div class="preset-info">
-              <div class="preset-name">네이비 + 화이트</div>
-              <div class="preset-code">#000080 / #FFFFFF</div>
-            </div>
-          </div>
-          
-          <div class="preset-item" data-preset="white-black">
-            <div class="preset-preview">
-              <div class="preset-bg" style="background: #FFFFFF;"></div>
-              <div class="preset-text" style="color: #000000;">미리 보기<br>텍스트입니다.</div>
-            </div>
-            <div class="preset-info">
-              <div class="preset-name">화이트 + 블랙</div>
-              <div class="preset-code">#FFFFFF / #000000</div>
-            </div>
-          </div>
+        </div>
+        <div style="margin-top: 20px; padding: 15px; background: #f8f8f8; border-radius: 8px;">
+          <p style="color: #666; font-size: 12px; margin: 0;">
+            💡 <strong>OBS 방송 팁:</strong> 배경 알파값을 0으로 설정하면 OBS 브라우저 소스에서 투명 배경으로 사용 가능합니다.
+          </p>
         </div>
       </div>
     </div>
   </div>
   
-  <!-- 여백 조절기 -->
-  <div id="margin-adjuster"></div>
+  <div class="notification" id="notification"></div>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
   <script>
@@ -944,9 +1122,6 @@ if (!channelCode) {
 // DOM 요소
 const viewerText = document.getElementById('viewer-text');
 const connectionStatus = document.getElementById('connection-status');
-const settingIcon = document.getElementById('setting-icon');
-const optionPanel = document.getElementById('option-panel');
-const closePanel = document.getElementById('closePanel');
 const marginAdjusterToggle = document.getElementById('marginAdjusterToggle');
 const marginAdjuster = document.getElementById('margin-adjuster');
 
@@ -958,6 +1133,24 @@ let activeStenographer = '1';
 let currentActiveInput = '';
 let isInitialConnection = true;
 
+// 깜빡임 방지를 위한 변수 추가
+let lastTextSentTime = 0;
+let lastAccumulatedLength = 0;
+let ignoreInputUntil = 0;
+
+// 스마트 1단어 지연을 위한 변수
+let previousInput = '';
+let previousDisplay = '';
+
+// 자막 숨김 상태
+let isSubtitleHidden = false;
+let wasHiddenBeforeInput = false;
+
+// 화자 구분 관련
+let speakerColorIndex = 0;
+let speakerColorMap = {};
+let dividerColors = ['#4A90E2', '#7ED321', '#F5A623', '#BD10E0', '#00D8FF'];
+
 // 여백 조절기 상태
 let marginAdjusterEnabled = false;
 let marginOffset = 0;
@@ -966,6 +1159,66 @@ let startY = 0;
 let startOffset = 0;
 let maxMargin = 0;
 let ignoreNextClick = false;
+
+// 프리셋 데이터
+const presets = {
+  'basic': {
+    name: '기본 자막',
+    bgColor: '#000000',
+    bgAlpha: '100',
+    fontColor: '#ffffff',
+    fontSize: '32',
+    fontFamily: "'Noto Sans KR', sans-serif",
+    letterSpacing: '0',
+    lineHeight: '1.5',
+    outlineOn: false,
+    shadowOn: false
+  },
+  'official': {
+    name: '공식 행사',
+    bgColor: '#003d7a',
+    bgAlpha: '90',
+    fontColor: '#ffffff',
+    fontSize: '34',
+    fontFamily: "'Noto Sans KR', sans-serif",
+    letterSpacing: '1',
+    lineHeight: '1.7',
+    outlineOn: false,
+    shadowOn: false
+  },
+  'news': {
+    name: '뉴스/보도',
+    bgColor: '#1a1a1a',
+    bgAlpha: '95',
+    fontColor: '#ffffff',
+    fontSize: '30',
+    fontFamily: "'Noto Sans KR', sans-serif",
+    letterSpacing: '0',
+    lineHeight: '1.4',
+    outlineOn: false,
+    shadowOn: true,
+    shadowColor: '#000000',
+    shadowBlur: '2',
+    shadowX: '1',
+    shadowY: '1'
+  },
+  'conference': {
+    name: '컨퍼런스/세미나',
+    bgColor: '#2c3e50',
+    bgAlpha: '85',
+    fontColor: '#ecf0f1',
+    fontSize: '36',
+    fontFamily: "'Pretendard', sans-serif",
+    letterSpacing: '0.5',
+    lineHeight: '1.6',
+    outlineOn: false,
+    shadowOn: true,
+    shadowColor: '#000000',
+    shadowBlur: '3',
+    shadowX: '1',
+    shadowY: '1'
+  }
+};
 
 // ========== 연결 상태 관리 ==========
 function updateConnectionStatus(status, message) {
@@ -1094,6 +1347,8 @@ function handleSyncAccumulated(data) {
   console.log('[Sync] 누적 텍스트 동기화');
   accumulatedText = data.accumulatedText || '';
   currentActiveInput = '';
+  previousInput = '';  // 리셋
+  previousDisplay = '';
   updateDisplay(accumulatedText, true);
   
   if (data.activeStenographer) {
@@ -1110,6 +1365,8 @@ function handleChannelState(data) {
     if (data.state.accumulatedText !== undefined) {
       accumulatedText = data.state.accumulatedText;
       currentActiveInput = '';
+      previousInput = '';  // 리셋
+      previousDisplay = '';
       updateDisplay(accumulatedText, true);
     }
   }
@@ -1121,6 +1378,15 @@ function handleStenoInput(data) {
                      data.role;
   
   if (roleNumber === activeStenographer) {
+    const now = Date.now();
+    const inputLength = (data.text || '').length;
+    
+    // 깜빡임 방지: text_sent 직후 1초간 짧아진 입력 무시
+    if (now < ignoreInputUntil && inputLength < lastAccumulatedLength - 10) {
+      console.log(⏭️ 빈 입력 무시:', inputLength, '<', lastAccumulatedLength);
+      return;
+    }
+    
     currentActiveInput = data.text || '';
     const fullText = accumulatedText + currentActiveInput;
     updateDisplay(fullText, false);
@@ -1133,6 +1399,8 @@ function handleSwitchRole(data) {
   if (data.accumulatedText !== undefined) {
     accumulatedText = data.accumulatedText;
     currentActiveInput = '';
+    previousInput = '';  // 리셋
+    previousDisplay = '';
     updateDisplay(accumulatedText, true);
   }
   
@@ -1140,84 +1408,287 @@ function handleSwitchRole(data) {
 }
 
 function handleTextSent(data) {
+  // 깜빡임 방지: text_sent 시간과 길이 기록
+  lastTextSentTime = Date.now();
+  lastAccumulatedLength = (data.accumulatedText || '').length;
+  ignoreInputUntil = Date.now() + 1000; // 1초간 짧은 입력 무시
+  
   accumulatedText = data.accumulatedText || '';
   currentActiveInput = '';
+  previousInput = '';  // 리셋
+  previousDisplay = '';
   updateDisplay(accumulatedText, true);
 }
 
 function handleClearText() {
   accumulatedText = '';
   currentActiveInput = '';
+  previousInput = '';  // 리셋
+  previousDisplay = '';
   updateDisplay('', true);
 }
 
-// ========== 화면 업데이트 ==========
+// ========== 화면 업데이트 (스마트 1단어 지연 + 화자 구분) ==========
 function updateDisplay(text, isImmediate = false) {
-  let displayText = text;
-  
-  // 1단어 지연 처리
-  if (!isImmediate && !text.endsWith(' ')) {
-    const words = text.split(' ');
-    if (words.length > 1) {
-      displayText = words.slice(0, -1).join(' ') + ' ';
-    } else {
-      displayText = '';
+  // 자막 숨김 상태에서 새 입력이 들어오면 자동으로 표시
+  if (isSubtitleHidden && text && text.trim()) {
+    if (wasHiddenBeforeInput || text.length > (previousInput ? previousInput.length : 0)) {
+      toggleSubtitleVisibility(true);
+      wasHiddenBeforeInput = false;
     }
   }
   
-  viewerText.textContent = displayText || '자막 대기 중...';
-  viewerText.scrollTop = viewerText.scrollHeight;
+  let displayText = text;
+  
+  if (isImmediate) {
+    // 즉시 표시 (text_sent 등)
+    previousInput = '';
+    previousDisplay = '';
+  } else {
+    // 백스페이스 감지: 이전보다 짧아짐
+    const isBackspace = previousInput.length > text.length;
+    
+    // 끝 공백만 지운 경우 감지
+    const onlySpaceRemoved = isBackspace && 
+                           previousInput.endsWith(' ') && 
+                           text === previousInput.slice(0, -1);
+    
+    if (text.length > 0) {
+      // 끝이 공백이면 전체 표시
+      if (text.endsWith(' ') || text.endsWith('\n')) {
+        displayText = text;
+      }
+      // 끝 공백만 지운 경우 → 이전 표시 내용 유지 (단어는 그대로)
+      else if (onlySpaceRemoved && previousDisplay) {
+        // 이전에 표시했던 내용에서 끝 공백만 제거
+        displayText = previousDisplay.trimEnd();
+      }
+      // 일반적인 1단어 지연
+      else {
+        const lastSpace = text.lastIndexOf(' ');
+        const lastNewline = text.lastIndexOf('\n');
+        const lastDelimiter = Math.max(lastSpace, lastNewline);
+        
+        if (lastDelimiter > -1) {
+          displayText = text.substring(0, lastDelimiter + 1);
+        } else {
+          displayText = '';
+        }
+      }
+    }
+    
+    // 상태 저장
+    previousInput = text;
+    previousDisplay = displayText;
+  }
+  
+  // 화자 구분 처리
+  if (document.getElementById('speakerEnabled').checked) {
+    renderFormattedText(displayText || '자막 대기 중...');
+  } else {
+    viewerText.textContent = displayText || '자막 대기 중...';
+  }
+  
+  // 세로정렬에 따른 스크롤 (스무스 스크롤 적용됨)
+  const vAlign = document.querySelector('.valign-btn.active')?.dataset.valign || 'top';
+  if (vAlign === 'bottom') {
+    viewerText.scrollTop = viewerText.scrollHeight;
+  } else if (vAlign === 'top') {
+    // 상단 정렬일 때는 새 텍스트가 보이도록 자연스럽게 스크롤
+    if (viewerText.scrollHeight > viewerText.clientHeight) {
+      viewerText.scrollTop = viewerText.scrollHeight;
+    }
+  } else {
+    viewerText.scrollTop = viewerText.scrollHeight;
+  }
+}
+
+// 화자 구분 형식으로 렌더링
+function renderFormattedText(text) {
+  const lines = text.split('\n');
+  const speakerStyle = document.getElementById('speakerStyle').value;
+  const useBg = document.getElementById('speakerBgEnabled').checked;
+  const useColorDivider = document.getElementById('colorDividerEnabled').checked;
+  const bgAlpha = parseInt(document.getElementById('speakerBgAlpha').value) / 100;
+  
+  viewerText.innerHTML = '';
+  
+  lines.forEach(line => {
+    const lineDiv = document.createElement('div');
+    lineDiv.className = 'speaker-line';
+    
+    // 화자 패턴 확인: "-화자명: " 형식
+    if (line.startsWith('-') && line.includes(': ')) {
+      const colonIndex = line.indexOf(': ');
+      const speaker = line.substring(1, colonIndex).trim(); // "-" 제거
+      const content = line.substring(colonIndex + 2); // ": " 이후 내용
+      
+      // 화자 이름 요소
+      const speakerSpan = document.createElement('span');
+      speakerSpan.className = 'speaker-name';
+      speakerSpan.textContent = speaker;
+      
+      // 배경색 설정
+      if (useBg) {
+        const bgColor = document.getElementById('speakerBgColor').value;
+        const r = parseInt(bgColor.slice(1, 3), 16);
+        const g = parseInt(bgColor.slice(3, 5), 16);
+        const b = parseInt(bgColor.slice(5, 7), 16);
+        speakerSpan.style.background = `rgba(${r}, ${g}, ${b}, ${bgAlpha})`;
+      } else {
+        speakerSpan.style.background = 'transparent';
+      }
+      
+      lineDiv.appendChild(speakerSpan);
+      
+      // 구분 스타일 적용
+      if (speakerStyle === 'divider') {
+        const divider = document.createElement('div');
+        divider.className = 'speaker-divider';
+        
+        // 순환 색상 적용
+        if (useColorDivider) {
+          if (!speakerColorMap[speaker]) {
+            speakerColorMap[speaker] = dividerColors[speakerColorIndex % 5];
+            speakerColorIndex++;
+          }
+          divider.style.background = speakerColorMap[speaker];
+        }
+        
+        lineDiv.appendChild(divider);
+      } else if (speakerStyle === 'pipe') {
+        const pipe = document.createElement('span');
+        pipe.className = 'speaker-pipe';
+        pipe.textContent = '|';
+        lineDiv.appendChild(pipe);
+      } else if (speakerStyle === 'minimal') {
+        const divider = document.createElement('div');
+        divider.className = 'speaker-divider';
+        divider.style.width = '1px';
+        divider.style.background = 'rgba(255, 255, 255, 0.2)';
+        divider.style.margin = '0 25px';
+        lineDiv.appendChild(divider);
+      }
+      
+      // 내용 요소
+      const contentSpan = document.createElement('span');
+      contentSpan.className = 'speaker-content';
+      contentSpan.textContent = content;
+      lineDiv.appendChild(contentSpan);
+      
+    } else {
+      // 일반 텍스트 (화자 없음)
+      lineDiv.className = 'speaker-line no-speaker';
+      lineDiv.textContent = line;
+    }
+    
+    viewerText.appendChild(lineDiv);
+  });
+}
+
+// 자막 표시/숨김 토글
+function toggleSubtitleVisibility(forceShow = null) {
+  if (forceShow !== null) {
+    isSubtitleHidden = !forceShow;
+  } else {
+    isSubtitleHidden = !isSubtitleHidden;
+  }
+  
+  if (isSubtitleHidden) {
+    viewerText.classList.add('hidden');
+    wasHiddenBeforeInput = true;
+    document.getElementById('subtitleVisible').checked = false;
+    showNotification('자막 숨김');
+  } else {
+    viewerText.classList.remove('hidden');
+    wasHiddenBeforeInput = false;
+    document.getElementById('subtitleVisible').checked = true;
+    showNotification('자막 표시');
+  }
 }
 
 // ========== UI 이벤트 ==========
-// 설정 아이콘 표시/숨김
-let mouseTimer = null;
-let isMouseInTopArea = false;
-let isMouseOnIcon = false;
+// 우클릭 메뉴
+document.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  showQuickWheel();
+});
 
-function updateIconVisibility() {
-  if (isMouseInTopArea || isMouseOnIcon || optionPanel.classList.contains('open')) {
-    settingIcon.classList.add('visible');
-  } else {
-    settingIcon.classList.remove('visible');
-  }
+function showQuickWheel() {
+  const overlay = document.getElementById('quickWheelOverlay');
+  const quickWheel = document.querySelector('.quick-wheel');
+  // 위치 리셋 (중앙)
+  quickWheel.style.transform = '';
+  overlay.classList.add('active');
 }
 
-document.addEventListener('mousemove', e => {
-  isMouseInTopArea = e.clientY < 80;
-  updateIconVisibility();
-});
+function closeQuickWheel() {
+  const overlay = document.getElementById('quickWheelOverlay');
+  const quickWheel = document.querySelector('.quick-wheel');
+  overlay.classList.remove('active');
+  // 위치 리셋
+  quickWheel.style.transform = '';
+}
 
-settingIcon.addEventListener('mouseenter', () => {
-  isMouseOnIcon = true;
-  updateIconVisibility();
-});
-
-settingIcon.addEventListener('mouseleave', () => {
-  isMouseOnIcon = false;
-  updateIconVisibility();
-});
-
-document.addEventListener('mouseleave', () => {
-  isMouseInTopArea = false;
-  isMouseOnIcon = false;
-  if (!optionPanel.classList.contains('open')) {
-    settingIcon.classList.remove('visible');
+// 오버레이 클릭으로 닫기
+document.getElementById('quickWheelOverlay').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) {
+    closeQuickWheel();
   }
 });
 
-// 옵션 패널 토글
-settingIcon.addEventListener('click', e => {
-  e.stopPropagation();
-  optionPanel.classList.toggle('open');
-  settingIcon.classList.add('visible');
-});
+// 옵션창 드래그 기능
+let isDraggingOptions = false;
+let optionsDragStartX = 0;
+let optionsDragStartY = 0;
+let optionsInitialX = 0;
+let optionsInitialY = 0;
 
-// 닫기 버튼
-closePanel.addEventListener('click', e => {
-  e.stopPropagation();
-  optionPanel.classList.remove('open');
-});
+function setupOptionsDrag() {
+  const quickWheel = document.querySelector('.quick-wheel');
+  const quickWheelHeader = document.querySelector('.quick-wheel-header');
+  
+  // 헤더 클릭 시 드래그 시작
+  quickWheelHeader.addEventListener('mousedown', (e) => {
+    // X 버튼 클릭은 제외
+    if (e.target.classList.contains('close-btn')) return;
+    
+    isDraggingOptions = true;
+    
+    // 현재 위치 계산
+    const rect = quickWheel.getBoundingClientRect();
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    
+    optionsInitialX = rect.left + rect.width / 2 - centerX;
+    optionsInitialY = rect.top + rect.height / 2 - centerY;
+    
+    optionsDragStartX = e.clientX - optionsInitialX;
+    optionsDragStartY = e.clientY - optionsInitialY;
+    
+    quickWheelHeader.style.cursor = 'grabbing';
+  });
+  
+  // 드래그 중
+  document.addEventListener('mousemove', (e) => {
+    if (!isDraggingOptions) return;
+    
+    e.preventDefault();
+    
+    const x = e.clientX - optionsDragStartX;
+    const y = e.clientY - optionsDragStartY;
+    
+    quickWheel.style.transform = `translate(${x}px, ${y}px)`;
+  });
+  
+  // 드래그 종료
+  document.addEventListener('mouseup', () => {
+    if (isDraggingOptions) {
+      isDraggingOptions = false;
+      quickWheelHeader.style.cursor = 'grab';
+    }
+  });
+}
 
 // 탭 기능
 const tabBtns = document.querySelectorAll('.tab-btn');
@@ -1235,74 +1706,21 @@ tabBtns.forEach(btn => {
   });
 });
 
-// 크로마키 프리셋 데이터
-const chromaPresets = {
-  'green-white': { bg: '#00FF00', text: '#FFFFFF' },
-  'blue-white': { bg: '#0000FF', text: '#FFFFFF' },
-  'magenta-white': { bg: '#FF00FF', text: '#FFFFFF' },
-  'black-white': { bg: '#000000', text: '#FFFFFF' },
-  'navy-white': { bg: '#000080', text: '#FFFFFF' },
-  'white-black': { bg: '#FFFFFF', text: '#000000' }
-};
-
-// 크로마키 프리셋 선택
-const presetItems = document.querySelectorAll('.preset-item');
-const resetPreset = document.getElementById('resetPreset');
-
-presetItems.forEach(item => {
-  item.addEventListener('click', () => {
-    const presetName = item.dataset.preset;
-    const preset = chromaPresets[presetName];
-    
-    if (preset) {
-      presetItems.forEach(p => p.classList.remove('active'));
-      item.classList.add('active');
-      
-      document.getElementById('bgColor').value = preset.bg;
-      document.getElementById('fontColor').value = preset.text;
-      
-      applyBasicOptions();
-    }
+// 정렬 버튼들
+document.querySelectorAll('.align-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.align-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyBasicOptions();
   });
 });
 
-// 프리셋 해제 버튼
-resetPreset.addEventListener('click', () => {
-  presetItems.forEach(p => p.classList.remove('active'));
-  document.getElementById('bgColor').value = '#000000';
-  document.getElementById('fontColor').value = '#FFFFFF';
-  applyBasicOptions();
-});
-
-// 폰트 추가 기능
-const addFontBtn = document.getElementById('addFontBtn');
-
-addFontBtn.addEventListener('click', () => {
-  const fontName = prompt(
-    "추가할 폰트 이름을 입력하세요:\n" +
-    "(예: Pretendard, 나눔스퀘어, 배달의민족 주아)\n\n" +
-    "※ 해당 폰트가 시스템에 설치되어 있어야 합니다."
-  );
-  
-  if (fontName && fontName.trim()) {
-    const trimmedName = fontName.trim();
-    const fontSelect = document.getElementById('fontFamily');
-    
-    const exists = Array.from(fontSelect.options).some(opt =>
-      opt.textContent === trimmedName
-    );
-    
-    if (!exists) {
-      const option = document.createElement('option');
-      option.value = `'${trimmedName}', sans-serif`;
-      option.textContent = trimmedName;
-      fontSelect.appendChild(option);
-      fontSelect.value = option.value;
-      applyBasicOptions();
-    } else {
-      alert('이미 추가된 폰트입니다.');
-    }
-  }
+document.querySelectorAll('.valign-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.valign-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyBasicOptions();
+  });
 });
 
 // 여백 조절기 토글
@@ -1320,15 +1738,16 @@ marginAdjusterToggle.addEventListener('change', () => {
 
 // 여백 조절기 업데이트
 function updateMarginAdjuster() {
-  if (marginOffset > 0) {
-    viewerText.style.setProperty('padding-bottom', marginOffset + 'px', 'important');
-    viewerText.style.setProperty('bottom', (40 + marginOffset) + 'px', 'important');
-    viewerText.scrollTop = viewerText.scrollHeight;
+  const bottomMargin = parseInt(document.getElementById('marginBottom').value) || 0;
+  const adjustedBottom = bottomMargin + marginOffset;
+  
+  if (marginOffset > 0 || bottomMargin > 0) {
+    viewerText.style.paddingBottom = adjustedBottom + 'px';
   } else {
-    viewerText.style.setProperty('padding-bottom', '0px', 'important');
-    viewerText.style.setProperty('bottom', '40px', 'important');
-    viewerText.scrollTop = viewerText.scrollHeight;
+    viewerText.style.paddingBottom = '0px';
   }
+  
+  viewerText.scrollTop = viewerText.scrollHeight;
 }
 
 // 드래그 이벤트
@@ -1363,33 +1782,71 @@ document.addEventListener('mouseup', () => {
   }
 });
 
-// 전체화면 토글
-document.body.addEventListener('click', e => {
-  if (ignoreNextClick) {
-    e.stopPropagation();
-    e.preventDefault();
-    ignoreNextClick = false;
-    return;
-  }
-  if (isDragging) return;
-  if (e.target.closest('#option-panel') || e.target.closest('#setting-icon')) return;
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen();
-  } else {
-    document.exitFullscreen();
-  }
+// 프리셋 적용
+document.querySelectorAll('.preset-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const presetName = item.dataset.preset;
+    applyPreset(presets[presetName]);
+    
+    // 선택 표시
+    document.querySelectorAll('.preset-item').forEach(p => p.classList.remove('selected'));
+    item.classList.add('selected');
+    
+    showNotification(`${presets[presetName].name} 적용됨`);
+  });
 });
 
-// 전체화면 상태 변경 감지
-document.addEventListener('fullscreenchange', () => {
-  if (document.fullscreenElement) {
-    settingIcon.classList.add('fullscreen');
-    optionPanel.classList.add('fullscreen');
-  } else {
-    settingIcon.classList.remove('fullscreen');
-    optionPanel.classList.remove('fullscreen');
+function applyPreset(preset) {
+  if (preset.bgColor) document.getElementById('bgColor').value = preset.bgColor;
+  if (preset.bgAlpha) {
+    document.getElementById('bgAlpha').value = preset.bgAlpha;
+    document.getElementById('bgAlphaLabel').textContent = preset.bgAlpha + '%';
   }
-});
+  if (preset.fontColor) document.getElementById('fontColor').value = preset.fontColor;
+  if (preset.fontSize) document.getElementById('fontSize').value = preset.fontSize;
+  if (preset.fontFamily) document.getElementById('fontFamily').value = preset.fontFamily;
+  if (preset.letterSpacing) document.getElementById('letterSpacing').value = preset.letterSpacing;
+  if (preset.lineHeight) document.getElementById('lineHeight').value = preset.lineHeight;
+  if (preset.outlineOn !== undefined) document.getElementById('outlineOn').checked = preset.outlineOn;
+  if (preset.outlineColor) document.getElementById('outlineColor').value = preset.outlineColor;
+  if (preset.outlineWidth) document.getElementById('outlineWidth').value = preset.outlineWidth;
+  if (preset.shadowOn !== undefined) document.getElementById('shadowOn').checked = preset.shadowOn;
+  if (preset.shadowColor) document.getElementById('shadowColor').value = preset.shadowColor;
+  if (preset.shadowBlur) document.getElementById('shadowBlur').value = preset.shadowBlur;
+  if (preset.shadowX) document.getElementById('shadowX').value = preset.shadowX;
+  if (preset.shadowY) document.getElementById('shadowY').value = preset.shadowY;
+  
+  // HEX 값 업데이트
+  document.getElementById('bgColorHex').value = preset.bgColor || '#000000';
+  document.getElementById('fontColorHex').value = preset.fontColor || '#ffffff';
+  if (preset.outlineColor) document.getElementById('outlineColorHex').value = preset.outlineColor;
+  if (preset.shadowColor) document.getElementById('shadowColorHex').value = preset.shadowColor;
+  
+  applyBasicOptions();
+}
+
+// 색상 HEX 연동
+function setupColorSync(colorId, hexId) {
+  const colorInput = document.getElementById(colorId);
+  const hexInput = document.getElementById(hexId);
+  
+  colorInput.addEventListener('input', () => {
+    hexInput.value = colorInput.value.toUpperCase();
+    applyBasicOptions();
+  });
+  
+  hexInput.addEventListener('input', (e) => {
+    let value = e.target.value;
+    if (!value.startsWith('#')) value = '#' + value;
+    value = value.slice(0, 7);
+    e.target.value = value.toUpperCase();
+    
+    if (/^#[0-9A-F]{6}$/i.test(value)) {
+      colorInput.value = value;
+      applyBasicOptions();
+    }
+  });
+}
 
 // 옵션 적용 함수
 function applyBasicOptions() {
@@ -1401,19 +1858,35 @@ function applyBasicOptions() {
   const b = parseInt(bgHex.slice(5, 7), 16);
   document.getElementById('viewer').style.background = `rgba(${r}, ${g}, ${b}, ${alpha})`;
   
+  // 텍스트 스타일
   viewerText.style.color = document.getElementById('fontColor').value;
   viewerText.style.fontSize = document.getElementById('fontSize').value + 'px';
   viewerText.style.fontFamily = document.getElementById('fontFamily').value;
   viewerText.style.letterSpacing = document.getElementById('letterSpacing').value + 'px';
   viewerText.style.lineHeight = document.getElementById('lineHeight').value;
   
-  // 상단/하단 여백 적용
-  const topMargin = parseInt(document.getElementById('marginTop').value) || 0;
-  const bottomMargin = parseInt(document.getElementById('marginBottom').value) || 0;
+  // 정렬 설정
+  const hAlign = document.querySelector('.align-btn.active')?.dataset.align || 'left';
+  viewerText.style.textAlign = hAlign;
   
-  viewerText.style.top = (40 + topMargin) + 'px';
-  viewerText.style.bottom = (40 + bottomMargin + marginOffset) + 'px';
-  viewerText.style.height = `calc(100% - ${80 + topMargin + bottomMargin + marginOffset}px)`;
+  const vAlign = document.querySelector('.valign-btn.active')?.dataset.valign || 'top';
+  viewerText.className = '';
+  if (vAlign === 'middle') {
+    viewerText.classList.add('align-middle');
+  } else if (vAlign === 'bottom') {
+    viewerText.classList.add('align-bottom');
+  }
+  // top은 기본값이므로 클래스 추가 없음
+  
+  // 여백 설정
+  const marginTop = parseInt(document.getElementById('marginTop').value) || 10;
+  const marginBottom = parseInt(document.getElementById('marginBottom').value) || 10;
+  const marginLeft = parseInt(document.getElementById('marginLeft').value) || 15;
+  const marginRight = parseInt(document.getElementById('marginRight').value) || 15;
+  
+  viewerText.style.padding = `${marginTop}px ${marginRight}px ${marginBottom}px ${marginLeft}px`;
+  viewerText.style.width = `calc(100% - ${marginLeft + marginRight}px)`;
+  viewerText.style.height = `calc(100% - ${marginTop + marginBottom + 20}px)`;
   
   // 테두리 적용
   const outlineOn = document.getElementById('outlineOn').checked;
@@ -1424,7 +1897,8 @@ function applyBasicOptions() {
   const shadowOn = document.getElementById('shadowOn').checked;
   const shadowColor = document.getElementById('shadowColor').value;
   const shadowBlur = document.getElementById('shadowBlur').value;
-  const shadowDistance = document.getElementById('shadowDistance').value;
+  const shadowX = document.getElementById('shadowX').value;
+  const shadowY = document.getElementById('shadowY').value;
   
   let textShadow = '';
   
@@ -1433,8 +1907,8 @@ function applyBasicOptions() {
     textShadow = outline;
   }
   
-  if (shadowOn && parseFloat(shadowDistance) > 0) {
-    const dropShadow = `${shadowDistance}px ${shadowDistance}px ${shadowBlur}px ${shadowColor}`;
+  if (shadowOn && parseFloat(shadowBlur) > 0) {
+    const dropShadow = `${shadowX}px ${shadowY}px ${shadowBlur}px ${shadowColor}`;
     textShadow = textShadow ? textShadow + ', ' + dropShadow : dropShadow;
   }
   
@@ -1442,9 +1916,23 @@ function applyBasicOptions() {
   updateMarginAdjuster();
 }
 
+// 알림 표시
+function showNotification(message, duration = 2000) {
+  const notif = document.getElementById('notification');
+  notif.textContent = message;
+  notif.classList.add('show');
+  
+  setTimeout(() => {
+    notif.classList.remove('show');
+  }, duration);
+}
+
 // 설정 변경 이벤트 리스너들
 document.getElementById('bgColor').addEventListener('input', applyBasicOptions);
-document.getElementById('bgAlpha').addEventListener('input', applyBasicOptions);
+document.getElementById('bgAlpha').addEventListener('input', (e) => {
+  document.getElementById('bgAlphaLabel').textContent = e.target.value + '%';
+  applyBasicOptions();
+});
 document.getElementById('fontColor').addEventListener('input', applyBasicOptions);
 document.getElementById('fontSize').addEventListener('input', applyBasicOptions);
 document.getElementById('fontFamily').addEventListener('change', applyBasicOptions);
@@ -1452,13 +1940,16 @@ document.getElementById('letterSpacing').addEventListener('input', applyBasicOpt
 document.getElementById('lineHeight').addEventListener('input', applyBasicOptions);
 document.getElementById('marginTop').addEventListener('input', applyBasicOptions);
 document.getElementById('marginBottom').addEventListener('input', applyBasicOptions);
+document.getElementById('marginLeft').addEventListener('input', applyBasicOptions);
+document.getElementById('marginRight').addEventListener('input', applyBasicOptions);
 document.getElementById('outlineOn').addEventListener('change', applyBasicOptions);
 document.getElementById('outlineColor').addEventListener('input', applyBasicOptions);
 document.getElementById('outlineWidth').addEventListener('input', applyBasicOptions);
 document.getElementById('shadowOn').addEventListener('change', applyBasicOptions);
 document.getElementById('shadowColor').addEventListener('input', applyBasicOptions);
 document.getElementById('shadowBlur').addEventListener('input', applyBasicOptions);
-document.getElementById('shadowDistance').addEventListener('input', applyBasicOptions);
+document.getElementById('shadowX').addEventListener('input', applyBasicOptions);
+document.getElementById('shadowY').addEventListener('input', applyBasicOptions);
 
 // 숫자 조절 버튼들
 document.getElementById('fontSizeUp').addEventListener('click', () => {
@@ -1521,6 +2012,30 @@ document.getElementById('marginBottomDown').addEventListener('click', () => {
   applyBasicOptions();
 });
 
+document.getElementById('marginLeftUp').addEventListener('click', () => {
+  const input = document.getElementById('marginLeft');
+  input.value = Math.min(200, Number(input.value) + 5);
+  applyBasicOptions();
+});
+
+document.getElementById('marginLeftDown').addEventListener('click', () => {
+  const input = document.getElementById('marginLeft');
+  input.value = Math.max(0, Number(input.value) - 5);
+  applyBasicOptions();
+});
+
+document.getElementById('marginRightUp').addEventListener('click', () => {
+  const input = document.getElementById('marginRight');
+  input.value = Math.min(200, Number(input.value) + 5);
+  applyBasicOptions();
+});
+
+document.getElementById('marginRightDown').addEventListener('click', () => {
+  const input = document.getElementById('marginRight');
+  input.value = Math.max(0, Number(input.value) - 5);
+  applyBasicOptions();
+});
+
 document.getElementById('outlineWidthUp').addEventListener('click', () => {
   const input = document.getElementById('outlineWidth');
   input.value = Math.min(10, Number(input.value) + 0.1).toFixed(1);
@@ -1545,22 +2060,90 @@ document.getElementById('shadowBlurDown').addEventListener('click', () => {
   applyBasicOptions();
 });
 
-document.getElementById('shadowDistanceUp').addEventListener('click', () => {
-  const input = document.getElementById('shadowDistance');
-  input.value = Math.min(10, Number(input.value) + 0.5).toFixed(1);
+document.getElementById('shadowXUp').addEventListener('click', () => {
+  const input = document.getElementById('shadowX');
+  input.value = Math.min(20, Number(input.value) + 0.5).toFixed(1);
   applyBasicOptions();
 });
 
-document.getElementById('shadowDistanceDown').addEventListener('click', () => {
-  const input = document.getElementById('shadowDistance');
-  input.value = Math.max(0, Number(input.value) - 0.5).toFixed(1);
+document.getElementById('shadowXDown').addEventListener('click', () => {
+  const input = document.getElementById('shadowX');
+  input.value = Math.max(-20, Number(input.value) - 0.5).toFixed(1);
   applyBasicOptions();
 });
 
-// ESC 키로 패널 닫기
+document.getElementById('shadowYUp').addEventListener('click', () => {
+  const input = document.getElementById('shadowY');
+  input.value = Math.min(20, Number(input.value) + 0.5).toFixed(1);
+  applyBasicOptions();
+});
+
+document.getElementById('shadowYDown').addEventListener('click', () => {
+  const input = document.getElementById('shadowY');
+  input.value = Math.max(-20, Number(input.value) - 0.5).toFixed(1);
+  applyBasicOptions();
+});
+
+// 자막 표시/숨김 체크박스
+document.getElementById('subtitleVisible').addEventListener('change', (e) => {
+  toggleSubtitleVisibility(e.target.checked);
+});
+
+// 전체화면 토글
+document.body.addEventListener('dblclick', e => {
+  if (e.target.closest('.quick-wheel-overlay')) return;
+  
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+  } else {
+    document.exitFullscreen();
+  }
+});
+
+// 단축키 이벤트
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && optionPanel.classList.contains('open')) {
-    optionPanel.classList.remove('open');
+  // 입력 필드에 포커스가 있으면 단축키 무시
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
+    return;
+  }
+  
+  switch(e.key) {
+    case 'Escape':
+      closeQuickWheel();
+      break;
+      
+    case 'Enter':
+      e.preventDefault();
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+      break;
+      
+    case 'ArrowUp':
+      e.preventDefault();
+      const currentSizeUp = parseInt(document.getElementById('fontSize').value);
+      const newSizeUp = Math.min(200, currentSizeUp + 2);
+      document.getElementById('fontSize').value = newSizeUp;
+      applyBasicOptions();
+      showNotification(`글자 크기: ${newSizeUp}px`);
+      break;
+      
+    case 'ArrowDown':
+      e.preventDefault();
+      const currentSizeDown = parseInt(document.getElementById('fontSize').value);
+      const newSizeDown = Math.max(10, currentSizeDown - 2);
+      document.getElementById('fontSize').value = newSizeDown;
+      applyBasicOptions();
+      showNotification(`글자 크기: ${newSizeDown}px`);
+      break;
+      
+    case 'h':
+    case 'H':
+      e.preventDefault();
+      toggleSubtitleVisibility();
+      break;
   }
 });
 
@@ -1569,11 +2152,28 @@ window.addEventListener('load', () => {
   console.log('[App] 초기화 시작');
   console.log('[App] 채널 코드:', channelCode);
   
+  // 색상 연동 설정
+  setupColorSync('bgColor', 'bgColorHex');
+  setupColorSync('fontColor', 'fontColorHex');
+  setupColorSync('outlineColor', 'outlineColorHex');
+  setupColorSync('shadowColor', 'shadowColorHex');
+  
+  // 옵션창 드래그 설정
+  setupOptionsDrag();
+  
+  // X 버튼 클릭 이벤트
+  document.getElementById('closeOptionsBtn').addEventListener('click', closeQuickWheel);
+  
   // 초기 설정 적용
   applyBasicOptions();
   
   // Socket 연결 시작
   initSocket();
+  
+  // 단축키 안내 (3초 후)
+  setTimeout(() => {
+    showNotification('단축키: Enter(전체화면), ↑↓(글자크기), H(자막 숨김)', 5000);
+  }, 3000);
 });
 
 // 페이지 언로드 시 정리
