@@ -13,7 +13,7 @@ let lastSentText = '';
 let lastSendTime = Date.now();
 
 // 🔥 IME 조합 관련 상태 플래그 추가
-const USE_IME_COMMIT_TX = true; // 기능 on/off 플래그
+const USE_IME_COMMIT_TX = true; // 🔥 기능 활성화 (필수 보완 #1)
 let isComposing = false;                 // IME 조합 중 여부
 let lastCompositionEndAt = 0;            // compositionend 타임스탬프(ms)
 const composeStabilizeMs = 150;          // 매칭 유예
@@ -127,16 +127,22 @@ function scheduleMaxComposeFlush() {
     if (isComposing) {
       // 조합이 너무 길어질 때 한 번 강제 전송
       console.debug('[IME] 최대지연 강제 전송');
-      sendNow();
+      const text = myEditor.value || '';
+      if (socket && socket.connected) {
+        socket.volatile.emit('steno_input', { channel, role: `steno${myRole}`, text });
+        lastSentText = text;
+        lastSendTime = Date.now();
+      }
     }
+    composeTimeoutId = null;
   }, maxComposeDelayMs);
 }
 
 function sendNow() {
   const text = myEditor.value || '';
-  // 기존 emit 그대로 사용
+  // 🔥 드래프트는 volatile 사용 (필수 보완 #6)
   if (socket && socket.connected) {
-    socket.emit('steno_input', { channel, role: `steno${myRole}`, text });
+    socket.volatile.emit('steno_input', { channel, role: `steno${myRole}`, text });
     lastSentText = text;
     lastSendTime = Date.now();
   }
@@ -152,18 +158,32 @@ function initializeComponents() {
   
   if (myEditor) {
     myEditor.oninput = handleInputChange;
+    
+    // 🔥 blur 핸들러 개선 (필수 보완 #5)
     myEditor.onblur = () => {
       if (sendInputTimeout) {
         clearTimeout(sendInputTimeout);
         sendInputTimeout = null;
-        
-        const currentText = myEditor.value;
-        // 모든 속기사가 blur 시 전송 (파트너가 봐야 하므로)
-        if (currentText !== lastSentText && socket && socket.connected) {
-          socket.emit('steno_input', { channel, role: `steno${myRole}`, text: currentText });
-          lastSentText = currentText;
-          lastSendTime = Date.now();
-        }
+      }
+      
+      // IME 조합 중 blur면 유예 후 전송
+      if (USE_IME_COMMIT_TX && isComposing) {
+        setTimeout(() => {
+          if (!isComposing && myEditor.value !== lastSentText && socket && socket.connected) {
+            socket.emit('steno_input', { channel, role: `steno${myRole}`, text: myEditor.value });
+            lastSentText = myEditor.value;
+            lastSendTime = Date.now();
+          }
+        }, composeStabilizeMs);
+        return;
+      }
+      
+      const currentText = myEditor.value;
+      // 모든 속기사가 blur 시 전송 (파트너가 봐야 하므로)
+      if (currentText !== lastSentText && socket && socket.connected) {
+        socket.emit('steno_input', { channel, role: `steno${myRole}`, text: currentText });
+        lastSentText = currentText;
+        lastSendTime = Date.now();
       }
     };
     
@@ -193,6 +213,11 @@ function initializeComponents() {
     // 엔터키 처리 - 권한자만 전송 가능
     myEditor.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
+        // 🔥 IME 조합 중/직후에는 기본 동작 허용 (필수 보완 #4)
+        if (USE_IME_COMMIT_TX && (isComposing || Date.now() - lastCompositionEndAt < composeStabilizeMs)) {
+          return; // IME 확정 흐름 방해 금지
+        }
+        
         e.preventDefault();
         
         // HTML 모드 또는 권한자일 때만 뷰어로 전송
@@ -821,119 +846,133 @@ function handleInputChange() {
   }
 }
 
-// 🔥 소켓 모드 전송 (IME 조합 체크 추가)
+// 🔥 소켓 모드 전송 (완전 개선 - 7가지 필수 보완 반영)
 function sendInput() {
   if (!socket || isHtmlMode) return;
   
   const currentText = myEditor.value;
   
-  // 🔥 IME 조합 중 체크 로직 추가
-  if (USE_IME_COMMIT_TX && isComposing) {
-    // 예외 트리거 체크
-    if (isImmediateTriggerByKey(currentText)) {
-      console.debug('[IME] 예외 트리거 감지 → 즉시 전송');
-      sendNow();
-    } else {
-      // 조합 중이면 전송 보류, 최대지연 타이머 설정
-      scheduleMaxComposeFlush();
-      console.debug('[IME] 조합 중 - 전송 보류');
+  // 🔥 즉시 트리거 일원화 (필수 보완 #2) - 모든 공백과 구두점 포함
+  if (isImmediateTriggerByKey(currentText)) {
+    if (currentText !== lastSentText) {
+      if (socket.connected) {
+        // 🔥 드래프트는 volatile 사용 (필수 보완 #6)
+        socket.volatile.emit('steno_input', { 
+          channel: channel, 
+          role: `steno${myRole}`, 
+          text: currentText 
+        });
+      }
+      lastSentText = currentText;
+      lastSendTime = Date.now();
+      
+      // 기존 타이머 취소
+      if (sendInputTimeout) {
+        clearTimeout(sendInputTimeout);
+        sendInputTimeout = null;
+      }
     }
-    // 뷰어 업데이트는 계속 진행 (로컬 프리뷰)
+    
+    // 뷰어 업데이트
+    if (isSoloMode() || myRole === activeStenographer) {
+      updateViewerWithCurrentInput();
+    }
+    return; // 즉시 전송 후 종료
+  }
+  
+  // 🔥 IME 조합 중 체크 (즉시 트리거가 아닐 때만)
+  if (USE_IME_COMMIT_TX && isComposing) {
+    scheduleMaxComposeFlush();
+    console.debug('[IME] 조합 중 - 전송 보류');
+    
+    // 뷰어 업데이트는 계속 진행
     if (isSoloMode() || myRole === activeStenographer) {
       updateViewerWithCurrentInput();
     }
     return;
   }
   
-  // 기존 로직 유지
+  // 기존 로직 (타이머 기반 전송)
   // 1인 모드이거나 권한자인 경우
   if (isSoloMode() || myRole === activeStenographer) {
-    // 뷰어 업데이트 (한 단어 지연)
+    // 뷰어 업데이트
     updateViewerWithCurrentInput();
     
-    // 서버로 입력 전송 (throttling)
+    // 이전 타이머 취소
     if (sendInputTimeout) {
       clearTimeout(sendInputTimeout);
     }
     
-    const shouldSendImmediately = 
-      currentText.endsWith(' ') ||
-      currentText.endsWith('\n') ||
-      currentText === '' ||
-      (Date.now() - lastSendTime) > 5000;
-    
-    if (shouldSendImmediately) {
-      if (currentText !== lastSentText) {
-        if (socket.connected) {
-          socket.emit('steno_input', { 
-            channel: channel, 
-            role: `steno${myRole}`, 
-            text: currentText 
-          });
-        }
-        lastSentText = currentText;
-        lastSendTime = Date.now();
-        
-        if (sendInputTimeout) {
-          clearTimeout(sendInputTimeout);
-          sendInputTimeout = null;
-        }
+    // 5초 경과 체크
+    const timeElapsed = Date.now() - lastSendTime;
+    if (timeElapsed > 5000 && currentText !== lastSentText) {
+      // 5초 강제 전송
+      if (socket.connected) {
+        socket.volatile.emit('steno_input', { 
+          channel: channel, 
+          role: `steno${myRole}`, 
+          text: currentText 
+        });
       }
-    } else {
+      lastSentText = currentText;
+      lastSendTime = Date.now();
+    } else if (currentText !== lastSentText) {
+      // 200ms 타이머 설정 (필수 보완 #3 - 타이머 핸들 정리)
       sendInputTimeout = setTimeout(() => {
-        if (currentText !== lastSentText) {
+        // 타이머 실행 시점의 최신 텍스트를 다시 읽음
+        const latestText = myEditor.value;
+        if (latestText !== lastSentText) {
           if (socket.connected) {
-            socket.emit('steno_input', { 
+            socket.volatile.emit('steno_input', { 
               channel: channel, 
               role: `steno${myRole}`, 
-              text: currentText 
+              text: latestText
             });
           }
-          lastSentText = currentText;
+          lastSentText = latestText;
           lastSendTime = Date.now();
         }
+        sendInputTimeout = null; // 🔥 타이머 핸들 정리 필수
       }, 200);
     }
   } 
   // 2인 모드의 대기자인 경우
   else {
-    // 파트너와 실시간 공유를 위해 더 빠르게 전송
+    // 이전 타이머 취소
     if (sendInputTimeout) {
       clearTimeout(sendInputTimeout);
     }
     
-    // 대기자는 더 즉각적으로 전송 (파트너가 실시간으로 봐야 매칭 가능)
-    const shouldSendImmediately = 
-      currentText.endsWith(' ') ||
-      currentText === '' ||
-      (Date.now() - lastSendTime) > 1000;  // 1초마다 (권한자의 5초보다 짧음)
-    
-    if (shouldSendImmediately) {
-      if (currentText !== lastSentText) {
-        if (socket.connected) {
-          socket.emit('steno_input', { 
-            channel: channel, 
-            role: `steno${myRole}`, 
-            text: currentText 
-          });
-        }
-        lastSentText = currentText;
-        lastSendTime = Date.now();
+    // 1초 경과 체크
+    const timeElapsed = Date.now() - lastSendTime;
+    if (timeElapsed > 1000 && currentText !== lastSentText) {
+      // 1초 강제 전송
+      if (socket.connected) {
+        socket.volatile.emit('steno_input', { 
+          channel: channel, 
+          role: `steno${myRole}`, 
+          text: currentText 
+        });
       }
-    } else {
-      // 대기자는 100ms로 더 빠르게 (권한자의 200ms보다 짧음)
+      lastSentText = currentText;
+      lastSendTime = Date.now();
+    } else if (currentText !== lastSentText) {
+      // 100ms 타이머 설정 (필수 보완 #3 - 타이머 핸들 정리)
       sendInputTimeout = setTimeout(() => {
-        if (currentText !== lastSentText) {
+        // 타이머 실행 시점의 최신 텍스트를 다시 읽음
+        const latestText = myEditor.value;
+        if (latestText !== lastSentText) {
           if (socket.connected) {
-            socket.emit('steno_input', { 
+            socket.volatile.emit('steno_input', { 
               channel: channel, 
               role: `steno${myRole}`, 
-              text: currentText 
+              text: latestText
             });
           }
-          lastSentText = currentText;
+          lastSentText = latestText;
           lastSendTime = Date.now();
         }
+        sendInputTimeout = null; // 🔥 타이머 핸들 정리 필수
       }, 100);
     }
   }
@@ -958,12 +997,19 @@ function updateViewerWithCurrentInput() {
   
   let displayText = accumulatedText;
   
-  // 현재 입력 중인 텍스트 추가
+  // 🔥 IME 조합 중 마지막 단어 표시 (옵션 보완 #7)
   if (myEditor.value) {
-    if (myEditor.value.endsWith(' ')) {
+    const needsSpacer = accumulatedText && !accumulatedText.endsWith('\n') && !accumulatedText.endsWith(' ');
+    
+    if (USE_IME_COMMIT_TX && isComposing) {
+      // 조합 중에는 모든 텍스트 표시 (마지막 단어 포함)
+      displayText = accumulatedText + 
+        (needsSpacer ? ' ' : '') + 
+        myEditor.value.trim();
+    } else if (myEditor.value.endsWith(' ')) {
       // 공백으로 끝나면 전체 추가
       displayText = accumulatedText + 
-        (accumulatedText && !accumulatedText.endsWith('\n') && !accumulatedText.endsWith(' ') ? ' ' : '') + 
+        (needsSpacer ? ' ' : '') + 
         myEditor.value.trim();
     } else {
       // 아직 입력 중인 마지막 단어는 제외
@@ -971,7 +1017,7 @@ function updateViewerWithCurrentInput() {
       if (words.length > 1) {
         const completeWords = words.slice(0, -1).join(' ');
         displayText = accumulatedText + 
-          (accumulatedText && !accumulatedText.endsWith('\n') && !accumulatedText.endsWith(' ') ? ' ' : '') + 
+          (needsSpacer ? ' ' : '') + 
           completeWords;
       }
     }
