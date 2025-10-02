@@ -1005,8 +1005,8 @@ function sendCompletedInput() {
     coalescedTimer = setTimeout(performSend, delay);
   }
   
-  // 권한자는 뷰어 즉시 업데이트
-  if (isActive) {
+  // 1인 모드이거나 권한자는 뷰어 즉시 업데이트
+  if (isSoloMode() || myRole === activeStenographer) {
     updateViewerWithCurrentInput();
   }
   
@@ -1588,17 +1588,18 @@ function updateViewerContent() {
 function sendToMonitor() {
   if (!myEditor || myEditor.value.trim() === '') return;
   
+  // 1인 모드이거나 권한자일 때만 전송
   if (isSoloMode() || myRole === activeStenographer) {
     const inputText = myEditor.value.trim();
     
     if (accumulatedText && accumulatedText.length > 0) {
       // 마지막이 개행으로 끝나면 새 줄로 시작
       if (accumulatedText.endsWith('\n')) {
-        accumulatedText += inputText + '\n';  // ← 여기 수정: 개행 한 번에 추가
+        accumulatedText += inputText + '\n';
       } else {
         // 개행으로 끝나지 않으면 공백으로 이어붙이기
         const needsSpacer = !accumulatedText.endsWith(' ');
-        accumulatedText += (needsSpacer ? ' ' : '') + inputText + '\n';  // ← 여기도 수정
+        accumulatedText += (needsSpacer ? ' ' : '') + inputText + '\n';
       }
     } else {
       // 첫 입력
@@ -1616,9 +1617,8 @@ function sendToMonitor() {
         accumulatedText,
         sender: myRole 
       });
+      console.log('[전송 모드] 텍스트 전송 완료 - 누적:', accumulatedText.length, '자');
     }
-    
-    console.log('[전송 모드] 텍스트 전송 완료 - 누적:', accumulatedText.length, '자');
   } else {
     console.log('[전송 모드] 대기자는 전송할 수 없습니다. F7로 권한을 요청하세요.');
   }
@@ -1654,7 +1654,8 @@ function sendInput() {
 // updateViewerWithCurrentInput 
 function updateViewerWithCurrentInput() {
   if (isViewerEditing) return;
-  if (myRole !== activeStenographer) return;
+  // 1인 모드이거나 권한자일 때만 업데이트
+  if (!isSoloMode() && myRole !== activeStenographer) return;
   
   const viewerContent = document.getElementById('viewerContent');
   if (!viewerContent) return;
@@ -1751,11 +1752,12 @@ function trimEditorText(editor) {
 
 // 모드 체크
 function isSoloMode() {
-  return stenoList.length === 1;
+  // stenoList가 없거나, 1명이거나, 0명일 때 모두 1인 모드
+  return !stenoList || stenoList.length <= 1;
 }
 
 function isCollaborationMode() {
-  return stenoList.length === 2;
+  return stenoList && stenoList.length === 2;
 }
 
 // 에디터 접근 권한 적용 함수 (개선된 버전)
@@ -2494,9 +2496,10 @@ if (!isHtmlMode && socket) {
     
     // 첫 번째 초기화
     if (!isInitialized) {
-      // activeStenographer 초기값 보장
+      // 초기값: 속기사1이 항상 먼저 권한자 (나중에 steno_list에서 조정됨)
       if (!activeStenographer) {
-        activeStenographer = '1';  // 기본값 설정
+        activeStenographer = '1';
+        console.log('[초기 권한자] 기본값 설정: 1');
       }
       initializeDOMReferences();
       initializeComponents();
@@ -2529,7 +2532,15 @@ if (!isHtmlMode && socket) {
     
     const newActive = active === 'steno1' ? '1' : '2';
     console.log('[활성 역할] 서버 업데이트:', active, '→', newActive);
-    activeStenographer = newActive;
+    
+    // 1인 모드일 때는 무조건 내가 권한자
+    if (isSoloMode() && myRole) {
+      activeStenographer = myRole;
+      console.log('[활성 역할] 1인 모드 - 권한자 강제 설정:', myRole);
+    } else {
+      activeStenographer = newActive;
+    }
+    
     updateStatus(); // applyEditorLocks() 포함
   });
 
@@ -2556,16 +2567,16 @@ if (!isHtmlMode && socket) {
     
     updateMode();
     
+    // 1인 모드일 때 자동으로 권한자 설정 (최우선)
+    if (currentCount === 1 && myRole) {
+      activeStenographer = myRole;
+      console.log('[1인 모드] 자동 권한자 설정:', myRole);
+    }
+    
     // 역할이 할당된 경우에만 상태 업데이트
     if (myRole) {
       updateStatus();
       updateUtilityStatus();
-    }
-    
-    // 1인 모드로 전환 시 내가 자동으로 권한자가 됨
-    if (nowSolo && !wasSolo && myRole) {
-      activeStenographer = myRole;
-      console.log('[1인 모드] 자동 권한자 설정:', myRole);
     }
     
     // 새로운 파트너 입장 감지 (1→2명)
