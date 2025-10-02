@@ -993,34 +993,6 @@ function sendInput() {
       checkWordMatchingAsActive();   // 권한자: 대기자 매칭 확인
     }
   }
-}
-
-// 🔥 새로운 함수: 로컬 뷰어 즉시 업데이트 (권한자 전용)
-function updateLocalViewer(inputText) {
-  if (isViewerEditing) return;
-  
-  const viewerContent = document.getElementById('viewerContent');
-  if (!viewerContent) return;
-  
-  let displayText = accumulatedText;
-  
-  if (inputText) {
-    const needsSpacer = accumulatedText && !accumulatedText.endsWith('\n') && !accumulatedText.endsWith(' ');
-    
-    // 🔥 항상 전체 텍스트 표시 (마지막 단어 포함)
-    displayText = accumulatedText + 
-      (needsSpacer ? ' ' : '') + 
-      inputText.trim();
-  }
-  
-  fullTextStorage = displayText;
-  updateMonitoringFromText(displayText);
-  const monitoringText = monitoringLines.join('\n').replace(/\n{2,}/g, '\n');
-  
-  // 🔥 즉시 렌더링 (rAF 제거)
-  renderMonitoringHTML(viewerContent, monitoringText);
-  viewerContent.scrollTop = viewerContent.scrollHeight;
-  lastDisplayedText = monitoringText;
 } 핸들 정리)
       sendInputTimeout = setTimeout(() => {
         // 타이머 실행 시점의 최신 텍스트를 다시 읽음
