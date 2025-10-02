@@ -129,7 +129,7 @@ function scheduleMaxComposeFlush() {
       console.debug('[IME] 최대지연 강제 전송');
       const text = myEditor.value || '';
       if (socket && socket.connected) {
-        socket.volatile.emit('steno_input', { channel, role: `steno${myRole}`, text });
+        socket.emit('steno_input', { channel, role: `steno${myRole}`, text });
         lastSentText = text;
         lastSendTime = Date.now();
       }
@@ -140,9 +140,9 @@ function scheduleMaxComposeFlush() {
 
 function sendNow() {
   const text = myEditor.value || '';
-  // 🔥 드래프트는 volatile 사용 (필수 보완 #6)
+  // 🔥 volatile 제거, 안정적인 emit 사용
   if (socket && socket.connected) {
-    socket.volatile.emit('steno_input', { channel, role: `steno${myRole}`, text });
+    socket.emit('steno_input', { channel, role: `steno${myRole}`, text });
     lastSentText = text;
     lastSendTime = Date.now();
   }
@@ -213,9 +213,9 @@ function initializeComponents() {
     // 엔터키 처리 - 권한자만 전송 가능
     myEditor.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
-        // 🔥 IME 조합 중/직후에는 기본 동작 허용 (필수 보완 #4)
-        if (USE_IME_COMMIT_TX && (isComposing || Date.now() - lastCompositionEndAt < composeStabilizeMs)) {
-          return; // IME 확정 흐름 방해 금지
+        // 🔥 IME 조합 중에만 기본 동작 허용 (조합 완료 후는 즉시 전송)
+        if (USE_IME_COMMIT_TX && isComposing) {
+          return; // IME 조합 중에만 방해 금지
         }
         
         e.preventDefault();
@@ -761,11 +761,20 @@ function updateViewerFromEditor() {
   updateMonitoringFromText(currentText);
   const monitoringText = monitoringLines.join('\n').replace(/\n{2,}/g, '\n');
   
-  requestAnimationFrame(() => {
+  // 🔥 rAF with setTimeout fallback (백그라운드 대응)
+  const updateFn = () => {
     renderMonitoringHTML(viewerContent, monitoringText);
     viewerContent.scrollTop = viewerContent.scrollHeight;
     lastDisplayedText = monitoringText;
-  });
+  };
+  
+  if (document.hidden) {
+    // 백그라운드일 때는 setTimeout 사용
+    setTimeout(updateFn, 0);
+  } else {
+    // 포그라운드일 때는 rAF 사용
+    requestAnimationFrame(updateFn);
+  }
 }
 
 function updateViewerContent() {
@@ -779,11 +788,20 @@ function updateViewerContent() {
     
       monitoringText = monitoringText.replace(/\n{2,}/g, '\n');
     
-    requestAnimationFrame(() => {
+    // 🔥 rAF with setTimeout fallback (백그라운드 대응)
+    const updateFn = () => {
       renderMonitoringHTML(viewerContent, monitoringText);
       viewerContent.scrollTop = viewerContent.scrollHeight;
       lastDisplayedText = monitoringText;
-    });
+    };
+    
+    if (document.hidden) {
+      // 백그라운드일 때는 setTimeout 사용
+      setTimeout(updateFn, 0);
+    } else {
+      // 포그라운드일 때는 rAF 사용
+      requestAnimationFrame(updateFn);
+    }
   }
 }
 
@@ -846,18 +864,23 @@ function handleInputChange() {
   }
 }
 
-// 🔥 소켓 모드 전송 (완전 개선 - 7가지 필수 보완 반영)
+// 🔥 소켓 모드 전송 (로컬 즉시 업데이트 추가)
 function sendInput() {
   if (!socket || isHtmlMode) return;
   
   const currentText = myEditor.value;
   
-  // 🔥 즉시 트리거 일원화 (필수 보완 #2) - 모든 공백과 구두점 포함
+  // 🔥 권한자는 항상 로컬 뷰어 즉시 업데이트 (서버 대기 안 함)
+  if (myRole === activeStenographer) {
+    updateLocalViewer(currentText);
+  }
+  
+  // 🔥 즉시 트리거 일원화 - 모든 공백과 구두점 포함
   if (isImmediateTriggerByKey(currentText)) {
     if (currentText !== lastSentText) {
       if (socket.connected) {
-        // 🔥 드래프트는 volatile 사용 (필수 보완 #6)
-        socket.volatile.emit('steno_input', { 
+        // 🔥 volatile 제거, 안정적인 emit 사용
+        socket.emit('steno_input', { 
           channel: channel, 
           role: `steno${myRole}`, 
           text: currentText 
@@ -872,32 +895,19 @@ function sendInput() {
         sendInputTimeout = null;
       }
     }
-    
-    // 뷰어 업데이트
-    if (isSoloMode() || myRole === activeStenographer) {
-      updateViewerWithCurrentInput();
-    }
     return; // 즉시 전송 후 종료
   }
   
-  // 🔥 IME 조합 중 체크 (즉시 트리거가 아닐 때만)
+  // 🔥 IME 조합 중 체크
   if (USE_IME_COMMIT_TX && isComposing) {
     scheduleMaxComposeFlush();
     console.debug('[IME] 조합 중 - 전송 보류');
-    
-    // 뷰어 업데이트는 계속 진행
-    if (isSoloMode() || myRole === activeStenographer) {
-      updateViewerWithCurrentInput();
-    }
     return;
   }
   
   // 기존 로직 (타이머 기반 전송)
   // 1인 모드이거나 권한자인 경우
   if (isSoloMode() || myRole === activeStenographer) {
-    // 뷰어 업데이트
-    updateViewerWithCurrentInput();
-    
     // 이전 타이머 취소
     if (sendInputTimeout) {
       clearTimeout(sendInputTimeout);
@@ -908,7 +918,7 @@ function sendInput() {
     if (timeElapsed > 5000 && currentText !== lastSentText) {
       // 5초 강제 전송
       if (socket.connected) {
-        socket.volatile.emit('steno_input', { 
+        socket.emit('steno_input', { 
           channel: channel, 
           role: `steno${myRole}`, 
           text: currentText 
@@ -917,13 +927,12 @@ function sendInput() {
       lastSentText = currentText;
       lastSendTime = Date.now();
     } else if (currentText !== lastSentText) {
-      // 200ms 타이머 설정 (필수 보완 #3 - 타이머 핸들 정리)
+      // 200ms 타이머 설정
       sendInputTimeout = setTimeout(() => {
-        // 타이머 실행 시점의 최신 텍스트를 다시 읽음
         const latestText = myEditor.value;
         if (latestText !== lastSentText) {
           if (socket.connected) {
-            socket.volatile.emit('steno_input', { 
+            socket.emit('steno_input', { 
               channel: channel, 
               role: `steno${myRole}`, 
               text: latestText
@@ -932,7 +941,7 @@ function sendInput() {
           lastSentText = latestText;
           lastSendTime = Date.now();
         }
-        sendInputTimeout = null; // 🔥 타이머 핸들 정리 필수
+        sendInputTimeout = null;
       }, 200);
     }
   } 
@@ -948,7 +957,7 @@ function sendInput() {
     if (timeElapsed > 1000 && currentText !== lastSentText) {
       // 1초 강제 전송
       if (socket.connected) {
-        socket.volatile.emit('steno_input', { 
+        socket.emit('steno_input', { 
           channel: channel, 
           role: `steno${myRole}`, 
           text: currentText 
@@ -957,7 +966,62 @@ function sendInput() {
       lastSentText = currentText;
       lastSendTime = Date.now();
     } else if (currentText !== lastSentText) {
-      // 100ms 타이머 설정 (필수 보완 #3 - 타이머 핸들 정리)
+      // 100ms 타이머 설정
+      sendInputTimeout = setTimeout(() => {
+        const latestText = myEditor.value;
+        if (latestText !== lastSentText) {
+          if (socket.connected) {
+            socket.emit('steno_input', { 
+              channel: channel, 
+              role: `steno${myRole}`, 
+              text: latestText
+            });
+          }
+          lastSentText = latestText;
+          lastSendTime = Date.now();
+        }
+        sendInputTimeout = null;
+      }, 100);
+    }
+  }
+  
+  // 2인 모드에서만 단어 매칭 체크
+  if (isCollaborationMode()) {
+    if (myRole !== activeStenographer) {
+      checkWordMatchingAsWaiting();  // 대기자: 권한 획득 체크
+    } else {
+      checkWordMatchingAsActive();   // 권한자: 대기자 매칭 확인
+    }
+  }
+}
+
+// 🔥 새로운 함수: 로컬 뷰어 즉시 업데이트 (권한자 전용)
+function updateLocalViewer(inputText) {
+  if (isViewerEditing) return;
+  
+  const viewerContent = document.getElementById('viewerContent');
+  if (!viewerContent) return;
+  
+  let displayText = accumulatedText;
+  
+  if (inputText) {
+    const needsSpacer = accumulatedText && !accumulatedText.endsWith('\n') && !accumulatedText.endsWith(' ');
+    
+    // 🔥 항상 전체 텍스트 표시 (마지막 단어 포함)
+    displayText = accumulatedText + 
+      (needsSpacer ? ' ' : '') + 
+      inputText.trim();
+  }
+  
+  fullTextStorage = displayText;
+  updateMonitoringFromText(displayText);
+  const monitoringText = monitoringLines.join('\n').replace(/\n{2,}/g, '\n');
+  
+  // 🔥 즉시 렌더링 (rAF 제거)
+  renderMonitoringHTML(viewerContent, monitoringText);
+  viewerContent.scrollTop = viewerContent.scrollHeight;
+  lastDisplayedText = monitoringText;
+} 핸들 정리)
       sendInputTimeout = setTimeout(() => {
         // 타이머 실행 시점의 최신 텍스트를 다시 읽음
         const latestText = myEditor.value;
@@ -1027,11 +1091,20 @@ function updateViewerWithCurrentInput() {
   updateMonitoringFromText(displayText);
   const monitoringText = monitoringLines.join('\n').replace(/\n{2,}/g, '\n');
   
-  requestAnimationFrame(() => {
+  // 🔥 rAF with setTimeout fallback (백그라운드 대응)
+  const updateFn = () => {
     renderMonitoringHTML(viewerContent, monitoringText);
     viewerContent.scrollTop = viewerContent.scrollHeight;
     lastDisplayedText = monitoringText;
-  });
+  };
+  
+  if (document.hidden) {
+    // 백그라운드일 때는 setTimeout 사용
+    setTimeout(updateFn, 0);
+  } else {
+    // 포그라운드일 때는 rAF 사용
+    requestAnimationFrame(updateFn);
+  }
 }
 
 function updateViewerWithOtherInput(otherText) {
@@ -1062,11 +1135,20 @@ function updateViewerWithOtherInput(otherText) {
   updateMonitoringFromText(displayText);
  const monitoringText = monitoringLines.join('\n').replace(/\n{2,}/g, '\n');
   
-  requestAnimationFrame(() => {
+  // 🔥 rAF with setTimeout fallback (백그라운드 대응)
+  const updateFn = () => {
     renderMonitoringHTML(viewerContent, monitoringText);
     viewerContent.scrollTop = viewerContent.scrollHeight;
     lastDisplayedText = monitoringText;
-  });
+  };
+  
+  if (document.hidden) {
+    // 백그라운드일 때는 setTimeout 사용
+    setTimeout(updateFn, 0);
+  } else {
+    // 포그라운드일 때는 rAF 사용
+    requestAnimationFrame(updateFn);
+  }
 }
 
 // 입력창 텍스트 최적화
