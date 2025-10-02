@@ -1,4 +1,3 @@
-
 // 전역 변수들 먼저 초기화
 let monitoringLines = [];
 const MAX_MONITORING_LINES = 30;
@@ -12,6 +11,14 @@ let lastRenderTime = 0; // 렌더링 성능 추적용
 let sendInputTimeout = null;
 let lastSentText = '';
 let lastSendTime = Date.now();
+
+// 🔥 IME 조합 관련 상태 플래그 추가
+const USE_IME_COMMIT_TX = true; // 기능 on/off 플래그
+let isComposing = false;                 // IME 조합 중 여부
+let lastCompositionEndAt = 0;            // compositionend 타임스탬프(ms)
+const composeStabilizeMs = 150;          // 매칭 유예
+const maxComposeDelayMs = 1200;          // 조합 장기 지속 안전 플러시
+let composeTimeoutId = null;             // 최대지연 타이머 핸들
 
 // 엔터키 모드 - 전송 모드로 고정
 const enterMode = 'send'; // 항상 전송 모드
@@ -107,6 +114,35 @@ function initializeDOMReferences() {
   console.log('[DOM 초기화] 완료 - myRole:', myRole, 'myColNum:', myColNum, 'activeStenographer:', activeStenographer);
 }
 
+// 🔥 IME 조합 관련 유틸리티 함수 추가
+function isImmediateTriggerByKey(text) {
+  // 입력의 맨 끝이 공백/개행/구두점이면 true
+  const ch = text?.slice(-1) || '';
+  return /[\s\n\t]|[.,;:!?…]$/.test(ch);
+}
+
+function scheduleMaxComposeFlush() {
+  if (composeTimeoutId) clearTimeout(composeTimeoutId);
+  composeTimeoutId = setTimeout(() => {
+    if (isComposing) {
+      // 조합이 너무 길어질 때 한 번 강제 전송
+      console.debug('[IME] 최대지연 강제 전송');
+      sendNow();
+    }
+  }, maxComposeDelayMs);
+}
+
+function sendNow() {
+  const text = myEditor.value || '';
+  // 기존 emit 그대로 사용
+  if (socket && socket.connected) {
+    socket.emit('steno_input', { channel, role: `steno${myRole}`, text });
+    lastSentText = text;
+    lastSendTime = Date.now();
+  }
+  console.debug('[SEND_NOW]', { len: text.length, reason: 'immediate' });
+}
+
 // 컴포넌트 초기화 함수
 function initializeComponents() {
   initializeDOMReferences();
@@ -130,6 +166,29 @@ function initializeComponents() {
         }
       }
     };
+    
+    // 🔥 IME 조합 이벤트 바인딩 추가
+    if (USE_IME_COMMIT_TX) {
+      myEditor.addEventListener('compositionstart', () => {
+        isComposing = true;
+        if (composeTimeoutId) { 
+          clearTimeout(composeTimeoutId); 
+          composeTimeoutId = null; 
+        }
+        console.debug('[IME] 조합 시작');
+      });
+
+      myEditor.addEventListener('compositionend', () => {
+        isComposing = false;
+        lastCompositionEndAt = Date.now();
+        if (composeTimeoutId) { 
+          clearTimeout(composeTimeoutId); 
+          composeTimeoutId = null; 
+        }
+        sendNow();  // 즉시 전송
+        console.debug('[IME] 조합 완료 → 즉시 전송');
+      });
+    }
     
     // 엔터키 처리 - 권한자만 전송 가능
     myEditor.addEventListener('keydown', (e) => {
@@ -762,12 +821,31 @@ function handleInputChange() {
   }
 }
 
-// 소켓 모드 전송
+// 🔥 소켓 모드 전송 (IME 조합 체크 추가)
 function sendInput() {
   if (!socket || isHtmlMode) return;
   
   const currentText = myEditor.value;
   
+  // 🔥 IME 조합 중 체크 로직 추가
+  if (USE_IME_COMMIT_TX && isComposing) {
+    // 예외 트리거 체크
+    if (isImmediateTriggerByKey(currentText)) {
+      console.debug('[IME] 예외 트리거 감지 → 즉시 전송');
+      sendNow();
+    } else {
+      // 조합 중이면 전송 보류, 최대지연 타이머 설정
+      scheduleMaxComposeFlush();
+      console.debug('[IME] 조합 중 - 전송 보류');
+    }
+    // 뷰어 업데이트는 계속 진행 (로컬 프리뷰)
+    if (isSoloMode() || myRole === activeStenographer) {
+      updateViewerWithCurrentInput();
+    }
+    return;
+  }
+  
+  // 기존 로직 유지
   // 1인 모드이거나 권한자인 경우
   if (isSoloMode() || myRole === activeStenographer) {
     // 뷰어 업데이트 (한 단어 지연)
@@ -1148,13 +1226,25 @@ function updatePerformanceInfo() {
   }
 }
 
-// 🔥 강화된 단어 매칭 체크 - 교대 후 초기화 보장
+// 🔥 강화된 단어 매칭 체크 - 교대 후 초기화 보장 (매칭 가드 추가)
 let isProcessingSwitch = false;  // 교대 처리 중 플래그 추가
 
 function checkWordMatchingAsWaiting() {
   if (isHtmlMode) return;
   if (myRole === activeStenographer) return;
   if (isProcessingSwitch) return;  // 교대 중이면 매칭 체크 중단
+  
+  // 🔥 IME 가드 추가
+  if (USE_IME_COMMIT_TX) {
+    if (isComposing) {
+      console.debug('[MATCH_GUARD] 조합 중 - 매칭 차단');
+      return;
+    }
+    if (Date.now() - lastCompositionEndAt < composeStabilizeMs) {
+      console.debug('[MATCH_GUARD] 조합 완료 직후 - 매칭 유예');
+      return;
+    }
+  }
   
   // 시간 제한: 마지막 교대로부터 0.6초 이상 경과해야 함
   if (Date.now() - lastSwitchTime < MIN_SWITCH_INTERVAL) {
@@ -1259,6 +1349,18 @@ function checkWordMatchingAsActive() {
   if (isHtmlMode) return;
   if (myRole !== activeStenographer) return;
   if (isProcessingSwitch) return;  // 교대 중이면 매칭 체크 중단
+  
+  // 🔥 IME 가드 추가
+  if (USE_IME_COMMIT_TX) {
+    if (isComposing) {
+      console.debug('[MATCH_GUARD] 조합 중 - 매칭 차단');
+      return;
+    }
+    if (Date.now() - lastCompositionEndAt < composeStabilizeMs) {
+      console.debug('[MATCH_GUARD] 조합 완료 직후 - 매칭 유예');
+      return;
+    }
+  }
   
   // 시간 제한
   if (Date.now() - lastSwitchTime < MIN_SWITCH_INTERVAL) {
@@ -2332,7 +2434,7 @@ if (!isHtmlMode && socket) {
       }
     }, 3000);
   });
-}
+} // Socket.io 이벤트 블록 종료
 
 function enterEditMode() {
   isViewerEditing = true;
@@ -2620,7 +2722,3 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault();
   }
 });
-
-
-
-
