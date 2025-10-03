@@ -73,6 +73,8 @@
       width: calc(100% - 30px);
       height: calc(100% - 20px);
       overflow-y: auto;
+      overflow-anchor: none;
+      scrollbar-gutter: stable both-edges;
       scrollbar-width: thin;
       scrollbar-color: #8884 #0000;
       background: none;
@@ -1489,18 +1491,12 @@ function updateDisplay(text, isImmediate = false) {
     viewerText.textContent = displayText || '자막 대기 중...';
   }
   
-  // 세로정렬에 따른 스크롤 (스무스 스크롤 적용됨)
-  const vAlign = document.querySelector('.valign-btn.active')?.dataset.valign || 'top';
-  if (vAlign === 'bottom') {
-    viewerText.scrollTop = viewerText.scrollHeight;
-  } else if (vAlign === 'top') {
-    // 상단 정렬일 때는 새 텍스트가 보이도록 자연스럽게 스크롤
-    if (viewerText.scrollHeight > viewerText.clientHeight) {
-      viewerText.scrollTop = viewerText.scrollHeight;
-    }
-  } else {
-    viewerText.scrollTop = viewerText.scrollHeight;
-  }
+  // 스크롤 위치 안정화 (이중 RAF)
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      viewerText.scrollTop = viewerText.scrollHeight - viewerText.clientHeight;
+    });
+  });
 }
 
 // 화자 구분 형식으로 렌더링
@@ -1863,7 +1859,12 @@ function applyBasicOptions() {
   viewerText.style.fontSize = document.getElementById('fontSize').value + 'px';
   viewerText.style.fontFamily = document.getElementById('fontFamily').value;
   viewerText.style.letterSpacing = document.getElementById('letterSpacing').value + 'px';
-  viewerText.style.lineHeight = document.getElementById('lineHeight').value;
+  
+  // line-height 픽셀 고정
+  const fontSize = parseFloat(document.getElementById('fontSize').value);
+  const lineHeightMul = parseFloat(document.getElementById('lineHeight').value);
+  const lineHeightPx = Math.round(fontSize * lineHeightMul);
+  viewerText.style.lineHeight = lineHeightPx + 'px';
   
   // 정렬 설정
   const hAlign = document.querySelector('.align-btn.active')?.dataset.align || 'left';
@@ -2186,4 +2187,5 @@ window.addEventListener('beforeunload', () => {
   </script>
 </body>
 </html>
+
 
