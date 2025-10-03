@@ -69,6 +69,7 @@
       justify-content: flex-start;
     }
     
+    /* ========== 스크롤 안정화된 #viewer-text ========== */
     #viewer-text {
       width: calc(100% - 30px);
       height: calc(100% - 20px);
@@ -89,10 +90,9 @@
       letter-spacing: 0;
       transition: color 0.2s, background 0.2s, opacity 0.5s ease;
       box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      scroll-behavior: smooth; /* 스무스 스크롤 */
+      display: block;
+      /* 수정: smooth 스크롤 제거 */
+      scroll-behavior: auto;
     }
     
     #viewer-text.hidden {
@@ -100,12 +100,19 @@
       transition: opacity 0.5s ease;
     }
     
+    /* 세로 정렬을 위한 클래스들 수정 */
     #viewer-text.align-middle {
+      display: flex;
+      flex-direction: column;
       justify-content: center;
+      height: calc(100% - 20px);
     }
     
     #viewer-text.align-bottom {
+      display: flex;
+      flex-direction: column;
       justify-content: flex-end;
+      height: calc(100% - 20px);
     }
     
     #viewer-text::-webkit-scrollbar {
@@ -665,13 +672,16 @@
       transform: translateX(-50%) translateY(-10px);
     }
     
-    /* 화자 구분 스타일 */
+    /* ========== 안정화된 화자 구분 스타일 ========== */
     .speaker-line {
       display: flex;
       align-items: center;
-      margin: 3px 0;
-      line-height: 1.5;
-      min-height: 1.5em;
+      /* 수정: margin 제거로 겹침 방지 */
+      margin: 0;
+      /* 수정: padding으로 간격 조절 */
+      padding: 1px 0;
+      min-height: 1em;
+      line-height: inherit;
     }
     
     .speaker-name {
@@ -682,6 +692,7 @@
       margin-right: 20px;
       white-space: nowrap;
       flex-shrink: 0;
+      line-height: inherit;
     }
     
     .speaker-divider {
@@ -698,16 +709,20 @@
       margin: 0 20px;
       font-weight: 300;
       align-self: center;
-      line-height: 1;
+      line-height: inherit;
     }
     
     .speaker-content {
       flex: 1;
       align-self: center;
+      line-height: inherit;
     }
     
     .speaker-line.no-speaker {
       display: block;
+      line-height: inherit;
+      /* 수정: padding으로 일관된 간격 */
+      padding: 1px 0;
     }
     
     /* 반응형 */
@@ -819,6 +834,15 @@
             <div class="num-btns">
               <button type="button" id="lineHeightUp">▲</button>
               <button type="button" id="lineHeightDown">▼</button>
+            </div>
+          </div>
+          
+          <div class="option-row">
+            <label>구분선 색상</label>
+            <div class="color-input-group">
+              <input type="checkbox" id="colorDividerEnabled">
+              <input type="color" id="dividerColor" value="#4A90E2">
+              <input type="text" class="color-hex" id="dividerColorHex" value="#4A90E2" maxlength="7">
             </div>
           </div>
         </div>
@@ -1002,61 +1026,7 @@
             </div>
           </div>
           
-          <div class="option-row">
-            <label>구분선 색상</label>
-            <input type="checkbox" id="colorDividerEnabled">
-            <span style="color: #888; font-size: 11px; margin-left: 8px;">순환 색상 사용</span>
-          </div>
-        </div>
-        
-        <div class="option-group">
-          <div class="option-group-title">순환 색상 설정 (5색)</div>
-          
-          <div class="option-row">
-            <label>색상 1</label>
-            <div class="color-input-group">
-              <input type="color" id="dividerColor1" value="#4A90E2">
-              <input type="text" class="color-hex" id="dividerColor1Hex" value="#4A90E2" maxlength="7">
-            </div>
-          </div>
-          
-          <div class="option-row">
-            <label>색상 2</label>
-            <div class="color-input-group">
-              <input type="color" id="dividerColor2" value="#7ED321">
-              <input type="text" class="color-hex" id="dividerColor2Hex" value="#7ED321" maxlength="7">
-            </div>
-          </div>
-          
-          <div class="option-row">
-            <label>색상 3</label>
-            <div class="color-input-group">
-              <input type="color" id="dividerColor3" value="#F5A623">
-              <input type="text" class="color-hex" id="dividerColor3Hex" value="#F5A623" maxlength="7">
-            </div>
-          </div>
-          
-          <div class="option-row">
-            <label>색상 4</label>
-            <div class="color-input-group">
-              <input type="color" id="dividerColor4" value="#BD10E0">
-              <input type="text" class="color-hex" id="dividerColor4Hex" value="#BD10E0" maxlength="7">
-            </div>
-          </div>
-          
-          <div class="option-row">
-            <label>색상 5</label>
-            <div class="color-input-group">
-              <input type="color" id="dividerColor5" value="#00D8FF">
-              <input type="text" class="color-hex" id="dividerColor5Hex" value="#00D8FF" maxlength="7">
-            </div>
-          </div>
-          
-          <div class="option-row">
-            <label>중립 색상</label>
-            <button type="button" id="neutralColorsBtn" class="preset-btn" style="padding: 6px 14px; font-size: 11px;">회색톤 설정</button>
-            <span style="color: #888; font-size: 11px; margin-left: 8px;">정치적 중립</span>
-          </div>
+
         </div>
       </div>
       
@@ -1150,9 +1120,6 @@ let isSubtitleHidden = false;
 let wasHiddenBeforeInput = false;
 
 // 화자 구분 관련
-let speakerColorIndex = 0;
-let speakerColorMap = {};
-let dividerColors = ['#4A90E2', '#7ED321', '#F5A623', '#BD10E0', '#00D8FF'];
 
 // 여백 조절기 상태
 let marginAdjusterEnabled = false;
@@ -1162,6 +1129,10 @@ let startY = 0;
 let startOffset = 0;
 let maxMargin = 0;
 let ignoreNextClick = false;
+
+// ========== 스크롤 안정화 관련 변수 ==========
+let lastRenderedText = '';
+let isScrollManual = false;
 
 // 프리셋 데이터
 const presets = {
@@ -1222,6 +1193,16 @@ const presets = {
     shadowY: '1'
   }
 };
+
+// ========== 스크롤 유틸리티 함수 ==========
+function isNearBottom(el, thresholdPx = 2) {
+  const gap = el.scrollHeight - (el.scrollTop + el.clientHeight);
+  return gap <= thresholdPx;
+}
+
+function snapToBottom(el) {
+  el.scrollTop = el.scrollHeight - el.clientHeight;
+}
 
 // ========== 연결 상태 관리 ==========
 function updateConnectionStatus(status, message) {
@@ -1350,7 +1331,7 @@ function handleSyncAccumulated(data) {
   console.log('[Sync] 누적 텍스트 동기화');
   accumulatedText = data.accumulatedText || '';
   currentActiveInput = '';
-  previousInput = '';  // 리셋
+  previousInput = '';
   previousDisplay = '';
   updateDisplay(accumulatedText, true);
   
@@ -1368,7 +1349,7 @@ function handleChannelState(data) {
     if (data.state.accumulatedText !== undefined) {
       accumulatedText = data.state.accumulatedText;
       currentActiveInput = '';
-      previousInput = '';  // 리셋
+      previousInput = '';
       previousDisplay = '';
       updateDisplay(accumulatedText, true);
     }
@@ -1402,7 +1383,7 @@ function handleSwitchRole(data) {
   if (data.accumulatedText !== undefined) {
     accumulatedText = data.accumulatedText;
     currentActiveInput = '';
-    previousInput = '';  // 리셋
+    previousInput = '';
     previousDisplay = '';
     updateDisplay(accumulatedText, true);
   }
@@ -1418,7 +1399,7 @@ function handleTextSent(data) {
   
   accumulatedText = data.accumulatedText || '';
   currentActiveInput = '';
-  previousInput = '';  // 리셋
+  previousInput = '';
   previousDisplay = '';
   updateDisplay(accumulatedText, true);
 }
@@ -1426,12 +1407,13 @@ function handleTextSent(data) {
 function handleClearText() {
   accumulatedText = '';
   currentActiveInput = '';
-  previousInput = '';  // 리셋
+  previousInput = '';
   previousDisplay = '';
+  lastRenderedText = '';
   updateDisplay('', true);
 }
 
-// ========== 화면 업데이트 (스마트 1단어 지연 + 화자 구분) ==========
+// ========== 개선된 화면 업데이트 함수 ==========
 function updateDisplay(text, isImmediate = false) {
   // 자막 숨김 상태에서 새 입력이 들어오면 자동으로 표시
   if (isSubtitleHidden && text && text.trim()) {
@@ -1463,7 +1445,6 @@ function updateDisplay(text, isImmediate = false) {
       }
       // 끝 공백만 지운 경우 → 이전 표시 내용 유지 (단어는 그대로)
       else if (onlySpaceRemoved && previousDisplay) {
-        // 이전에 표시했던 내용에서 끝 공백만 제거
         displayText = previousDisplay.trimEnd();
       }
       // 일반적인 1단어 지연
@@ -1484,45 +1465,61 @@ function updateDisplay(text, isImmediate = false) {
     previousInput = text;
     previousDisplay = displayText;
   }
-  
-// 스크롤 위치 체크 (DOM 변경 전)
-  const wasAtBottom = Math.abs(
-    viewerText.scrollHeight - viewerText.scrollTop - viewerText.clientHeight
-  ) < 10;
-  
-  // 화자 구분 처리
-  if (document.getElementById('speakerEnabled').checked) {
-    renderFormattedText(displayText || '자막 대기 중...');
-  } else {
-    viewerText.textContent = displayText || '자막 대기 중...';
+
+  // ========== 불필요한 재렌더링 방지 ==========
+  const finalDisplayText = displayText || '자막 대기 중...';
+  if (finalDisplayText === lastRenderedText) {
+    return; // 동일한 내용이면 재렌더링 하지 않음
   }
   
-  // 바닥에 있었으면 다시 바닥으로 (DOM 변경 후)
+  // ========== 개선된 스크롤 위치 보존 ==========
+  const scrollTop = viewerText.scrollTop;
+  const scrollHeight = viewerText.scrollHeight;
+  const clientHeight = viewerText.clientHeight;
+  
+  // 더 정확한 바닥 감지 (1px 허용치)
+  const wasAtBottom = (scrollTop + clientHeight) >= (scrollHeight - 1);
+  
+  // 화자 구분 처리 - 항상 renderFormattedText 사용
+  renderFormattedText(finalDisplayText);
+  
+  // 렌더링된 텍스트 기록
+  lastRenderedText = finalDisplayText;
+  
+  // ========== 개선된 스크롤 복원 ==========
   if (wasAtBottom) {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        viewerText.scrollTop = viewerText.scrollHeight - viewerText.clientHeight;
-      });
-    });
+    // 즉시 스크롤 (requestAnimationFrame 제거로 지연 최소화)
+    viewerText.scrollTop = viewerText.scrollHeight - viewerText.clientHeight;
+  } else {
+    // 수동 스크롤 중이었다면 위치 유지
+    viewerText.scrollTop = scrollTop;
   }
 }
 
-// 화자 구분 형식으로 렌더링
+// ========== 화자 구분 형식 렌더링 함수 ==========
 function renderFormattedText(text) {
   const lines = text.split('\n');
+  const speakerEnabled = document.getElementById('speakerEnabled').checked;
   const speakerStyle = document.getElementById('speakerStyle').value;
   const useBg = document.getElementById('speakerBgEnabled').checked;
   const useColorDivider = document.getElementById('colorDividerEnabled').checked;
   const bgAlpha = parseInt(document.getElementById('speakerBgAlpha').value) / 100;
   
+  // 현재 설정된 line-height 가져오기
+  const currentLineHeight = viewerText.style.lineHeight;
+  
   viewerText.innerHTML = '';
   
   lines.forEach(line => {
     const lineDiv = document.createElement('div');
-    lineDiv.className = 'speaker-line';
     
-    // 화자 패턴 확인: "-화자명: " 형식
-    if (line.startsWith('-') && line.includes(': ')) {
+    // line-height 명시적 적용
+    lineDiv.style.lineHeight = currentLineHeight;
+    
+    // 화자 구분이 활성화되고 화자 패턴이 있는 경우
+    if (speakerEnabled && line.startsWith('-') && line.includes(': ')) {
+      lineDiv.className = 'speaker-line';
+      
       const colonIndex = line.indexOf(': ');
       const speaker = line.substring(1, colonIndex).trim(); // "-" 제거
       const content = line.substring(colonIndex + 2); // ": " 이후 내용
@@ -1550,13 +1547,10 @@ function renderFormattedText(text) {
         const divider = document.createElement('div');
         divider.className = 'speaker-divider';
         
-        // 순환 색상 적용
+        // 구분선 색상 적용
         if (useColorDivider) {
-          if (!speakerColorMap[speaker]) {
-            speakerColorMap[speaker] = dividerColors[speakerColorIndex % 5];
-            speakerColorIndex++;
-          }
-          divider.style.background = speakerColorMap[speaker];
+          const dividerColor = document.getElementById('dividerColor').value;
+          divider.style.background = dividerColor;
         }
         
         lineDiv.appendChild(divider);
@@ -1564,13 +1558,28 @@ function renderFormattedText(text) {
         const pipe = document.createElement('span');
         pipe.className = 'speaker-pipe';
         pipe.textContent = '|';
+        
+        // 구분선 색상 적용
+        if (useColorDivider) {
+          const dividerColor = document.getElementById('dividerColor').value;
+          pipe.style.color = dividerColor;
+        }
+        
         lineDiv.appendChild(pipe);
       } else if (speakerStyle === 'minimal') {
         const divider = document.createElement('div');
         divider.className = 'speaker-divider';
         divider.style.width = '1px';
-        divider.style.background = 'rgba(255, 255, 255, 0.2)';
         divider.style.margin = '0 25px';
+        
+        // 구분선 색상 적용
+        if (useColorDivider) {
+          const dividerColor = document.getElementById('dividerColor').value;
+          divider.style.background = dividerColor;
+        } else {
+          divider.style.background = 'rgba(255, 255, 255, 0.2)';
+        }
+        
         lineDiv.appendChild(divider);
       }
       
@@ -1581,7 +1590,7 @@ function renderFormattedText(text) {
       lineDiv.appendChild(contentSpan);
       
     } else {
-      // 일반 텍스트 (화자 없음)
+      // 일반 텍스트도 동일한 구조 사용
       lineDiv.className = 'speaker-line no-speaker';
       lineDiv.textContent = line;
     }
@@ -1589,6 +1598,21 @@ function renderFormattedText(text) {
     viewerText.appendChild(lineDiv);
   });
 }
+
+// ========== 수동 스크롤 감지 ==========
+viewerText.addEventListener('wheel', () => {
+  isScrollManual = true;
+  setTimeout(() => {
+    isScrollManual = false;
+  }, 1000);
+});
+
+viewerText.addEventListener('touchstart', () => {
+  isScrollManual = true;
+  setTimeout(() => {
+    isScrollManual = false;
+  }, 1000);
+});
 
 // 자막 표시/숨김 토글
 function toggleSubtitleVisibility(forceShow = null) {
@@ -1868,24 +1892,23 @@ function applyBasicOptions() {
   viewerText.style.fontFamily = document.getElementById('fontFamily').value;
   viewerText.style.letterSpacing = document.getElementById('letterSpacing').value + 'px';
   
-  // line-height 픽셀 고정
-  const fontSize = parseFloat(document.getElementById('fontSize').value);
+  // line-height를 em 단위로 설정
   const lineHeightMul = parseFloat(document.getElementById('lineHeight').value);
-  const lineHeightPx = Math.round(fontSize * lineHeightMul);
-  viewerText.style.lineHeight = lineHeightPx + 'px';
+  viewerText.style.lineHeight = lineHeightMul + 'em';
   
   // 정렬 설정
   const hAlign = document.querySelector('.align-btn.active')?.dataset.align || 'left';
   viewerText.style.textAlign = hAlign;
   
+  // 세로 정렬 처리
   const vAlign = document.querySelector('.valign-btn.active')?.dataset.valign || 'top';
-  viewerText.className = '';
+  viewerText.classList.remove('align-middle', 'align-bottom');
+  
   if (vAlign === 'middle') {
     viewerText.classList.add('align-middle');
   } else if (vAlign === 'bottom') {
     viewerText.classList.add('align-bottom');
   }
-  // top은 기본값이므로 클래스 추가 없음
   
   // 여백 설정
   const marginTop = parseInt(document.getElementById('marginTop').value) || 10;
@@ -1923,6 +1946,11 @@ function applyBasicOptions() {
   
   viewerText.style.textShadow = textShadow;
   updateMarginAdjuster();
+  
+  // 현재 텍스트 다시 렌더링 (스타일 적용)
+  lastRenderedText = ''; // 강제 재렌더링
+  const currentText = accumulatedText + currentActiveInput;
+  updateDisplay(currentText, true);
 }
 
 // 알림 표시
@@ -1959,6 +1987,50 @@ document.getElementById('shadowColor').addEventListener('input', applyBasicOptio
 document.getElementById('shadowBlur').addEventListener('input', applyBasicOptions);
 document.getElementById('shadowX').addEventListener('input', applyBasicOptions);
 document.getElementById('shadowY').addEventListener('input', applyBasicOptions);
+
+// 화자 구분 설정 변경 시 적용
+document.getElementById('speakerEnabled').addEventListener('change', () => {
+  lastRenderedText = ''; // 강제 재렌더링
+  const currentText = accumulatedText + currentActiveInput;
+  updateDisplay(currentText, true);
+});
+
+document.getElementById('speakerStyle').addEventListener('change', () => {
+  lastRenderedText = '';
+  const currentText = accumulatedText + currentActiveInput;
+  updateDisplay(currentText, true);
+});
+
+document.getElementById('speakerBgEnabled').addEventListener('change', () => {
+  lastRenderedText = '';
+  const currentText = accumulatedText + currentActiveInput;
+  updateDisplay(currentText, true);
+});
+
+document.getElementById('speakerBgColor').addEventListener('input', () => {
+  lastRenderedText = '';
+  const currentText = accumulatedText + currentActiveInput;
+  updateDisplay(currentText, true);
+});
+
+document.getElementById('speakerBgAlpha').addEventListener('input', (e) => {
+  document.getElementById('speakerBgAlphaLabel').textContent = e.target.value + '%';
+  lastRenderedText = '';
+  const currentText = accumulatedText + currentActiveInput;
+  updateDisplay(currentText, true);
+});
+
+document.getElementById('colorDividerEnabled').addEventListener('change', () => {
+  lastRenderedText = '';
+  const currentText = accumulatedText + currentActiveInput;
+  updateDisplay(currentText, true);
+});
+
+document.getElementById('dividerColor').addEventListener('input', () => {
+  lastRenderedText = '';
+  const currentText = accumulatedText + currentActiveInput;
+  updateDisplay(currentText, true);
+});
 
 // 숫자 조절 버튼들
 document.getElementById('fontSizeUp').addEventListener('click', () => {
@@ -2166,6 +2238,7 @@ window.addEventListener('load', () => {
   setupColorSync('fontColor', 'fontColorHex');
   setupColorSync('outlineColor', 'outlineColorHex');
   setupColorSync('shadowColor', 'shadowColorHex');
+  setupColorSync('dividerColor', 'dividerColorHex');
   
   // 옵션창 드래그 설정
   setupOptionsDrag();
@@ -2195,7 +2268,3 @@ window.addEventListener('beforeunload', () => {
   </script>
 </body>
 </html>
-
-
-
-
