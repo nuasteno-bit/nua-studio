@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>누아속기사무소</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700;900&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700;900&family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
   <style>
@@ -87,13 +87,16 @@
     .nav-menu {
       display: flex;
       gap: 3rem;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
     }
     
     .nav-link {
       color: #000;
       text-decoration: none;
-      font-size: 0.95rem;
-      font-weight: 500;
+      font-size: 1.05rem;
+      font-weight: 600;
       position: relative;
       transition: color 0.3s;
     }
@@ -118,7 +121,6 @@
       width: 100%;
     }
     
-    /* Fixed Navigation */
     .fixed-nav-black {
       position: fixed;
       right: 0;
@@ -132,10 +134,10 @@
       justify-content: center;
       writing-mode: vertical-rl;
       color: #fff;
-      font-weight: 700;
-      font-size: 0.7rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-weight: 800;
+      font-size: 0.9rem;
+      letter-spacing: 0.3em;
       transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1), font-size 0.5s;
     }
     
@@ -170,7 +172,6 @@
       top: 150px;
     }
     
-    /* Hero Section */
     .hero {
       min-height: 100vh;
       display: flex;
@@ -186,7 +187,7 @@
       margin: 0 auto;
       width: 100%;
       display: grid;
-      grid-template-columns: 1.2fr 1fr;
+      grid-template-columns: 1.4fr 1fr;
       gap: 3rem;
       align-items: center;
       position: relative;
@@ -227,7 +228,7 @@
       line-height: 1.2;
       font-weight: 800;
       margin-bottom: 2rem;
-      letter-spacing: -2px;
+      letter-spacing: -3px;
     }
     
     .hero-title .line-1 {
@@ -237,14 +238,14 @@
     
     .hero-title .line-2 {
       display: block;
-      text-align: center;
-      margin-left: 1rem;
+      text-align: left;
+      margin-left: 6rem;
     }
     
     .hero-title .line-3 {
       display: block;
       text-align: left;
-      margin-left: 8rem;
+      margin-left: 0;
     }
     
     .hero-title span {
@@ -295,13 +296,12 @@
       font-size: 1.2rem;
     }
     
-    /* Hero Visual - Image Cards */
     .hero-visual {
       position: relative;
       width: 100%;
       height: 550px;
       display: flex;
-      align-items: flex-end;
+      align-items: center;
       justify-content: center;
       gap: 1rem;
       padding-bottom: 2rem;
@@ -309,12 +309,21 @@
     
     .img-card {
       width: 100px;
-      border-radius: 20px;
+      border-radius: 8px;
       overflow: hidden;
       box-shadow: 0 10px 30px rgba(0,0,0,0.15);
       transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
       cursor: pointer;
       position: relative;
+      height: 400px;
+    }
+    
+    .img-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
     }
     
     .img-card:hover {
@@ -328,29 +337,6 @@
       z-index: 100;
     }
     
-    .img-card:nth-child(1) {
-      height: 400px;
-      background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-    }
-    
-    .img-card:nth-child(2) {
-      height: 450px;
-      background: linear-gradient(180deg, #f093fb 0%, #f5576c 100%);
-    }
-    
-    .img-card:nth-child(3) {
-      height: 380px;
-      background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
-      margin-bottom: 50px;
-    }
-    
-    .img-card:nth-child(4) {
-      height: 420px;
-      background: linear-gradient(180deg, #43e97b 0%, #38f9d7 100%);
-      margin-bottom: 20px;
-    }
-    
-    /* Highlights Section */
     .highlights {
       padding: var(--section-padding) 24px;
       position: relative;
@@ -431,16 +417,6 @@
     
     .hl__col--right {
       margin-top: 80px;
-    }
-    
-    @media (max-width: 768px) {
-      .hl__inner {
-        grid-template-columns: 1fr;
-        margin-right: auto;
-      }
-      .hl__col--right {
-        margin-top: 0;
-      }
     }
     
     .card {
@@ -530,7 +506,6 @@
       letter-spacing: -0.3px;
     }
     
-    /* Services Section */
     .services {
       padding: var(--section-padding) 3rem;
       background: #fff;
@@ -560,63 +535,261 @@
     }
     
     .services-grid {
-      max-width: var(--maxw);
+      max-width: 900px;
       margin: 0 auto;
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 48px;
+      display: flex;
+      gap: 40px;
+      padding: 0 4%;
+    }
+    
+    .service-column {
+      width: 50%;
+      display: flex;
+      flex-direction: column;
+      gap: 60px;
+    }
+    
+    .service-column:nth-child(2) {
+      padding-top: 100px;
     }
     
     .service-card {
-      background: #fff;
-      border: 1px solid rgba(0,0,0,0.06);
-      box-shadow: 0 10px 24px rgba(0,0,0,0.06);
-      padding: 2.5rem 2rem;
-      transition: all 0.25s ease;
+      background: transparent;
+      position: relative;
+      width: 92%;
+      max-width: 340px;
+      height: 520px;
+      margin-left: auto;
+      margin-right: auto;
+      transition: all 0.3s ease, opacity 200ms linear, transform 200ms ease-out;
+      cursor: pointer;
+    }
+    
+    .service-card-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .service-card-image {
+      position: absolute;
+      width: 90%;
+      height: 190px;
+      overflow: hidden;
+      top: -6%;
+      left: -6%;
+      z-index: 2;
+    }
+    
+    .service-card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.6s ease;
+    }
+    
+    .service-card:hover .service-card-image img {
+      transform: scale(1.05);
+    }
+    
+    .service-card-color-box {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 0 0 80px 30px;
+      border: 1px solid #fff;
+    }
+    
+    .service-card-content {
+      position: relative;
+      z-index: 3;
+      color: #fff;
+      width: 90%;
     }
     
     .service-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+      transform: translateY(-4px);
+    }
+    
+    .service-card.clicked {
+      opacity: 0;
+      transform: translateY(-40px);
+    }
+    
+    .service-card.out {
+      opacity: 0;
+      transform: translateY(-40px);
     }
     
     .service-icon {
-      width: 50px;
-      height: 50px;
+      width: 60px;
+      height: 60px;
       background: #FFE500;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.3rem;
+      font-size: 1.5rem;
       margin-bottom: 1.5rem;
     }
     
     .service-name {
-      font-size: 0.65rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: #999;
-      margin-bottom: 0.6rem;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 1rem;
     }
     
     .service-title {
-      font-size: 1.3rem;
-      font-weight: 600;
+      font-size: 2rem;
+      font-weight: 700;
       font-family: 'Noto Serif KR', serif;
-      margin-bottom: 1rem;
-      line-height: 1.5;
-      letter-spacing: -0.3px;
+      margin-bottom: 0;
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+      color: #fff;
     }
     
     .service-description {
-      color: #666;
-      line-height: 1.7;
+      color: rgba(255,255,255,0.9);
+      line-height: 1.6;
       font-size: 0.9rem;
+      display: none;
     }
     
-    /* Careers - Split Text Animation */
+    .service-cover {
+      position: fixed;
+      z-index: 1000;
+      transform-origin: 50% 50%;
+      transition: transform 300ms ease-in-out;
+      pointer-events: none;
+    }
+    
+    .service-open-content {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      z-index: 1010;
+      opacity: 0;
+      pointer-events: none;
+      overflow-y: auto;
+      transition: opacity 200ms linear 0ms;
+    }
+    
+    .service-open-content.open {
+      opacity: 1;
+      pointer-events: all;
+      transition-delay: 600ms;
+    }
+    
+    .service-detail-content {
+      background: #fff;
+      max-width: 900px;
+      margin: 80px auto 80px;
+      padding: 4rem 3rem;
+      position: relative;
+    }
+    
+    .service-close-content {
+      display: block;
+      position: fixed;
+      right: 30px;
+      top: 30px;
+      width: 40px;
+      height: 40px;
+      z-index: 1020;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 50%;
+      transition: all 0.3s;
+      text-decoration: none;
+    }
+    
+    .service-close-content:hover {
+      background: #FFE500;
+      transform: rotate(90deg);
+    }
+    
+    .service-close-content span {
+      background: #000;
+      width: 24px;
+      height: 3px;
+      display: block;
+      position: absolute;
+      top: 18px;
+      left: 8px;
+      border-radius: 2px;
+    }
+    
+    .service-close-content .x-1 {
+      transform: rotate(45deg);
+    }
+    
+    .service-close-content .x-2 {
+      transform: rotate(-45deg);
+    }
+    
+    .service-detail-content h2 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      font-family: 'Noto Serif KR', serif;
+      margin-bottom: 1.5rem;
+      color: #000;
+    }
+    
+    .service-detail-content h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      font-family: 'Noto Serif KR', serif;
+      margin-top: 2.5rem;
+      margin-bottom: 1rem;
+      color: #000;
+    }
+    
+    .service-detail-content p {
+      font-size: 1.05rem;
+      line-height: 1.8;
+      color: #444;
+      margin-bottom: 1.2rem;
+    }
+    
+    .service-detail-content ul {
+      margin: 1.5rem 0;
+      padding-left: 1.5rem;
+    }
+    
+    .service-detail-content li {
+      font-size: 1.05rem;
+      line-height: 1.8;
+      color: #444;
+      margin-bottom: 0.8rem;
+    }
+    
+    .price-box {
+      background: #fafafa;
+      border-left: 4px solid #FFE500;
+      padding: 1.5rem 2rem;
+      margin: 2rem 0;
+    }
+    
+    .price-box strong {
+      color: #000;
+      font-size: 1.8rem;
+      font-family: 'Noto Serif KR', serif;
+    }
+    
     .careers {
       padding: var(--section-padding) 0;
       background: #000;
@@ -636,7 +809,7 @@
     
     .careers-wrapper {
       position: relative;
-      height: 150px;
+      height: 100px;
       overflow: hidden;
     }
     
@@ -658,8 +831,7 @@
     }
     
     .careers-row:nth-child(3) {
-      top: 100px;
-      animation: scrollLeft 32s linear infinite;
+      display: none;
     }
     
     @keyframes scrollLeft {
@@ -681,7 +853,6 @@
       font-family: 'Noto Serif KR', serif;
     }
     
-    /* Values */
     .values {
       padding: var(--section-padding) 3rem;
       background: #fafafa;
@@ -773,7 +944,6 @@
       font-size: 0.9rem;
     }
     
-    /* Footer */
     .footer {
       background: #0a0a0a;
       color: #fff;
@@ -843,6 +1013,28 @@
       font-size: 0.85rem;
     }
     
+    @media (max-width: 1440px) {
+      .hero-content {
+        margin-left: 40px;
+        padding-right: 1rem;
+      }
+      
+      .hero-container {
+        gap: 2rem;
+      }
+    }
+    
+    @media (max-width: 1280px) {
+      .hero-content {
+        margin-left: 24px;
+        padding-right: 0;
+      }
+      
+      .hero-container {
+        gap: 2rem;
+      }
+    }
+    
     @media (max-width: 1024px) {
       .hero-container {
         grid-template-columns: 1fr;
@@ -869,6 +1061,14 @@
       .nav-menu {
         display: none;
       }
+      
+      .hl__inner {
+        grid-template-columns: 1fr;
+        margin-right: auto;
+      }
+      .hl__col--right {
+        margin-top: 0;
+      }
     }
   </style>
 </head>
@@ -881,7 +1081,7 @@
       <nav class="nav-menu">
         <a href="#intro" class="nav-link">소개</a>
         <a href="#services" class="nav-link">서비스</a>
-        <a href="#careers" class="nav-link">실적</a>
+        <a href="#pricing" class="nav-link">요금안내</a>
         <a href="#contact" class="nav-link">문의</a>
       </nav>
     </div>
@@ -913,10 +1113,18 @@
       </div>
       
       <div class="hero-visual">
-        <div class="img-card"></div>
-        <div class="img-card"></div>
-        <div class="img-card"></div>
-        <div class="img-card"></div>
+        <div class="img-card" style="background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);">
+          <img src="card1.jpg" alt="법원 녹취록 서비스">
+        </div>
+        <div class="img-card" style="background: linear-gradient(180deg, #f093fb 0%, #f5576c 100%);">
+          <img src="card2.jpg" alt="현장 속기 서비스">
+        </div>
+        <div class="img-card" style="background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);">
+          <img src="card3.jpg" alt="영상 자막 서비스">
+        </div>
+        <div class="img-card" style="background: linear-gradient(180deg, #43e97b 0%, #38f9d7 100%);">
+          <img src="card4.jpg" alt="회의록 작성 서비스">
+        </div>
       </div>
     </div>
   </div>
@@ -988,37 +1196,82 @@ QUALITY</div>
     </div>
     
     <div class="services-grid">
-      <div class="service-card">
-        <div class="service-icon">⚖</div>
-        <div class="service-name">Court Transcription</div>
-        <h3 class="service-title">법원 제출용 녹취록</h3>
-        <p class="service-description">민사·형사·가사·행정 소송 등 모든 법원 제출용 녹취록을 표준 양식에 맞춰 정확하게 작성합니다.</p>
+      <div class="service-column">
+        <div class="service-card" data-service="0">
+          <div class="service-card-wrapper">
+            <div class="service-card-image">
+              <img src="card1.jpg" alt="법원 녹취록" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #667eea 0%, #764ba2 100%)'">
+            </div>
+            <div class="service-card-color-box" style="background: #EB5160;">
+              <div class="service-card-content">
+                <div class="service-icon">⚖</div>
+                <div class="service-name">Court Transcription</div>
+                <h3 class="service-title">법원 제출용 녹취록</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="service-card" data-service="2">
+          <div class="service-card-wrapper">
+            <div class="service-card-image">
+              <img src="card3.jpg" alt="현장 속기" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'">
+            </div>
+            <div class="service-card-color-box" style="background: #8DAA91;">
+              <div class="service-card-content">
+                <div class="service-icon">🎙</div>
+                <div class="service-name">On-site Stenography</div>
+                <h3 class="service-title">현장 실시간 속기</h3>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       
-      <div class="service-card">
-        <div class="service-icon">📊</div>
-        <div class="service-name">Meeting Minutes</div>
-        <h3 class="service-title">공식 회의록 작성</h3>
-        <p class="service-description">주주이회, 이사회, 정책공청회 등 공식 회의의 모든 내용을 체계적으로 정리합니다.</p>
+      <div class="service-column">
+        <div class="service-card" data-service="1">
+          <div class="service-card-wrapper">
+            <div class="service-card-image">
+              <img src="card2.jpg" alt="공식 회의록" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'">
+            </div>
+            <div class="service-card-color-box" style="background: #8F3985;">
+              <div class="service-card-content">
+                <div class="service-icon">📊</div>
+                <div class="service-name">Meeting Minutes</div>
+                <h3 class="service-title">공식 회의록 작성</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="service-card" data-service="3">
+          <div class="service-card-wrapper">
+            <div class="service-card-image">
+              <img src="card4.jpg" alt="전문 분야 녹취" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)'">
+            </div>
+            <div class="service-card-color-box" style="background: #888DA7;">
+              <div class="service-card-content">
+                <div class="service-icon">🔬</div>
+                <div class="service-name">Specialized Fields</div>
+                <h3 class="service-title">전문 분야 녹취</h3>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      
-      <div class="service-card">
-        <div class="service-icon">🎙</div>
-        <div class="service-name">On-site Stenography</div>
-        <h3 class="service-title">현장 실시간 속기</h3>
-        <p class="service-description">컨퍼런스, 포럼, 세미나 등에 전문 속기사를 파견하여 현장에서 실시간 속기합니다.</p>
-      </div>
-      
-      <div class="service-card">
-        <div class="service-icon">🔬</div>
-        <div class="service-name">Specialized Fields</div>
-        <h3 class="service-title">전문 분야 녹취</h3>
-        <p class="service-description">의료, 특허, 건설 분쟁 등 전문 분야의 용어에 능통한 속기사가 정확한 녹취를 제공합니다.</p>
-      </div>
+    </div>
+    
+    <div id="service-cover" class="service-cover"></div>
+    <div id="service-open-content" class="service-open-content">
+      <a href="#" id="service-close-content" class="service-close-content">
+        <span class="x-1"></span>
+        <span class="x-2"></span>
+      </a>
+      <div class="service-detail-content" id="service-detail-content"></div>
     </div>
   </div>
 
-  <div id="careers" class="careers">
+  <div id="pricing" class="careers">
     <h2 class="careers-title">주요 경력 및 실적<span class="dot">.</span></h2>
     <div class="careers-wrapper">
       <div class="careers-row careers-row-1">
@@ -1155,18 +1408,6 @@ QUALITY</div>
       currentIndex = (currentIndex + 1) % imgCards.length;
     }, 5000);
     
-    // Hero Image Cards Float Animation
-    gsap.utils.toArray('.img-card').forEach((card, i) => {
-      gsap.to(card, {
-        y: 'random(-15, 15)',
-        duration: 'random(2.5, 4)',
-        repeat: -1,
-        yoyo: true,
-        ease: 'sine.inOut',
-        delay: i * 0.2
-      });
-    });
-    
     // Background Text Parallax
     gsap.utils.toArray('.bg-word').forEach(text => {
       gsap.fromTo(text, 
@@ -1258,28 +1499,7 @@ QUALITY</div>
       }
     });
     
-    // Services Cards
-    const serviceCards = document.querySelectorAll('.services .service-card');
-    serviceCards.forEach((card, i) => {
-      gsap.fromTo(card,
-        { y: 24, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 0.6,
-          delay: i * 0.06,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: '.services',
-            start: 'top 75%',
-            toggleActions: 'play none none none',
-            once: true
-          }
-        }
-      );
-    });
-    
-    // Careers Split Rows Animation
+    // Careers Split Rows Animation (2 rows only)
     gsap.to('.careers-row-1', {
       x: '-100%',
       duration: 30,
@@ -1290,13 +1510,6 @@ QUALITY</div>
     gsap.to('.careers-row-2', {
       x: '-100%',
       duration: 35,
-      repeat: -1,
-      ease: 'none'
-    });
-    
-    gsap.to('.careers-row-3', {
-      x: '-100%',
-      duration: 32,
       repeat: -1,
       ease: 'none'
     });
@@ -1346,16 +1559,231 @@ QUALITY</div>
         end: 'max',
         onUpdate: (self) => {
           if (self.direction === 1) {
-            // 스크롤 아래로
             fixedNavBlack.classList.add('is-collapsed');
             fixedNavYellow.classList.add('is-collapsed');
           } else {
-            // 스크롤 위로
             fixedNavBlack.classList.remove('is-collapsed');
             fixedNavYellow.classList.remove('is-collapsed');
           }
         }
       });
+    }
+    
+    // Service Card Expansion Effect
+    const serviceCardsAll = document.querySelectorAll('.service-card');
+    const serviceCover = document.getElementById('service-cover');
+    const serviceOpenContent = document.getElementById('service-open-content');
+    const serviceDetailContent = document.getElementById('service-detail-content');
+    const serviceCloseContent = document.getElementById('service-close-content');
+    let currentServiceCard = null;
+    let servicePageIsOpen = false;
+    
+    const serviceDetails = [
+      {
+        title: '법원 제출용 녹취록',
+        icon: '⚖',
+        content: `
+          <h3>서비스 개요</h3>
+          <p>모든 법원 소송 절차에 필요한 정확한 녹취록을 작성해드립니다. 민사, 형사, 가사, 행정 소송 등 모든 분야의 법원 제출용 녹취록을 표준 양식에 맞춰 정확하게 작성합니다.</p>
+          
+          <h3>주요 특징</h3>
+          <ul>
+            <li><strong>법원 인증</strong>: 대법원 지정 속기사 자격 보유</li>
+            <li><strong>표준 양식</strong>: 법원 제출용 표준 양식 완벽 준수</li>
+            <li><strong>2차 검수</strong>: 모든 녹취록은 2차 검수를 통해 오류 제로 달성</li>
+            <li><strong>빠른 납기</strong>: 표준 2-3일, 긴급 시 당일 작업 가능</li>
+          </ul>
+          
+          <h3>작업 프로세스</h3>
+          <p>1. 녹음 파일 접수 및 확인<br>
+          2. 1차 녹취 작업<br>
+          3. 2차 검수 및 교정<br>
+          4. 법원 양식 적용<br>
+          5. 최종 납품</p>
+          
+          <div class="price-box">
+            <p><strong>60분 기준 150,000원~</strong></p>
+            <p>음질, 화자 수, 전문 용어 사용 정도에 따라 변동</p>
+          </div>
+        `
+      },
+      {
+        title: '공식 회의록 작성',
+        icon: '📊',
+        content: `
+          <h3>서비스 개요</h3>
+          <p>주주총회, 이사회, 정책공청회 등 공식 회의의 모든 내용을 체계적으로 정리합니다. 법적 효력이 필요한 공식 문서로 작성됩니다.</p>
+          
+          <h3>주요 특징</h3>
+          <ul>
+            <li><strong>공식 문서</strong>: 법적 효력을 갖춘 공식 회의록 작성</li>
+            <li><strong>체계적 정리</strong>: 안건별, 발언자별 명확한 구분</li>
+            <li><strong>기밀 유지</strong>: 철저한 보안 및 기밀 유지</li>
+            <li><strong>신속 처리</strong>: 회의 종료 후 24시간 내 초안 제공</li>
+          </ul>
+          
+          <h3>적용 분야</h3>
+          <p>주주총회, 이사회, 노사협의회, 정책공청회, 학술 세미나, 전문가 포럼 등</p>
+          
+          <div class="price-box">
+            <p><strong>2시간 기준 200,000원~</strong></p>
+            <p>회의 시간 및 참석 인원에 따라 변동</p>
+          </div>
+        `
+      },
+      {
+        title: '현장 실시간 속기',
+        icon: '🎙',
+        content: `
+          <h3>서비스 개요</h3>
+          <p>컨퍼런스, 포럼, 세미나 등에 전문 속기사를 파견하여 현장에서 실시간으로 속기합니다. 행사 종료와 동시에 완성된 기록을 제공합니다.</p>
+          
+          <h3>주요 특징</h3>
+          <ul>
+            <li><strong>실시간 기록</strong>: 발언과 동시에 텍스트로 변환</li>
+            <li><strong>현장 투입</strong>: 전국 어디든 속기사 파견 가능</li>
+            <li><strong>즉시 납품</strong>: 행사 종료 후 1시간 내 정리본 제공</li>
+            <li><strong>장비 지원</strong>: 전문 속기 장비 일체 제공</li>
+          </ul>
+          
+          <h3>적용 분야</h3>
+          <p>국제 컨퍼런스, 학술 심포지엄, 기업 세미나, 정부 공청회, 기자 간담회 등</p>
+          
+          <div class="price-box">
+            <p><strong>반일(4시간) 기준 400,000원~</strong></p>
+            <p>전일(8시간) 700,000원~, 출장비 별도</p>
+          </div>
+        `
+      },
+      {
+        title: '전문 분야 녹취',
+        icon: '🔬',
+        content: `
+          <h3>서비스 개요</h3>
+          <p>의료, 특허, 건설, 금융 등 전문 분야의 용어에 능통한 속기사가 정확한 녹취를 제공합니다. 일반 녹취로는 불가능한 전문성이 요구되는 프로젝트에 최적화되어 있습니다.</p>
+          
+          <h3>주요 특징</h3>
+          <ul>
+            <li><strong>전문 용어 정확성</strong>: 각 분야 전문 용어 완벽 숙지</li>
+            <li><strong>분야별 전문가</strong>: 의료, 특허, 건설 등 분야별 전담 속기사 배정</li>
+            <li><strong>용어집 관리</strong>: 프로젝트별 전문 용어집 구축</li>
+            <li><strong>검수 시스템</strong>: 해당 분야 전문가 감수 가능</li>
+          </ul>
+          
+          <h3>적용 분야</h3>
+          <p>의료 소송, 특허 분쟁, 건설 중재, 금융 감사, 기술 자문, 학술 연구 등</p>
+          
+          <div class="price-box">
+            <p><strong>60분 기준 200,000원~</strong></p>
+            <p>전문성 수준 및 난이도에 따라 변동</p>
+          </div>
+        `
+      }
+    ];
+    
+    serviceCardsAll.forEach((card, index) => {
+      card.addEventListener('click', function() {
+        openServiceDetail(card, index);
+      });
+    });
+    
+    if (serviceCloseContent) {
+      serviceCloseContent.addEventListener('click', function(e) {
+        e.preventDefault();
+        closeServiceDetail();
+      });
+    }
+    
+    function openServiceDetail(card, index) {
+      currentServiceCard = card;
+      
+      // 현재 스크롤 위치 저장
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      
+      card.classList.add('clicked');
+      
+      serviceCardsAll.forEach((c, i) => {
+        if (i !== index) {
+          setTimeout(() => {
+            c.classList.add('out');
+          }, 100 * i);
+        }
+      });
+      
+      setTimeout(() => {
+        animateServiceCoverUp(card, index);
+      }, 500);
+      
+      serviceOpenContent.classList.add('open');
+    }
+    
+    function animateServiceCoverUp(card, index) {
+      const cardPosition = card.getBoundingClientRect();
+      const cardStyle = getComputedStyle(card);
+      
+      serviceCover.style.left = cardPosition.left + 'px';
+      serviceCover.style.top = cardPosition.top + 'px';
+      serviceCover.style.width = cardPosition.width + 'px';
+      serviceCover.style.height = cardPosition.height + 'px';
+      serviceCover.style.backgroundColor = cardStyle.backgroundColor;
+      
+      const scaleX = window.innerWidth / cardPosition.width;
+      const scaleY = window.innerHeight / cardPosition.height;
+      const offsetX = (window.innerWidth / 2 - cardPosition.width / 2 - cardPosition.left) / scaleX;
+      const offsetY = (window.innerHeight / 2 - cardPosition.height / 2 - cardPosition.top) / scaleY;
+      
+      serviceCover.style.transform = `scaleX(${scaleX}) scaleY(${scaleY}) translate3d(${offsetX}px, ${offsetY}px, 0px)`;
+      
+      serviceDetailContent.innerHTML = `
+        <div style="text-align: center; font-size: 3rem; margin-bottom: 1rem;">${serviceDetails[index].icon}</div>
+        <h2>${serviceDetails[index].title}</h2>
+        ${serviceDetails[index].content}
+      `;
+      
+      setTimeout(() => {
+        // 모달 내부 스크롤만 맨 위로
+        serviceOpenContent.scrollTop = 0;
+        servicePageIsOpen = true;
+      }, 300);
+    }
+    
+    function closeServiceDetail() {
+      if (!currentServiceCard) return;
+      
+      serviceOpenContent.classList.remove('open');
+      
+      const cardPosition = currentServiceCard.getBoundingClientRect();
+      serviceCover.style.left = cardPosition.left + 'px';
+      serviceCover.style.top = cardPosition.top + 'px';
+      serviceCover.style.width = cardPosition.width + 'px';
+      serviceCover.style.height = cardPosition.height + 'px';
+      serviceCover.style.transform = 'scaleX(1) scaleY(1) translate3d(0px, 0px, 0px)';
+      
+      setTimeout(() => {
+        serviceDetailContent.innerHTML = '';
+        serviceCover.style.width = '0px';
+        serviceCover.style.height = '0px';
+        servicePageIsOpen = false;
+        
+        currentServiceCard.classList.remove('clicked');
+        serviceCardsAll.forEach((card, i) => {
+          setTimeout(() => {
+            card.classList.remove('out');
+          }, 100 * i);
+        });
+        
+        // 원래 스크롤 위치로 복원
+        const scrollY = document.body.style.top;
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+        
+        currentServiceCard = null;
+      }, 301);
     }
   </script>
 </body>
