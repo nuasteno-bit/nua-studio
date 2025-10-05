@@ -90,8 +90,9 @@
       letter-spacing: 0;
       transition: color 0.2s, background 0.2s, opacity 0.5s ease;
       box-sizing: border-box;
-      display: block;
-      /* 수정: smooth 스크롤 제거 */
+      display: flex;
+      flex-direction: column;
+      gap: 0px;
       scroll-behavior: auto;
     }
     
@@ -100,17 +101,13 @@
       transition: opacity 0.5s ease;
     }
     
-    /* 세로 정렬을 위한 클래스들 수정 */
+    /* 세로 정렬을 위한 클래스들 - wrapper 구조 사용 */
     #viewer-text.align-middle {
-      display: flex;
-      flex-direction: column;
       justify-content: center;
       height: calc(100% - 20px);
     }
     
     #viewer-text.align-bottom {
-      display: flex;
-      flex-direction: column;
       justify-content: flex-end;
       height: calc(100% - 20px);
     }
@@ -672,18 +669,35 @@
       transform: translateX(-50%) translateY(-10px);
     }
     
-    /* ========== 안정화된 화자 구분 스타일 ========== */
-    .speaker-line {
+    /* ========== 완전히 안정화된 화자 구분 스타일 (GPT 권장 기준) ========== */
+    /* 세로 정렬용 wrapper - 내용을 감싸는 컨테이너 */
+    .content-wrapper {
+      width: 100%;
+      flex-shrink: 0;
       display: flex;
-      align-items: center;
-      /* 수정: margin 제거로 겹침 방지 */
-      margin: 0;
-      /* 수정: padding으로 간격 조절 */
-      padding: 1px 0;
-      min-height: 1em;
-      line-height: inherit;
+      flex-direction: column;
+      gap: 0px;
     }
     
+    /* 
+     * 핵심: 모든 라인(화자 있음/없음)을 동일한 구조로 통일
+     * - display: flex로 고정 (block 혼용 금지)
+     * - align-items: baseline (텍스트 기준 정렬)
+     * - padding/margin: 0 (px 누적 방지)
+     * - min-height: auto (1em 제거로 line-height 불일치 해소)
+     */
+    .speaker-line {
+      display: flex;
+      align-items: baseline;
+      padding: 0;
+      margin: 0;
+      min-height: auto;
+      box-sizing: border-box;
+      line-height: inherit;
+      flex-shrink: 0;
+    }
+    
+    /* 화자 이름 영역 */
     .speaker-name {
       background: rgba(255, 255, 255, 0.08);
       padding: 3px 15px;
@@ -693,36 +707,46 @@
       white-space: nowrap;
       flex-shrink: 0;
       line-height: inherit;
+      display: inline-flex;
+      align-items: baseline;
+      box-sizing: border-box;
     }
     
+    /* 세로 구분선 */
     .speaker-divider {
       width: 2px;
-      height: 1.2em;
+      align-self: stretch;
       background: rgba(255, 255, 255, 0.3);
       margin-right: 20px;
       flex-shrink: 0;
-      align-self: center;
     }
     
+    /* 파이프 문자 구분 */
     .speaker-pipe {
       color: rgba(255, 255, 255, 0.4);
       margin: 0 20px;
       font-weight: 300;
-      align-self: center;
       line-height: inherit;
     }
     
+    /* 화자 내용 영역 */
     .speaker-content {
       flex: 1;
-      align-self: center;
       line-height: inherit;
+      min-width: 0;
+      word-break: break-word;
+      box-sizing: border-box;
     }
     
+    /* 화자가 없는 일반 텍스트 라인 - 동일한 구조 유지 */
     .speaker-line.no-speaker {
-      display: block;
+      display: flex;
+      align-items: baseline;
       line-height: inherit;
-      /* 수정: padding으로 일관된 간격 */
-      padding: 1px 0;
+      padding: 0;
+      margin: 0;
+      min-height: auto;
+      box-sizing: border-box;
     }
     
     /* 반응형 */
@@ -834,15 +858,6 @@
             <div class="num-btns">
               <button type="button" id="lineHeightUp">▲</button>
               <button type="button" id="lineHeightDown">▼</button>
-            </div>
-          </div>
-          
-          <div class="option-row">
-            <label>구분선 색상</label>
-            <div class="color-input-group">
-              <input type="checkbox" id="colorDividerEnabled">
-              <input type="color" id="dividerColor" value="#4A90E2">
-              <input type="text" class="color-hex" id="dividerColorHex" value="#4A90E2" maxlength="7">
             </div>
           </div>
         </div>
@@ -1026,6 +1041,15 @@
             </div>
           </div>
           
+          <div class="option-row">
+            <label>구분선 색상</label>
+            <div class="color-input-group">
+              <input type="checkbox" id="colorDividerEnabled">
+              <input type="color" id="dividerColor" value="#4A90E2">
+              <input type="text" class="color-hex" id="dividerColorHex" value="#4A90E2" maxlength="7">
+            </div>
+          </div>
+          
 
         </div>
       </div>
@@ -1057,11 +1081,6 @@
               <button class="preset-btn apply">적용</button>
             </div>
           </div>
-        </div>
-        <div style="margin-top: 20px; padding: 15px; background: #f8f8f8; border-radius: 8px;">
-          <p style="color: #666; font-size: 12px; margin: 0;">
-            💡 <strong>OBS 방송 팁:</strong> 배경 알파값을 0으로 설정하면 OBS 브라우저 소스에서 투명 배경으로 사용 가능합니다.
-          </p>
         </div>
       </div>
     </div>
@@ -1466,6 +1485,13 @@ function updateDisplay(text, isImmediate = false) {
     previousDisplay = displayText;
   }
 
+  // ========== 빈 줄 숨김 처리 (새 기능) ==========
+  // 끝의 빈 줄들을 제거 (단, 새로운 입력이 시작되면 줄바꿈 표시)
+  if (!currentActiveInput || currentActiveInput.trim().length === 0) {
+    // 입력 중이 아니거나 빈 입력만 있으면 trailing newlines 제거
+    displayText = displayText.replace(/\n+$/, '');
+  }
+  
   // ========== 불필요한 재렌더링 방지 ==========
   const finalDisplayText = displayText || '자막 대기 중...';
   if (finalDisplayText === lastRenderedText) {
@@ -1496,7 +1522,7 @@ function updateDisplay(text, isImmediate = false) {
   }
 }
 
-// ========== 화자 구분 형식 렌더링 함수 ==========
+// ========== 화자 구분 형식 렌더링 함수 (GPT 권장사항 완전 적용) ==========
 function renderFormattedText(text) {
   const lines = text.split('\n');
   const speakerEnabled = document.getElementById('speakerEnabled').checked;
@@ -1510,16 +1536,27 @@ function renderFormattedText(text) {
   
   viewerText.innerHTML = '';
   
+  // 세로 정렬 확인 및 wrapper 생성
+  const vAlign = document.querySelector('.valign-btn.active')?.dataset.valign || 'top';
+  const needsWrapper = vAlign === 'middle' || vAlign === 'bottom';
+  
+  let container = viewerText;
+  if (needsWrapper) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'content-wrapper';
+    viewerText.appendChild(wrapper);
+    container = wrapper;
+  }
+  
   lines.forEach(line => {
     const lineDiv = document.createElement('div');
+    lineDiv.className = 'speaker-line';
     
-    // line-height 명시적 적용
+    // 모든 라인에 line-height 명시적 적용
     lineDiv.style.lineHeight = currentLineHeight;
     
     // 화자 구분이 활성화되고 화자 패턴이 있는 경우
     if (speakerEnabled && line.startsWith('-') && line.includes(': ')) {
-      lineDiv.className = 'speaker-line';
-      
       const colonIndex = line.indexOf(': ');
       const speaker = line.substring(1, colonIndex).trim(); // "-" 제거
       const content = line.substring(colonIndex + 2); // ": " 이후 내용
@@ -1586,16 +1623,20 @@ function renderFormattedText(text) {
       // 내용 요소
       const contentSpan = document.createElement('span');
       contentSpan.className = 'speaker-content';
-      contentSpan.textContent = content;
+      contentSpan.textContent = content || '\u200B'; // 빈 줄 처리
       lineDiv.appendChild(contentSpan);
       
     } else {
-      // 일반 텍스트도 동일한 구조 사용
-      lineDiv.className = 'speaker-line no-speaker';
-      lineDiv.textContent = line;
+      // 일반 텍스트도 동일한 구조 사용 - GPT 권장: no-speaker도 같은 flex 구조
+      lineDiv.classList.add('no-speaker');
+      
+      const contentSpan = document.createElement('span');
+      contentSpan.className = 'speaker-content';
+      contentSpan.textContent = line || '\u200B'; // 빈 줄 처리
+      lineDiv.appendChild(contentSpan);
     }
     
-    viewerText.appendChild(lineDiv);
+    container.appendChild(lineDiv);
   });
 }
 
