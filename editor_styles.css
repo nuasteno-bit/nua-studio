@@ -402,7 +402,7 @@ body.solo-mode #col2 {
     display: none !important;
 }
 
-/* ===== Editor Card - 깔끔한 단일 테두리 ===== */
+/* ===== Editor Card - 종합 강조 (적당히) ===== */
 .editor-card {
     background: var(--card-bg);
     border-radius: 16px;
@@ -416,14 +416,22 @@ body.solo-mode #col2 {
     position: relative;
 }
 
-/* 권한자 시각화 - 글로우 이동 효과 */
+/* 권한자 시각화 - 테두리 + 글로우 + 배경 강조 */
 .column.active .editor-card,
 .editor-card.active {
-    border: 2px solid var(--card-border);
-    box-shadow: var(--shadow-md);
-    background: var(--editor-active-bg);
+    border: 2px solid var(--accent-primary);
+    box-shadow: 
+        0 0 0 1px var(--accent-primary),
+        0 0 15px rgba(var(--accent-shadow), 0.5),
+        var(--shadow-md);
+    background: linear-gradient(
+        135deg,
+        var(--editor-active-bg) 0%,
+        var(--card-bg) 100%
+    );
 }
 
+/* 좌측 글로우 이동 바 - 6px로 적당히 */
 .column.active .editor-card::before,
 .editor-card.active::before {
     content: '';
@@ -431,7 +439,7 @@ body.solo-mode #col2 {
     left: 0;
     top: 0;
     bottom: 0;
-    width: 4px;
+    width: 6px;
     background: linear-gradient(
         to bottom,
         transparent,
@@ -450,36 +458,24 @@ body.solo-mode #col2 {
     50% { background-position: 0% 100%; }
 }
 
-/* 모노 테마 - 초록색 글로우 이동 */
-[data-theme="mono"] .column.active .editor-card::before,
-[data-theme="mono"] .editor-card.active::before {
-    background: linear-gradient(
-        to bottom,
-        transparent,
-        #00b300,
-        #00ff00,
-        #00b300,
-        transparent
-    );
-    background-size: 100% 50%;
+/* Light 테마 특화 */
+.column.active .editor-card,
+.editor-card.active {
+    box-shadow: 
+        0 0 0 1px var(--accent-primary),
+        0 0 15px rgba(9, 105, 218, 0.3),
+        var(--shadow-md);
 }
 
-/* Neon 테마 - 강한 글로우 */
-[data-theme="neon"] .column.active .editor-card::before,
-[data-theme="neon"] .editor-card.active::before {
-    background: linear-gradient(
-        to bottom,
-        transparent,
-        #00f0ff,
-        #a259ff,
-        #00f0ff,
-        transparent
-    );
-    box-shadow: 0 0 10px #00f0ff;
-    background-size: 100% 50%;
+/* Dark 테마 특화 */
+[data-theme="dark"] .column.active .editor-card,
+[data-theme="dark"] .editor-card.active {
+    box-shadow: 
+        0 0 0 1px #58a6ff,
+        0 0 15px rgba(88, 166, 255, 0.3),
+        var(--shadow-md);
 }
 
-/* Dark 테마 */
 [data-theme="dark"] .column.active .editor-card::before,
 [data-theme="dark"] .editor-card.active::before {
     background: linear-gradient(
@@ -493,7 +489,72 @@ body.solo-mode #col2 {
     background-size: 100% 50%;
 }
 
-/* Tokyo 테마 */
+/* Neon 테마 특화 */
+[data-theme="neon"] .column.active .editor-card,
+[data-theme="neon"] .editor-card.active {
+    border-color: #00f0ff;
+    box-shadow: 
+        0 0 0 1px #00f0ff,
+        0 0 20px rgba(0, 240, 255, 0.4),
+        var(--shadow-md);
+}
+
+[data-theme="neon"] .column.active .editor-card::before,
+[data-theme="neon"] .editor-card.active::before {
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        #00f0ff,
+        #a259ff,
+        #00f0ff,
+        transparent
+    );
+    box-shadow: 0 0 8px #00f0ff;
+    background-size: 100% 50%;
+}
+
+/* Mono 테마 특화 - 초록색 */
+[data-theme="mono"] .editor-card {
+    border: 2px solid #d0d0d0;
+}
+
+[data-theme="mono"] .column.active .editor-card,
+[data-theme="mono"] .editor-card.active {
+    border: 2px solid #00b300;
+    box-shadow: 
+        0 0 0 1px #00b300,
+        0 0 10px rgba(0, 179, 0, 0.3),
+        0 4px 0 #000000;
+    background: linear-gradient(
+        135deg,
+        #fafafa 0%,
+        #ffffff 100%
+    );
+}
+
+[data-theme="mono"] .column.active .editor-card::before,
+[data-theme="mono"] .editor-card.active::before {
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        #00b300,
+        #00ff00,
+        #00b300,
+        transparent
+    );
+    background-size: 100% 50%;
+}
+
+/* Tokyo 테마 특화 */
+[data-theme="tokyo"] .column.active .editor-card,
+[data-theme="tokyo"] .editor-card.active {
+    border-color: #7aa2f7;
+    box-shadow: 
+        0 0 0 1px #7aa2f7,
+        0 0 15px rgba(122, 162, 247, 0.3),
+        var(--shadow-md);
+}
+
 [data-theme="tokyo"] .column.active .editor-card::before,
 [data-theme="tokyo"] .editor-card.active::before {
     background: linear-gradient(
@@ -507,11 +568,31 @@ body.solo-mode #col2 {
     background-size: 100% 50%;
 }
 
-/* Neon 테마 특별 효과 */
-[data-theme="neon"] .column.active .editor-card {
-    box-shadow: 
-        0 0 20px rgba(0,240,255,0.3),
-        var(--shadow-md);
+/* 헤더 상단 강조선 - 절제되게 */
+.column.active .editor-header,
+.editor-card.active .editor-header {
+    border-top: 2px solid var(--accent-primary);
+    background: var(--bg-tertiary);
+}
+
+[data-theme="mono"] .column.active .editor-header,
+[data-theme="mono"] .editor-card.active .editor-header {
+    border-top: 2px solid #00b300;
+}
+
+[data-theme="neon"] .column.active .editor-header,
+[data-theme="neon"] .editor-card.active .editor-header {
+    border-top: 2px solid #00f0ff;
+}
+
+[data-theme="tokyo"] .column.active .editor-header,
+[data-theme="tokyo"] .editor-card.active .editor-header {
+    border-top: 2px solid #7aa2f7;
+}
+
+[data-theme="dark"] .column.active .editor-header,
+[data-theme="dark"] .editor-card.active .editor-header {
+    border-top: 2px solid #58a6ff;
 }
 
 .editor-header {
