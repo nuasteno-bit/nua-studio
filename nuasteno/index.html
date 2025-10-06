@@ -503,6 +503,131 @@
       overflow: hidden;
     }
     
+    .soundwave-bg {
+      position: absolute;
+      pointer-events: none;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: 1;
+      overflow: visible;
+    }
+    
+    .soundwave-bg circle {
+      fill: none;
+      stroke: rgba(37, 99, 235, 0.1);
+      stroke-width: 0.25;
+      transform-origin: 50% 50%;
+      opacity: 1;
+      cx: -55;
+      cy: 145;
+      animation-name: soundwave-fade;
+      animation-iteration-count: infinite;
+      animation-fill-mode: both;
+      animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .soundwave-bg circle:nth-child(odd) {
+      animation-name: soundwave-fade-strong;
+    }
+    
+    .soundwave-bg circle:nth-child(3n) {
+      stroke-width: 0.2;
+    }
+    
+    .soundwave-bg circle:nth-child(5n) {
+      animation-name: soundwave-fade-weak;
+    }
+    
+    .soundwave-bg circle:nth-child(1) { r: 50; animation-delay: 0s; animation-duration: 10s; }
+    .soundwave-bg circle:nth-child(2) { r: 54; animation-delay: 0.25s; animation-duration: 10.5s; }
+    .soundwave-bg circle:nth-child(3) { r: 59; animation-delay: 0.55s; animation-duration: 11s; }
+    .soundwave-bg circle:nth-child(4) { r: 63; animation-delay: 0.8s; animation-duration: 11.5s; }
+    .soundwave-bg circle:nth-child(5) { r: 68; animation-delay: 1.1s; animation-duration: 12s; }
+    .soundwave-bg circle:nth-child(6) { r: 73; animation-delay: 1.45s; animation-duration: 12.5s; }
+    .soundwave-bg circle:nth-child(7) { r: 78; animation-delay: 1.75s; animation-duration: 13s; }
+    .soundwave-bg circle:nth-child(8) { r: 83; animation-delay: 2.1s; animation-duration: 13.5s; }
+    .soundwave-bg circle:nth-child(9) { r: 88; animation-delay: 2.5s; animation-duration: 14s; }
+    .soundwave-bg circle:nth-child(10) { r: 93; animation-delay: 2.85s; animation-duration: 14.5s; }
+    .soundwave-bg circle:nth-child(11) { r: 98; animation-delay: 3.25s; animation-duration: 15s; }
+    .soundwave-bg circle:nth-child(12) { r: 103; animation-delay: 3.7s; animation-duration: 15.5s; }
+    .soundwave-bg circle:nth-child(13) { r: 108; animation-delay: 4.1s; animation-duration: 16s; }
+    .soundwave-bg circle:nth-child(14) { r: 113; animation-delay: 4.55s; animation-duration: 16.5s; }
+    .soundwave-bg circle:nth-child(15) { r: 118; animation-delay: 5.05s; animation-duration: 17s; }
+    .soundwave-bg circle:nth-child(16) { r: 123; animation-delay: 5.5s; animation-duration: 17.5s; }
+    .soundwave-bg circle:nth-child(17) { r: 128; animation-delay: 6s; animation-duration: 18s; }
+    .soundwave-bg circle:nth-child(18) { r: 133; animation-delay: 6.55s; animation-duration: 18.5s; }
+    
+    @keyframes soundwave-fade {
+      0% {
+        transform: scale(0.95);
+        opacity: 0;
+      }
+      20% {
+        transform: scale(1);
+        opacity: 0.5;
+      }
+      50% {
+        transform: scale(1.01);
+        opacity: 0.7;
+      }
+      80% {
+        transform: scale(1.02);
+        opacity: 0.4;
+      }
+      100% {
+        transform: scale(1.03);
+        opacity: 0;
+      }
+    }
+    
+    @keyframes soundwave-fade-strong {
+      0% {
+        transform: scale(0.93);
+        opacity: 0;
+      }
+      15% {
+        transform: scale(0.98);
+        opacity: 0.65;
+      }
+      45% {
+        transform: scale(1.015);
+        opacity: 0.85;
+      }
+      75% {
+        transform: scale(1.025);
+        opacity: 0.55;
+      }
+      100% {
+        transform: scale(1.035);
+        opacity: 0;
+      }
+    }
+    
+    @keyframes soundwave-fade-weak {
+      0% {
+        transform: scale(0.97);
+        opacity: 0;
+      }
+      25% {
+        transform: scale(1.005);
+        opacity: 0.35;
+      }
+      55% {
+        transform: scale(1.008);
+        opacity: 0.5;
+      }
+      85% {
+        transform: scale(1.012);
+        opacity: 0.25;
+      }
+      100% {
+        transform: scale(1.015);
+        opacity: 0;
+      }
+    }
+    
     .hero-container {
       max-width: 1800px;
       margin: 0 auto;
@@ -1477,6 +1602,27 @@
   </a>
 
   <div class="hero">
+    <svg class="soundwave-bg" xmlns="http://www.w3.org/2000/svg" viewBox="-50 -50 200 200" preserveAspectRatio="xMidYMid slice">
+      <circle></circle>
+      <circle></circle>
+      <circle></circle>
+      <circle></circle>
+      <circle></circle>
+      <circle></circle>
+      <circle></circle>
+      <circle></circle>
+      <circle></circle>
+      <circle></circle>
+      <circle></circle>
+      <circle></circle>
+      <circle></circle>
+      <circle></circle>
+      <circle></circle>
+      <circle></circle>
+      <circle></circle>
+      <circle></circle>
+    </svg>
+    
     <div class="hero-container">
       <div class="hero-content">
         <div class="hero-badge">한글속기 1급 · 법원 녹취 전문</div>
