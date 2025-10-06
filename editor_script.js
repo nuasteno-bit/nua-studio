@@ -1377,13 +1377,6 @@ function checkWordMatchingAsWaiting() {
     const endPos = mySpaces[startSpaceIdx + matchWordCount - 1] + 1;
     const candidateText = myText.substring(startPos, endPos);
     
-    // ✅ trim() 제거
-    // 과거 텍스트와 매칭 방지 (중복 송출 방지)
-    if (accumulatedText && accumulatedText.includes(candidateText)) {
-      console.log('[매칭 방지] 이미 송출된 텍스트:', candidateText.substring(0, 20));
-      continue;
-    }
-    
     // 권한자 텍스트에서 매칭 확인
     const matchIndex = otherText.indexOf(candidateText);
     if (matchIndex !== -1) {
@@ -1479,13 +1472,6 @@ function checkWordMatchingAsActive() {
     const startPos = startSpaceIdx === 0 ? 0 : otherSpaces[startSpaceIdx - 1] + 1;
     const endPos = otherSpaces[startSpaceIdx + matchWordCount - 1] + 1;
     const candidateText = otherText.substring(startPos, endPos);
-    
-    // ✅ trim() 제거
-    // 과거 텍스트와 매칭 방지 (중복 송출 방지)
-    if (accumulatedText && accumulatedText.includes(candidateText)) {
-      console.log('[매칭 방지] 이미 송출된 텍스트:', candidateText.substring(0, 20));
-      continue;
-    }
     
     // 내 텍스트에서 매칭 확인
     const matchIndex = myText.indexOf(candidateText);
