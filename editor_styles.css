@@ -402,49 +402,119 @@ body.solo-mode #col2 {
     display: none !important;
 }
 
-/* ===== Editor Card - 이중 테두리 해결 ===== */
+/* ===== Editor Card - 깔끔한 단일 테두리 ===== */
 .editor-card {
     background: var(--card-bg);
     border-radius: 16px;
     overflow: hidden;
     box-shadow: var(--shadow-sm);
-    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+    transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
     flex: 1;
     border: 2px solid var(--card-border);
+    position: relative;
 }
 
-/* 권한자 시각화 - 성능 최적화 */
+/* 권한자 시각화 - 글로우 이동 효과 */
 .column.active .editor-card,
 .editor-card.active {
-    border: 3px solid var(--accent-primary);
-    box-shadow: 
-        0 0 0 1px var(--accent-primary),
-        0 0 20px var(--accent-shadow);
+    border: 2px solid var(--card-border);
+    box-shadow: var(--shadow-md);
     background: var(--editor-active-bg);
 }
 
-/* 모노 테마 - 초록색 포인트로 명확한 구분 */
-[data-theme="mono"] .editor-card {
-    border: 2px solid #000000;
+.column.active .editor-card::before,
+.editor-card.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        var(--accent-primary),
+        var(--accent-secondary),
+        var(--accent-primary),
+        transparent
+    );
+    background-size: 100% 50%;
+    animation: glow-move 2.5s ease-in-out infinite;
+    z-index: 10;
 }
 
-[data-theme="mono"] .column:not(.active) .editor-card {
-    border: 2px solid #d0d0d0;
+@keyframes glow-move {
+    0%, 100% { background-position: 0% 0%; }
+    50% { background-position: 0% 100%; }
 }
 
-[data-theme="mono"] .column.active .editor-card,
-[data-theme="mono"] .editor-card.active {
-    border: 3px solid #00b300; /* 초록색 */
+/* 모노 테마 - 초록색 글로우 이동 */
+[data-theme="mono"] .column.active .editor-card::before,
+[data-theme="mono"] .editor-card.active::before {
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        #00b300,
+        #00ff00,
+        #00b300,
+        transparent
+    );
+    background-size: 100% 50%;
+}
+
+/* Neon 테마 - 강한 글로우 */
+[data-theme="neon"] .column.active .editor-card::before,
+[data-theme="neon"] .editor-card.active::before {
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        #00f0ff,
+        #a259ff,
+        #00f0ff,
+        transparent
+    );
+    box-shadow: 0 0 10px #00f0ff;
+    background-size: 100% 50%;
+}
+
+/* Dark 테마 */
+[data-theme="dark"] .column.active .editor-card::before,
+[data-theme="dark"] .editor-card.active::before {
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        #58a6ff,
+        #bc8cff,
+        #58a6ff,
+        transparent
+    );
+    background-size: 100% 50%;
+}
+
+/* Tokyo 테마 */
+[data-theme="tokyo"] .column.active .editor-card::before,
+[data-theme="tokyo"] .editor-card.active::before {
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        #7aa2f7,
+        #bb9af7,
+        #7aa2f7,
+        transparent
+    );
+    background-size: 100% 50%;
+}
+
+/* Neon 테마 특별 효과 */
+[data-theme="neon"] .column.active .editor-card {
     box-shadow: 
-        0 0 0 1px #00b300,
-        0 4px 0 #000000;
-    background: #fafafa;
+        0 0 20px rgba(0,240,255,0.3),
+        var(--shadow-md);
 }
 
 .editor-header {
-    position: relative;
     padding: 16px 20px;
     border-bottom: 2px solid var(--border);
     display: flex;
@@ -466,10 +536,10 @@ body.solo-mode #col2 {
     font-family: 'Poppins', sans-serif;
 }
 
-/* Role Badge */
+/* Role Badge - 깔끔하게 정리 */
 .role-badge,
 .editor-badge {
-    padding: 4px 10px;
+    padding: 5px 12px;
     border-radius: 12px;
     font-size: 11px;
     font-weight: 600;
@@ -479,13 +549,14 @@ body.solo-mode #col2 {
     background: var(--bg-tertiary);
     color: var(--text-secondary);
     border: 1px solid var(--border);
+    transition: all 0.2s ease;
 }
 
 .role-badge.live-badge,
 .editor-badge.live {
     background: var(--accent-primary);
     color: var(--white);
-    box-shadow: 0 2px 8px var(--accent-shadow);
+    border: none;
     font-weight: 700;
 }
 
@@ -539,7 +610,7 @@ body.solo-mode #col2 {
     color: #ff9800 !important;
 }
 
-/* ===== Editor Content - 테두리 제거 ===== */
+/* ===== Editor Content - 세로선 제거 ===== */
 .editor-content {
     flex: 1;
     display: flex;
@@ -548,7 +619,7 @@ body.solo-mode #col2 {
     background: var(--editor-bg);
     margin: 12px;
     border-radius: 12px;
-    border: none; /* 이중 테두리 방지 */
+    border: none;
     overflow: hidden;
     transition: background 0.3s ease;
 }
@@ -558,7 +629,7 @@ body.solo-mode #col2 {
     background: var(--editor-active-bg);
 }
 
-/* Editor Textarea */
+/* 좌측 세로선 제거 - 카드에만 표시 */
 .editor-textarea,
 .editor-box {
     flex: 1;
@@ -591,42 +662,9 @@ body.solo-mode #col2 {
     opacity: 0.7;
 }
 
-/* 권한자 입력 표시 - 좌측 바 */
-.column.active .editor-content::before,
-.editor-card.active .editor-content::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: var(--accent-gradient);
-    opacity: 0.9;
-}
+/* 좌측 세로선 제거 - 카드에만 표시 */
 
-/* 모노 테마 좌측 바 - 초록색 */
-[data-theme="mono"] .column.active .editor-content::before,
-[data-theme="mono"] .editor-card.active .editor-content::before {
-    width: 4px;
-    background: #00b300;
-}
-
-/* 권한자 헤더 좌측 바 */
-.column.active .editor-header::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: var(--accent-gradient);
-}
-
-[data-theme="mono"] .column.active .editor-header::before {
-    background: #00b300;
-}
-
-/* ===== 대기자 입력 시 미세한 변화 ===== */
+/* Editor Textarea */
 
 /* Light 테마 */
 .column:not(.active) .editor-textarea:focus,
@@ -703,25 +741,35 @@ body.solo-mode #col2 {
     font-weight: 500;
 }
 
-/* ===== Neon 테마 특별 효과 (가벼운 버전) ===== */
-[data-theme="neon"] .column.active .editor-card {
-    animation: neonGlowLight 4s ease-in-out infinite;
-}
-
-@keyframes neonGlowLight {
-    0%, 100% { 
-        box-shadow: 
-            0 0 0 2px #00f0ff,
-            0 0 20px rgba(0,240,255,0.4);
-    }
-    50% { 
-        box-shadow: 
-            0 0 0 2px #00f0ff,
-            0 0 30px rgba(0,240,255,0.6);
-    }
-}
-
 /* ===== Panel Card (Viewer & Control) ===== */
+.panel-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--card-border);
+}
+.editor-footer,
+.status-bar {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-tertiary);
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.char-count {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+}
+
+/* Editor Footer / Status Bar */
 .panel-card {
     background: var(--card-bg);
     border-radius: 16px;
