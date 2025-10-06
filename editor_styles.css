@@ -1,5 +1,4 @@
-/* NUA STUDIO Steno Editor - Compact Styles */
-/* 기존 editor.css와 충돌 방지를 위해 CSS 변수와 스코프 사용 */
+/* NUA STUDIO Steno Editor - Optimized Styles */
 
 * {
     margin: 0;
@@ -7,7 +6,7 @@
     box-sizing: border-box;
 }
 
-/* CSS Variables - Theme System */
+/* ===== CSS Variables - Theme System ===== */
 :root {
     --black: #000000;
     --white: #ffffff;
@@ -105,7 +104,7 @@
     --text-secondary: #4a4a4a;
     --text-tertiary: #7a7a7a;
     --editor-bg: #ffffff;
-    --editor-active-bg: #f0f0f0;
+    --editor-active-bg: #fafafa;
     --editor-border: #000000;
     --editor-focus-border: #000000;
     --card-bg: #ffffff;
@@ -117,9 +116,9 @@
     --shadow-sm: 0 2px 0 rgba(0,0,0,0.1);
     --shadow-md: 0 4px 0 rgba(0,0,0,0.15);
     --shadow-lg: 0 8px 0 rgba(0,0,0,0.2);
-    --accent-primary: #000000;
+    --accent-primary: #00b300;
     --accent-secondary: #4a4a4a;
-    --accent-shadow: rgba(0, 0, 0, 0.2);
+    --accent-shadow: rgba(0, 179, 0, 0.3);
 }
 
 /* Tokyo Night Theme */
@@ -148,7 +147,7 @@
     --accent-shadow: rgba(122, 162, 247, 0.3);
 }
 
-/* Solarized Theme (compatibility) */
+/* Compatibility Themes */
 body.solarized {
     --bg-primary: #002b36;
     --bg-secondary: #073642;
@@ -164,7 +163,6 @@ body.solarized {
     --accent-shadow: rgba(181, 137, 0, 0.3);
 }
 
-/* Contrast Theme (compatibility) */
 body.contrast {
     --bg-primary: #000000;
     --bg-secondary: #000000;
@@ -180,7 +178,7 @@ body.contrast {
     --accent-shadow: rgba(255, 255, 0, 0.5);
 }
 
-/* Body and Layout */
+/* ===== Body and Layout ===== */
 body {
     font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
     background: var(--bg-secondary);
@@ -192,7 +190,7 @@ body {
     transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* Header */
+/* ===== Header ===== */
 .header {
     background: var(--bg-primary);
     border-bottom: 1px solid var(--border);
@@ -338,7 +336,24 @@ body {
     box-shadow: var(--shadow-sm);
 }
 
-/* Main Container - 2x2 Grid Layout */
+/* Neon 테마 Select 가독성 개선 */
+[data-theme="neon"] .theme-select {
+    background: rgba(10,10,10,0.95);
+    color: #00f0ff;
+    border-color: rgba(0,240,255,0.4);
+}
+
+[data-theme="neon"] .theme-select option {
+    background: #0a0a0a;
+    color: #ffffff;
+}
+
+[data-theme="neon"] .theme-select:hover {
+    background: rgba(0,240,255,0.1);
+    border-color: #00f0ff;
+}
+
+/* ===== Main Container - 2x2 Grid Layout ===== */
 .main-container {
     flex: 1;
     display: flex;
@@ -365,7 +380,7 @@ body {
     min-height: 250px;
 }
 
-/* Column Container (for compatibility) */
+/* Column Container */
 .column {
     flex: 1;
     display: flex;
@@ -373,7 +388,7 @@ body {
     min-width: 350px;
 }
 
-/* 1인 모드 스타일 */
+/* Solo Mode Styles */
 body.solo-mode .top-row {
     flex-direction: row !important;
 }
@@ -387,31 +402,49 @@ body.solo-mode #col2 {
     display: none !important;
 }
 
-/* Editor Card */
+/* ===== Editor Card - 이중 테두리 해결 ===== */
 .editor-card {
     background: var(--card-bg);
     border-radius: 16px;
     overflow: hidden;
     box-shadow: var(--shadow-sm);
-    transition: all 0.3s var(--ease);
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
     display: flex;
     flex-direction: column;
     flex: 1;
     border: 2px solid var(--card-border);
 }
 
-/* Active Editor Glow */
+/* 권한자 시각화 - 성능 최적화 */
 .column.active .editor-card,
 .editor-card.active {
-    border-color: var(--accent-primary);
+    border: 3px solid var(--accent-primary);
     box-shadow: 
         0 0 0 1px var(--accent-primary),
-        0 0 20px var(--accent-shadow),
-        var(--shadow-lg);
+        0 0 20px var(--accent-shadow);
     background: var(--editor-active-bg);
 }
 
+/* 모노 테마 - 초록색 포인트로 명확한 구분 */
+[data-theme="mono"] .editor-card {
+    border: 2px solid #000000;
+}
+
+[data-theme="mono"] .column:not(.active) .editor-card {
+    border: 2px solid #d0d0d0;
+}
+
+[data-theme="mono"] .column.active .editor-card,
+[data-theme="mono"] .editor-card.active {
+    border: 3px solid #00b300; /* 초록색 */
+    box-shadow: 
+        0 0 0 1px #00b300,
+        0 4px 0 #000000;
+    background: #fafafa;
+}
+
 .editor-header {
+    position: relative;
     padding: 16px 20px;
     border-bottom: 2px solid var(--border);
     display: flex;
@@ -433,7 +466,7 @@ body.solo-mode #col2 {
     font-family: 'Poppins', sans-serif;
 }
 
-/* Role Badge (compatibility with existing JS) */
+/* Role Badge */
 .role-badge,
 .editor-badge {
     padding: 4px 10px;
@@ -488,7 +521,7 @@ body.solo-mode #col2 {
     transform: scale(1.1);
 }
 
-/* Performance Info (compatibility) */
+/* Performance Info */
 .font-controls {
     padding: 8px 20px;
     border-bottom: 1px solid var(--border);
@@ -506,7 +539,7 @@ body.solo-mode #col2 {
     color: #ff9800 !important;
 }
 
-/* Editor Content */
+/* ===== Editor Content - 테두리 제거 ===== */
 .editor-content {
     flex: 1;
     display: flex;
@@ -515,18 +548,17 @@ body.solo-mode #col2 {
     background: var(--editor-bg);
     margin: 12px;
     border-radius: 12px;
-    border: 2px solid var(--editor-border);
+    border: none; /* 이중 테두리 방지 */
     overflow: hidden;
-    transition: all 0.3s ease;
+    transition: background 0.3s ease;
 }
 
 .column.active .editor-content,
 .editor-card.active .editor-content {
-    border-color: var(--accent-primary);
-    box-shadow: inset 0 0 20px var(--accent-shadow);
+    background: var(--editor-active-bg);
 }
 
-/* Editor Textarea (기존 호환 유지) */
+/* Editor Textarea */
 .editor-textarea,
 .editor-box {
     flex: 1;
@@ -539,7 +571,7 @@ body.solo-mode #col2 {
     line-height: 1.8;
     color: var(--text-primary);
     background: transparent;
-    transition: all 0.3s var(--ease);
+    transition: background 0.2s ease;
     width: 100%;
     min-height: 120px;
 }
@@ -559,12 +591,7 @@ body.solo-mode #col2 {
     opacity: 0.7;
 }
 
-.editor-textarea:focus,
-.editor-box:focus {
-    background: var(--editor-active-bg);
-}
-
-/* Active typing indicator */
+/* 권한자 입력 표시 - 좌측 바 */
 .column.active .editor-content::before,
 .editor-card.active .editor-content::before {
     content: '';
@@ -572,14 +599,90 @@ body.solo-mode #col2 {
     left: 0;
     top: 0;
     bottom: 0;
-    width: 3px;
+    width: 4px;
     background: var(--accent-gradient);
-    animation: blink 1s infinite;
+    opacity: 0.9;
 }
 
-@keyframes blink {
-    0%, 50% { opacity: 1; }
-    51%, 100% { opacity: 0.3; }
+/* 모노 테마 좌측 바 - 초록색 */
+[data-theme="mono"] .column.active .editor-content::before,
+[data-theme="mono"] .editor-card.active .editor-content::before {
+    width: 4px;
+    background: #00b300;
+}
+
+/* 권한자 헤더 좌측 바 */
+.column.active .editor-header::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--accent-gradient);
+}
+
+[data-theme="mono"] .column.active .editor-header::before {
+    background: #00b300;
+}
+
+/* ===== 대기자 입력 시 미세한 변화 ===== */
+
+/* Light 테마 */
+.column:not(.active) .editor-textarea:focus,
+.column:not(.active) .editor-box:focus {
+    background: rgba(9, 105, 218, 0.03);
+}
+
+/* Dark 테마 */
+[data-theme="dark"] .column:not(.active) .editor-textarea:focus,
+[data-theme="dark"] .column:not(.active) .editor-box:focus {
+    background: rgba(88, 166, 255, 0.05);
+}
+
+/* Neon 테마 */
+[data-theme="neon"] .column:not(.active) .editor-textarea:focus,
+[data-theme="neon"] .column:not(.active) .editor-box:focus {
+    background: rgba(0, 240, 255, 0.03);
+}
+
+/* Mono 테마 */
+[data-theme="mono"] .column:not(.active) .editor-textarea:focus,
+[data-theme="mono"] .column:not(.active) .editor-box:focus {
+    background: #fafafa;
+}
+
+/* Tokyo 테마 */
+[data-theme="tokyo"] .column:not(.active) .editor-textarea:focus,
+[data-theme="tokyo"] .column:not(.active) .editor-box:focus {
+    background: rgba(122, 162, 247, 0.04);
+}
+
+/* 대기자 카드 focus 효과 */
+.column:not(.active) .editor-card:has(.editor-textarea:focus),
+.column:not(.active) .editor-card:has(.editor-box:focus) {
+    border-color: rgba(90, 120, 255, 0.25);
+}
+
+[data-theme="dark"] .column:not(.active) .editor-card:has(.editor-textarea:focus),
+[data-theme="dark"] .column:not(.active) .editor-card:has(.editor-box:focus) {
+    border-color: rgba(88, 166, 255, 0.25);
+}
+
+[data-theme="neon"] .column:not(.active) .editor-card:has(.editor-textarea:focus),
+[data-theme="neon"] .column:not(.active) .editor-card:has(.editor-box:focus) {
+    border-color: rgba(0, 240, 255, 0.2);
+}
+
+[data-theme="mono"] .column:not(.active) .editor-card:has(.editor-textarea:focus),
+[data-theme="mono"] .column:not(.active) .editor-card:has(.editor-box:focus) {
+    border-color: #000000;
+    border-width: 3px;
+}
+
+[data-theme="tokyo"] .column:not(.active) .editor-card:has(.editor-textarea:focus),
+[data-theme="tokyo"] .column:not(.active) .editor-card:has(.editor-box:focus) {
+    border-color: rgba(122, 162, 247, 0.3);
 }
 
 /* Editor Footer / Status Bar */
@@ -600,7 +703,25 @@ body.solo-mode #col2 {
     font-weight: 500;
 }
 
-/* Panel Card (Viewer & Control) */
+/* ===== Neon 테마 특별 효과 (가벼운 버전) ===== */
+[data-theme="neon"] .column.active .editor-card {
+    animation: neonGlowLight 4s ease-in-out infinite;
+}
+
+@keyframes neonGlowLight {
+    0%, 100% { 
+        box-shadow: 
+            0 0 0 2px #00f0ff,
+            0 0 20px rgba(0,240,255,0.4);
+    }
+    50% { 
+        box-shadow: 
+            0 0 0 2px #00f0ff,
+            0 0 30px rgba(0,240,255,0.6);
+    }
+}
+
+/* ===== Panel Card (Viewer & Control) ===== */
 .panel-card {
     background: var(--card-bg);
     border-radius: 16px;
@@ -612,13 +733,11 @@ body.solo-mode #col2 {
     border: 1px solid var(--card-border);
 }
 
-/* Viewer specific width */
 .viewer {
     flex: 1;
     min-width: 300px;
 }
 
-/* Utility/Control specific width */
 .utility {
     width: 420px;
     min-width: 250px;
@@ -644,7 +763,6 @@ body.solo-mode #col2 {
     gap: 8px;
 }
 
-/* Panel Content - Compact version */
 .panel-content,
 .panel-body {
     flex: 1;
@@ -678,7 +796,49 @@ body.solo-mode #col2 {
     font-style: italic;
 }
 
-/* Viewer Edit Button */
+/* 모니터링 뷰어 구조 */
+.viewer-content-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+#viewerContent {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px;
+    background: var(--input-bg);
+    border: 2px solid var(--input-border);
+    border-radius: 12px;
+    margin: 0 20px;
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text-primary);
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+#viewerContent span {
+    display: inline;
+}
+
+/* 뷰어 편집 모드 스타일 수정 */
+.viewer.editing #viewerContent {
+    border-color: #f39c12;
+    box-shadow: 0 0 10px rgba(243, 156, 18, 0.4);
+    background-color: var(--bg-tertiary);
+}
+
+/* panel-body 수정 */
+#viewer-body {
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+}
+
 .viewer-edit-btn {
     background-color: #f39c12;
     color: #fff;
@@ -701,7 +861,6 @@ body.solo-mode #col2 {
     border-color: #229954;
 }
 
-/* Viewer editing mode */
 .viewer.editing .panel-body {
     border: 2px solid #f39c12;
     box-shadow: 0 0 10px rgba(243, 156, 18, 0.4);
@@ -757,7 +916,6 @@ body.solo-mode #col2 {
     background: var(--accent-gradient);
 }
 
-/* Chat Badge */
 .chat-badge {
     position: absolute;
     top: 4px;
@@ -1143,14 +1301,13 @@ body.solo-mode #col2 {
     box-shadow: 0 0 8px var(--accent-shadow);
 }
 
-/* Text Settings Grid - New compact design */
+/* Text Settings Grid */
 .text-settings-grid {
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
-/* Settings Items - Compact with buttons */
 .setting-item,
 .text-setting-item {
     margin-bottom: 16px;
@@ -1191,7 +1348,6 @@ body.solo-mode #col2 {
     margin-left: 8px;
 }
 
-/* New button controls for settings */
 .setting-control-buttons {
     display: flex;
     gap: 4px;
@@ -1327,6 +1483,11 @@ footer {
     animation: blink 1s infinite;
 }
 
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.3; }
+}
+
 /* Utility new message animation */
 .utility.new-message {
     animation: utilityGlow 0.5s ease-out 3;
@@ -1336,103 +1497,6 @@ footer {
     0% { box-shadow: 0 0 0 rgba(255, 140, 0, 0); }
     50% { box-shadow: 0 0 20px rgba(255, 140, 0, 0.6); }
     100% { box-shadow: 0 0 0 rgba(255, 140, 0, 0); }
-}
-
-/* Neon Theme Special Effects */
-[data-theme="neon"] .editor-card {
-    box-shadow: 0 0 20px rgba(0,240,255,0.1);
-}
-
-[data-theme="neon"] .editor-card.active {
-    animation: neonPulse 2s ease-in-out infinite;
-}
-
-@keyframes neonPulse {
-    0%, 100% { 
-        box-shadow: 
-            0 0 0 1px var(--accent-primary),
-            0 0 30px var(--accent-shadow),
-            var(--shadow-lg);
-    }
-    50% { 
-        box-shadow: 
-            0 0 0 1px var(--accent-primary),
-            0 0 40px var(--accent-shadow),
-            0 0 60px rgba(162,89,255,0.2);
-    }
-}
-
-[data-theme="neon"] .control-btn.primary,
-[data-theme="neon"] .chat-send {
-    position: relative;
-    overflow: hidden;
-}
-
-[data-theme="neon"] .control-btn.primary::before,
-[data-theme="neon"] .chat-send::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.3);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-}
-
-[data-theme="neon"] .control-btn.primary:hover::before,
-[data-theme="neon"] .chat-send:hover::before {
-    width: 300px;
-    height: 300px;
-}
-
-/* Mono Theme Clean Borders */
-[data-theme="mono"] .editor-card,
-[data-theme="mono"] .panel-card {
-    border-width: 2px;
-    box-shadow: none;
-}
-
-[data-theme="mono"] .editor-card.active {
-    border-width: 3px;
-    box-shadow: none;
-}
-
-[data-theme="mono"] .control-btn,
-[data-theme="mono"] .font-btn {
-    border-width: 2px;
-}
-
-[data-theme="mono"] .control-btn:hover,
-[data-theme="mono"] .font-btn:hover {
-    background: var(--text-primary);
-    color: var(--bg-primary);
-}
-
-/* Animations */
-@keyframes glow {
-    from { box-shadow: 0 0 20px var(--accent-shadow); }
-    to { box-shadow: 0 0 30px var(--accent-shadow); }
-}
-
-@keyframes editorGlow {
-    0% { 
-        box-shadow: 
-            inset 0 0 20px rgba(90, 120, 255, 0.1),
-            0 0 30px rgba(90, 120, 255, 0.4);
-    }
-    50% {
-        box-shadow: 
-            inset 0 0 25px rgba(90, 120, 255, 0.15),
-            0 0 40px rgba(90, 120, 255, 0.6);
-    }
-    100% { 
-        box-shadow: 
-            inset 0 0 30px rgba(90, 120, 255, 0.2),
-            0 0 50px rgba(90, 120, 255, 0.8);
-    }
 }
 
 /* Responsive Design */
@@ -1528,7 +1592,6 @@ footer {
     }
 }
 
-/* Height constraints for small screens */
 @media (max-height: 700px) {
     .main-container {
         padding: 10px;
@@ -1583,7 +1646,7 @@ select:focus {
     outline-offset: 2px;
 }
 
-/* Prevent layout shift during typing */
+/* Prevent layout shift */
 .editor-textarea,
 .editor-box {
     overflow-y: auto;
@@ -1618,7 +1681,7 @@ select:focus {
     background: var(--text-secondary);
 }
 
-/* Loading Spinner (compatibility) */
+/* Loading Spinner */
 .loading-spinner {
     width: 20px;
     height: 20px;
@@ -1632,14 +1695,7 @@ select:focus {
     to { transform: rotate(360deg); }
 }
 
-/* Enter Mode Indicator (compatibility) */
-.enter-mode-indicator {
-    color: var(--accent-primary);
-    font-weight: bold;
-    margin-left: 16px;
-}
-
-/* Light Theme Compatibility Classes */
+/* Compatibility Classes */
 body.light-theme {
     --bg-primary: #ffffff;
     --bg-secondary: #fafbfc;
@@ -1649,20 +1705,12 @@ body.light-theme {
     --text-tertiary: #8c959f;
 }
 
-/* Solo/Collaboration Mode Classes (JS compatibility) */
-body.solo-mode .top-row {
-    flex-direction: row !important;
-}
-
 body.collaboration-mode .top-row {
     /* Maintains default flex-direction */
 }
 
-/* Active column animation (JS compatibility) */
 .column.active {
-    border: 2px solid var(--accent-primary);
-    box-shadow: 0 0 20px var(--accent-shadow);
-    animation: glow 2s ease-in-out infinite alternate;
+    /* Styles applied via .editor-card.active */
 }
 
 /* Print Styles */
