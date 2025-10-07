@@ -1,0 +1,1972 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>누아속기사무소 - 서비스</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700;900&family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #2563EB;
+      --max-width: 1200px;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: #fff;
+      color: #000;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    
+    .header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      z-index: 1000;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      padding: 1.5rem 3rem;
+    }
+    
+    .header-container {
+      max-width: 1800px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 2rem;
+    }
+    
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 800;
+      font-family: 'Noto Serif KR', serif;
+      color: #000;
+      text-decoration: none;
+      letter-spacing: -1px;
+      position: relative;
+      margin-left: 2rem;
+      display: inline-block;
+    }
+    
+    .logo-text,
+    .logo-hover {
+      transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    
+    .logo-text {
+      display: inline-block;
+    }
+    
+    .logo-hover {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.5);
+      opacity: 0;
+      font-weight: 900;
+      letter-spacing: 4px;
+      filter: blur(10px);
+    }
+    
+    .logo:hover .logo-text {
+      opacity: 0;
+      transform: scale(1.2);
+      filter: blur(10px);
+    }
+    
+    .logo:hover .logo-hover {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+      filter: blur(0);
+    }
+    
+    .nav-menu {
+      display: flex;
+      gap: 3rem;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+    
+    .nav-link {
+      pointer-events: all;
+      color: #000;
+      text-decoration: none;
+      font-size: 1.05rem;
+      font-weight: 600;
+      position: relative;
+      transition: color 0.3s;
+    }
+    
+    .nav-link:focus-visible {
+      outline: 2px solid var(--primary-color);
+      outline-offset: 4px;
+    }
+    
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--primary-color);
+      transition: width 0.3s;
+    }
+    
+    .nav-link:hover::after {
+      width: 100%;
+    }
+    
+    .special-menu {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: center;
+      text-decoration: none;
+      padding: 0.7rem 1.3rem;
+      border-radius: 8px;
+      transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+      position: relative;
+      background: #fff;
+      min-height: 60px;
+      isolation: isolate;
+      border: 1px solid rgba(37, 99, 235, 0.2);
+    }
+    
+    .special-menu::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 8px;
+      padding: 2px;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        transparent 40%,
+        rgba(37, 99, 235, 0.25) 50%,
+        rgba(96, 165, 250, 0.35) 53%,
+        rgba(37, 99, 235, 0.25) 56%,
+        transparent 60%,
+        transparent 100%
+      );
+      background-size: 200% 100%;
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      animation: borderShine 4s linear infinite;
+    }
+    
+    @keyframes borderShine {
+      0% {
+        background-position: 200% 0;
+      }
+      100% {
+        background-position: -200% 0;
+      }
+    }
+    
+    .special-menu::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 8px;
+      background: radial-gradient(
+        circle at center,
+        transparent 0%,
+        rgba(37, 99, 235, 0.03) 100%
+      );
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    .special-menu:hover {
+      transform: translateY(-2px);
+      background: rgba(37, 99, 235, 0.04);
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.2);
+      border-color: rgba(37, 99, 235, 0.3);
+    }
+    
+    .special-menu:hover::before {
+      animation: borderShine 2s linear infinite;
+    }
+    
+    .special-menu:hover::after {
+      opacity: 1;
+    }
+    
+    .special-menu:focus-visible {
+      outline: 2px solid var(--primary-color);
+      outline-offset: 4px;
+    }
+    
+    .special-menu-content {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .live-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      background: #ef4444;
+      border-radius: 50%;
+      position: relative;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    
+    .live-dot::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 100%;
+      background: #ef4444;
+      border-radius: 50%;
+      animation: pulse-ring 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse-dot {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.6;
+      }
+    }
+    
+    @keyframes pulse-ring {
+      0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.6;
+      }
+      50% {
+        transform: translate(-50%, -50%) scale(2.5);
+        opacity: 0;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0;
+      }
+    }
+    
+    .special-menu-text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+    
+    .special-menu-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #000;
+      font-family: 'Noto Serif KR', serif;
+      letter-spacing: -0.3px;
+      line-height: 1.3;
+    }
+    
+    .special-menu-subtitle {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--primary-color);
+      letter-spacing: 0.3px;
+      line-height: 1.3;
+    }
+    
+    .fixed-nav-black {
+      position: fixed;
+      right: 0;
+      top: 90px;
+      z-index: 1001;
+      width: 60px;
+      height: 220px;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      writing-mode: vertical-rl;
+      color: #fff;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-weight: 800;
+      font-size: 0.9rem;
+      letter-spacing: 0.3em;
+      transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1), font-size 0.5s;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    
+    .fixed-nav-black.is-collapsed {
+      height: 60px;
+      font-size: 0;
+    }
+    
+    .fixed-nav-black.is-collapsed::before {
+      content: '📞';
+      font-size: 1.3rem;
+      writing-mode: horizontal-tb;
+    }
+    
+    .fixed-nav-yellow {
+      position: fixed;
+      right: 0;
+      top: 310px;
+      z-index: 1001;
+      width: 60px;
+      height: 60px;
+      background: #FEE500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #000;
+      font-size: 1.5rem;
+      transition: top 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      text-decoration: none;
+    }
+    
+    .fixed-nav-yellow:hover {
+      background: #FDD835;
+    }
+    
+    .fixed-nav-yellow.is-collapsed {
+      top: 150px;
+    }
+    
+    .hero-services {
+      min-height: 60vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 140px 3rem 80px;
+      background: #fafafa;
+      text-align: center;
+    }
+    
+    .hero-content-services {
+      max-width: 800px;
+    }
+    
+    .hero-title-services {
+      font-family: 'Noto Serif KR', serif;
+      font-size: clamp(3rem, 6vw, 5rem);
+      font-weight: 800;
+      margin-bottom: 1.5rem;
+      letter-spacing: -2px;
+      line-height: 1.2;
+    }
+    
+    .hero-subtitle-services {
+      font-size: 1.1rem;
+      color: #666;
+      line-height: 1.8;
+    }
+    
+    .services-nav {
+      position: sticky;
+      top: 90px;
+      background: #fff;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      z-index: 1000;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .services-nav::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .services-nav-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      display: flex;
+      gap: 0;
+      padding: 0 3rem;
+      min-width: min-content;
+    }
+    
+    .service-tab {
+      padding: 1.5rem 2rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #999;
+      text-decoration: none;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+      white-space: nowrap;
+      cursor: pointer;
+      position: relative;
+    }
+    
+    .service-tab:hover {
+      color: #000;
+    }
+    
+    .service-tab.active {
+      color: #000;
+      border-bottom-color: var(--primary-color);
+    }
+    
+    .services-content {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 80px 3rem 120px;
+    }
+    
+    .service-section {
+      display: none;
+      opacity: 0;
+    }
+    
+    .service-section.active {
+      display: block;
+      animation: fadeIn 0.6s ease-out forwards;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .section-header {
+      margin-bottom: 3rem;
+    }
+    
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+    }
+    
+    .section-title {
+      font-family: 'Noto Serif KR', serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      margin-bottom: 1rem;
+      letter-spacing: -1px;
+    }
+    
+    .section-description {
+      font-size: 1.05rem;
+      color: #666;
+      line-height: 1.8;
+      max-width: 700px;
+    }
+    
+    .service-accordion {
+      margin-top: 3rem;
+    }
+    
+    .accordion-item {
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      transition: all 0.3s;
+    }
+    
+    .accordion-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2rem 0;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .accordion-header:hover {
+      color: var(--primary-color);
+    }
+    
+    .accordion-title-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex: 1;
+    }
+    
+    .accordion-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--primary-color);
+      border: 1.5px solid var(--primary-color);
+      padding: 0.3rem 0.8rem;
+      text-transform: uppercase;
+    }
+    
+    .accordion-title {
+      font-family: 'Noto Serif KR', serif;
+      font-size: 1.4rem;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+    
+    .accordion-icon {
+      width: 40px;
+      height: 40px;
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    
+    .accordion-item.active .accordion-icon {
+      transform: rotate(45deg);
+      background: var(--primary-color);
+      color: #fff;
+      border-color: var(--primary-color);
+    }
+    
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    
+    .accordion-content-inner {
+      padding: 0 0 2.5rem 0;
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: all 0.4s ease-out;
+    }
+    
+    .accordion-item.active .accordion-content-inner {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      margin-bottom: 2rem;
+    }
+    
+    .content-column h4 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      color: #000;
+    }
+    
+    .content-column ul {
+      list-style: none;
+    }
+    
+    .content-column li {
+      padding: 0.6rem 0;
+      padding-left: 1.2rem;
+      color: #666;
+      line-height: 1.7;
+      position: relative;
+    }
+    
+    .content-column li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 1rem;
+      width: 4px;
+      height: 4px;
+      background: var(--primary-color);
+      border-radius: 50%;
+    }
+    
+    .content-column p {
+      color: #666;
+      line-height: 1.8;
+      margin-bottom: 0.8rem;
+    }
+    
+    .content-highlight {
+      background: #fafafa;
+      border-left: 3px solid var(--primary-color);
+      padding: 1.5rem 2rem;
+      margin: 2rem 0;
+    }
+    
+    .content-highlight p {
+      font-size: 0.95rem;
+      line-height: 1.8;
+      color: #444;
+      margin: 0;
+    }
+    
+    .cta-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+    
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.9rem 2rem;
+      background: #000;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.3s;
+      border: none;
+      cursor: pointer;
+    }
+    
+    .btn-primary:hover {
+      background: var(--primary-color);
+      gap: 0.8rem;
+    }
+    
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.9rem 2rem;
+      background: transparent;
+      color: #000;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      border: 1.5px solid #000;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    
+    .btn-secondary:hover {
+      background: #000;
+      color: #fff;
+    }
+    
+    .process-section {
+      margin-top: 4rem;
+      padding-top: 3rem;
+      border-top: 1px solid rgba(0,0,0,0.08);
+    }
+    
+    .process-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 2rem;
+      font-family: 'Noto Serif KR', serif;
+    }
+    
+    .process-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem;
+      position: relative;
+    }
+    
+    .process-step {
+      text-align: center;
+      position: relative;
+      opacity: 0;
+    }
+    
+    .process-step::after {
+      content: '';
+      position: absolute;
+      top: 25px;
+      left: 50%;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(to right, var(--primary-color), transparent);
+      opacity: 0;
+      z-index: -1;
+      transition: opacity 0.5s ease-out;
+    }
+    
+    .process-step.animated::after {
+      opacity: 0.3;
+    }
+    
+    .process-step:last-child::after {
+      display: none;
+    }
+    
+    .process-step-number {
+      width: 50px;
+      height: 50px;
+      background: var(--primary-color);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.2rem;
+      margin: 0 auto 1rem;
+      font-family: 'Noto Serif KR', serif;
+      position: relative;
+      transform: scale(0);
+      transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    
+    .process-step-number::before {
+      content: '';
+      position: absolute;
+      inset: -5px;
+      border-radius: 50%;
+      border: 2px solid var(--primary-color);
+      opacity: 0;
+      transform: scale(1.3);
+      transition: all 0.3s;
+    }
+    
+    .process-step:hover .process-step-number {
+      transform: scale(1.1);
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
+    }
+    
+    .process-step:hover .process-step-number::before {
+      opacity: 0.4;
+      transform: scale(1.5);
+    }
+    
+    .process-step-title {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      transform: translateY(10px);
+      opacity: 0;
+      transition: all 0.4s ease-out;
+    }
+    
+    .process-step-desc {
+      font-size: 0.9rem;
+      color: #666;
+      line-height: 1.6;
+      transform: translateY(10px);
+      opacity: 0;
+      transition: all 0.5s ease-out;
+    }
+    
+    .footer {
+      background: #0a0a0a;
+      color: #fff;
+      padding: 4rem 3rem 2rem;
+    }
+    
+    .footer-content {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      text-align: center;
+    }
+    
+    .footer-logo {
+      font-size: 1.5rem;
+      font-weight: 800;
+      font-family: 'Noto Serif KR', serif;
+      margin-bottom: 1rem;
+      letter-spacing: -1px;
+    }
+    
+    .footer-text {
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+    }
+    
+    .footer-bottom {
+      padding-top: 2rem;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      color: #666;
+      font-size: 0.85rem;
+    }
+    
+    @media (max-width: 768px) {
+      .header {
+        padding: 1rem 1.5rem;
+      }
+      
+      .logo {
+        font-size: 1.4rem;
+        margin-left: 0;
+      }
+      
+      .nav-menu {
+        display: none;
+      }
+      
+      .special-menu {
+        padding: 0.5rem 0.9rem;
+        min-height: 50px;
+      }
+      
+      .special-menu-content {
+        gap: 0.4rem;
+      }
+      
+      .live-dot {
+        width: 5px;
+        height: 5px;
+      }
+      
+      .special-menu-title {
+        font-size: 0.9rem;
+      }
+      
+      .special-menu-subtitle {
+        font-size: 0.6rem;
+      }
+      
+      .hero-services {
+        padding: 120px 1.5rem 60px;
+        min-height: 50vh;
+      }
+      
+      .services-nav {
+        top: 70px;
+      }
+      
+      .services-nav-inner {
+        padding: 0 1.5rem;
+      }
+      
+      .service-tab {
+        padding: 1.2rem 1.2rem;
+        font-size: 0.9rem;
+      }
+      
+      .services-content {
+        padding: 60px 1.5rem 80px;
+      }
+      
+      .content-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+      
+      .accordion-title {
+        font-size: 1.1rem;
+      }
+      
+      .accordion-badge {
+        font-size: 0.6rem;
+      }
+      
+      .process-steps {
+        grid-template-columns: 1fr;
+      }
+      
+      .process-step::after {
+        display: none;
+      }
+      
+      .fixed-nav-black,
+      .fixed-nav-yellow {
+        display: none;
+      }
+      
+      .cta-buttons {
+        flex-direction: column;
+      }
+      
+      .btn-primary,
+      .btn-secondary {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-container">
+      <a href="index.html" class="logo">
+        <span class="logo-text">누아속기사무소</span>
+        <span class="logo-hover">NUA</span>
+      </a>
+      <nav class="nav-menu">
+        <a href="index.html#intro" class="nav-link">소개</a>
+        <a href="#" class="nav-link">서비스</a>
+        <a href="index.html#pricing" class="nav-link">요금안내</a>
+        <a href="#contact" class="nav-link">문의</a>
+      </nav>
+      <a href="http://nuastudio.co.kr" target="_blank" rel="noopener noreferrer" class="special-menu">
+        <div class="special-menu-content">
+          <div class="live-indicator">
+            <span class="live-dot"></span>
+          </div>
+          <div class="special-menu-text">
+            <span class="special-menu-title">누아스튜디오</span>
+            <span class="special-menu-subtitle">실시간 속기 솔루션</span>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <a href="tel:02-3489-4433" class="fixed-nav-black" aria-label="전화 상담">빠른접수</a>
+  <a href="http://pf.kakao.com/_your_kakao_id" target="_blank" class="fixed-nav-yellow" aria-label="카카오톡 상담">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 3C6.48 3 2 6.58 2 11C2 13.5 3.5 15.75 5.88 17.13L5 21L8.87 19.13C9.87 19.38 10.92 19.5 12 19.5C17.52 19.5 22 15.92 22 11.5C22 7.08 17.52 3 12 3Z" fill="currentColor"/>
+    </svg>
+  </a>
+
+  <div class="hero-services">
+    <div class="hero-content-services">
+      <h1 class="hero-title-services">전문 속기 서비스<span style="color: var(--primary-color);">.</span></h1>
+      <p class="hero-subtitle-services">10년 이상의 경험으로 검증된 속기 전문가들이<br>정확하고 신속한 기록 서비스를 제공합니다</p>
+    </div>
+  </div>
+
+  <nav class="services-nav">
+    <div class="services-nav-inner">
+      <a href="#" class="service-tab active" data-service="transcription">녹취록</a>
+      <a href="#" class="service-tab" data-service="minutes">회의록</a>
+      <a href="#" class="service-tab" data-service="onsite">현장속기</a>
+      <a href="#" class="service-tab" data-service="subtitle">영상자막</a>
+      <a href="#" class="service-tab" data-service="foreign">외국어</a>
+    </div>
+  </nav>
+
+  <div class="services-content">
+    <!-- 녹취록 -->
+    <div class="service-section active" id="transcription">
+      <div class="section-header">
+        <div class="section-label">Transcription</div>
+        <h2 class="section-title">녹취록 작성</h2>
+        <p class="section-description">법적 증거로 인정받는 공식 녹취록. 국가공인 1급 속기사가 직접 작성하고 속기사무소 직인을 날인하여 법원, 검찰, 경찰 등 모든 사법기관에 제출 가능합니다.</p>
+      </div>
+
+      <div class="service-accordion">
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div class="accordion-title-wrapper">
+              <span class="accordion-badge">Primary</span>
+              <h3 class="accordion-title">법원 제출용 녹취록</h3>
+            </div>
+            <div class="accordion-icon">+</div>
+          </div>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <div class="content-grid">
+                <div class="content-column">
+                  <h4>적용 분야</h4>
+                  <ul>
+                    <li>민사 소송 증거 자료</li>
+                    <li>형사 고소 및 수사 자료</li>
+                    <li>가사 소송 관련 기록</li>
+                    <li>행정 소송 증거 문서</li>
+                  </ul>
+                </div>
+                <div class="content-column">
+                  <h4>서비스 특징</h4>
+                  <ul>
+                    <li>법원 양식 완벽 준수</li>
+                    <li>2차 검수로 오류 제로</li>
+                    <li>전자소송용 PDF 제공</li>
+                    <li>표준 2-3일, 긴급 당일 가능</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="content-highlight">
+                <p>대법원 지정 속기사 자격을 보유한 전문가가 직접 작성합니다. 서울중앙지법 5,000건 이상의 납품 실적으로 검증된 신뢰성을 제공합니다.</p>
+              </div>
+              <div class="cta-buttons">
+                <a href="#contact" class="btn-primary">견적 문의 →</a>
+                <a href="#contact" class="btn-secondary">샘플 요청</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div class="accordion-title-wrapper">
+              <h3 class="accordion-title">통화녹음 녹취록</h3>
+            </div>
+            <div class="accordion-icon">+</div>
+          </div>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <div class="content-grid">
+                <div class="content-column">
+                  <h4>적용 사례</h4>
+                  <ul>
+                    <li>보이스피싱 및 전화 사기</li>
+                    <li>계약 분쟁 및 채무 관련</li>
+                    <li>협박 및 명예훼손</li>
+                    <li>거래 내역 증빙</li>
+                  </ul>
+                </div>
+                <div class="content-column">
+                  <h4>기술 강점</h4>
+                  <ul>
+                    <li>불량 음질 복원 처리</li>
+                    <li>통화자 구분 명확화</li>
+                    <li>중요 부분 타임스탬프 표시</li>
+                    <li>발췌 작성으로 비용 절감</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="cta-buttons">
+                <a href="#contact" class="btn-primary">견적 문의 →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div class="accordion-title-wrapper">
+              <h3 class="accordion-title">현장녹음 녹취록</h3>
+            </div>
+            <div class="accordion-icon">+</div>
+          </div>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <div class="content-grid">
+                <div class="content-column">
+                  <h4>적용 분야</h4>
+                  <ul>
+                    <li>직장 내 괴롭힘 및 갑질</li>
+                    <li>성희롱 및 폭행 사건</li>
+                    <li>학교폭력 및 학폭위 제출용</li>
+                    <li>현장 대화 증거 자료</li>
+                  </ul>
+                </div>
+                <div class="content-column">
+                  <h4>전문 처리</h4>
+                  <ul>
+                    <li>배경소음 제거 기술</li>
+                    <li>다화자 음성 분리</li>
+                    <li>감정 뉘앙스 반영</li>
+                    <li>상황 설명 주석 추가</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="cta-buttons">
+                <a href="#contact" class="btn-primary">견적 문의 →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div class="accordion-title-wrapper">
+              <h3 class="accordion-title">검찰 및 경찰 제출용</h3>
+            </div>
+            <div class="accordion-icon">+</div>
+          </div>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <div class="content-grid">
+                <div class="content-column">
+                  <p>형사 고소 및 수사 단계에서 필요한 녹취록을 조서 형식에 맞춰 작성합니다. 긴급 사안의 경우 당일 작업이 가능하며, 수사기관 제출에 필요한 모든 서류를 완비하여 제공합니다.</p>
+                </div>
+                <div class="content-column">
+                  <h4>긴급 대응</h4>
+                  <ul>
+                    <li>당일 특급 작업 가능</li>
+                    <li>야간 및 주말 상담</li>
+                    <li>빠른 등기 발송</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="cta-buttons">
+                <a href="#contact" class="btn-primary">긴급 상담 →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="process-section">
+        <h3 class="process-title">작업 프로세스</h3>
+        <div class="process-steps">
+          <div class="process-step">
+            <div class="process-step-number">1</div>
+            <div class="process-step-title">파일 전달</div>
+            <div class="process-step-desc">카톡, 이메일, 홈페이지로 녹음파일 전송</div>
+          </div>
+          <div class="process-step">
+            <div class="process-step-number">2</div>
+            <div class="process-step-title">견적 안내</div>
+            <div class="process-step-desc">24시간 내 정확한 견적 회신</div>
+          </div>
+          <div class="process-step">
+            <div class="process-step-number">3</div>
+            <div class="process-step-title">작업 진행</div>
+            <div class="process-step-desc">입금 확인 후 즉시 작업 착수</div>
+          </div>
+          <div class="process-step">
+            <div class="process-step-number">4</div>
+            <div class="process-step-title">초안 검토</div>
+            <div class="process-step-desc">의뢰인 확인 및 수정 요청</div>
+          </div>
+          <div class="process-step">
+            <div class="process-step-number">5</div>
+            <div class="process-step-title">최종 납품</div>
+            <div class="process-step-desc">공증 후 등기 또는 이메일 발송</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 회의록 -->
+    <div class="service-section" id="minutes">
+      <div class="section-header">
+        <div class="section-label">Meeting Minutes</div>
+        <h2 class="section-title">회의록 작성</h2>
+        <p class="section-description">공식 회의의 모든 과정을 투명하게 기록합니다. 조합 총회부터 기업 이사회까지, 법적 효력을 갖춘 공식 문서로 작성하여 분쟁을 예방하고 책임 소재를 명확히 합니다.</p>
+      </div>
+
+      <div class="service-accordion">
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div class="accordion-title-wrapper">
+              <span class="accordion-badge">Primary</span>
+              <h3 class="accordion-title">재개발 및 재건축 조합</h3>
+            </div>
+            <div class="accordion-icon">+</div>
+          </div>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <div class="content-grid">
+                <div class="content-column">
+                  <h4>회의 유형</h4>
+                  <ul>
+                    <li>조합 설립 총회</li>
+                    <li>정기 및 임시 총회</li>
+                    <li>이사회 회의록</li>
+                    <li>분과위원회 회의</li>
+                  </ul>
+                </div>
+                <div class="content-column">
+                  <h4>작성 특징</h4>
+                  <ul>
+                    <li>안건별 명확한 구분</li>
+                    <li>발언자별 의견 정리</li>
+                    <li>찬반 의결 사항 기록</li>
+                    <li>현장 출장 속기 가능</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="content-highlight">
+                <p>조합원 간 분쟁 발생 시 결정적 증거가 되는 회의록. 100건 이상의 재개발 조합 실적으로 검증된 전문성을 제공합니다. 추후 소송 대비가 가능한 완벽한 기록을 보장합니다.</p>
+              </div>
+              <div class="cta-buttons">
+                <a href="#contact" class="btn-primary">견적 문의 →</a>
+                <a href="#contact" class="btn-secondary">샘플 요청</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div class="accordion-title-wrapper">
+              <h3 class="accordion-title">주주총회 및 이사회</h3>
+            </div>
+            <div class="accordion-icon">+</div>
+          </div>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <div class="content-grid">
+                <div class="content-column">
+                  <h4>서비스 범위</h4>
+                  <ul>
+                    <li>정기 주주총회</li>
+                    <li>임시 주주총회</li>
+                    <li>이사회 회의록</li>
+                    <li>감사위원회 회의</li>
+                  </ul>
+                </div>
+                <div class="content-column">
+                  <h4>법적 준수</h4>
+                  <ul>
+                    <li>상법 기준 양식 작성</li>
+                    <li>등기부 첨부용 제작</li>
+                    <li>기밀 유지 철저</li>
+                    <li>48시간 내 초안 제공</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="cta-buttons">
+                <a href="#contact" class="btn-primary">견적 문의 →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div class="accordion-title-wrapper">
+              <h3 class="accordion-title">공공기관 회의록</h3>
+            </div>
+            <div class="accordion-icon">+</div>
+          </div>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <div class="content-grid">
+                <div class="content-column">
+                  <h4>적용 분야</h4>
+                  <ul>
+                    <li>정책 공청회</li>
+                    <li>각종 심의회 및 위원회</li>
+                    <li>지방의회 회의</li>
+                    <li>공공기관 내부 회의</li>
+                  </ul>
+                </div>
+                <div class="content-column">
+                  <h4>공문서 기준</h4>
+                  <ul>
+                    <li>공식 문서 양식 준수</li>
+                    <li>투명성 제고</li>
+                    <li>책임 소재 명확화</li>
+                    <li>아카이빙 지원</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="content-highlight">
+                <p>환경부, 국토교통부, 특허청 등 다수 공공기관 납품 실적 보유. 정부 공문서 작성 기준을 완벽히 이해하고 있습니다.</p>
+              </div>
+              <div class="cta-buttons">
+                <a href="#contact" class="btn-primary">견적 문의 →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div class="accordion-title-wrapper">
+              <h3 class="accordion-title">기타 회의록</h3>
+            </div>
+            <div class="accordion-icon">+</div>
+          </div>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <div class="content-grid">
+                <div class="content-column">
+                  <h4>적용 분야</h4>
+                  <ul>
+                    <li>노사협의회</li>
+                    <li>종친회 및 동문회</li>
+                    <li>종교기관 (교회·성당·사찰)</li>
+                    <li>시민단체 및 협회</li>
+                  </ul>
+                </div>
+                <div class="content-column">
+                  <h4>서비스 특징</h4>
+                  <ul>
+                    <li>조직 특성 맞춤형 작성</li>
+                    <li>요구 양식 반영</li>
+                    <li>간담회 및 좌담회</li>
+                    <li>각종 정기/임시 모임</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="cta-buttons">
+                <a href="#contact" class="btn-primary">상담 신청 →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 현장속기 -->
+    <div class="service-section" id="onsite">
+      <div class="section-header">
+        <div class="section-label">On-site Stenography</div>
+        <h2 class="section-title">현장 출장 속기</h2>
+        <p class="section-description">전문 속기사가 현장에 직접 방문하여 실시간으로 기록합니다. 컨퍼런스, 세미나, 공청회 등 모든 행사에서 발언과 동시에 텍스트로 변환하며, 행사 종료 즉시 정리된 기록을 제공합니다.</p>
+      </div>
+
+      <div class="service-accordion">
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div class="accordion-title-wrapper">
+              <span class="accordion-badge">Premium</span>
+              <h3 class="accordion-title">컨퍼런스 및 세미나</h3>
+            </div>
+            <div class="accordion-icon">+</div>
+          </div>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <div class="content-grid">
+                <div class="content-column">
+                  <h4>서비스 방식</h4>
+                  <ul>
+                    <li>실시간 타이핑 (1분당 1,000타)</li>
+                    <li>스크린 송출 옵션 제공</li>
+                    <li>음성 녹음 백업</li>
+                    <li>행사 종료 후 1시간 내 납품</li>
+                  </ul>
+                </div>
+                <div class="content-column">
+                  <h4>적용 행사</h4>
+                  <ul>
+                    <li>기업 세미나 및 워크숍</li>
+                    <li>신제품 발표회</li>
+                    <li>투자설명회</li>
+                    <li>대규모 컨퍼런스 (50-1,000명)</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="content-highlight">
+                <p>전문 속기 장비 일체 제공. 노트북, 프로젝터 연결, 실시간 화면 송출 시스템까지 모든 장비를 구비하여 현장에 투입됩니다.</p>
+              </div>
+              <div class="cta-buttons">
+                <a href="#contact" class="btn-primary">출장 견적 문의 →</a>
+                <a href="#contact" class="btn-secondary">일정 확인</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div class="accordion-title-wrapper">
+              <h3 class="accordion-title">학술 심포지엄</h3>
+            </div>
+            <div class="accordion-icon">+</div>
+          </div>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <div class="content-grid">
+                <div class="content-column">
+                  <h4>전문 분야 대응</h4>
+                  <ul>
+                    <li>사전 발표자료 숙지</li>
+                    <li>전문 용어 학습</li>
+                    <li>학술 양식 준수</li>
+                    <li>영문 초록 작성 가능</li>
+                  </ul>
+                </div>
+                <div class="content-column">
+                  <h4>주요 실적</h4>
+                  <ul>
+                    <li>대학 학술대회</li>
+                    <li>연구소 세미나</li>
+                    <li>학회 정기 총회</li>
+                    <li>국제 학술 컨퍼런스</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="cta-buttons">
+                <a href="#contact" class="btn-primary">견적 문의 →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div class="accordion-title-wrapper">
+              <h3 class="accordion-title">정부 공청회</h3>
+            </div>
+            <div class="accordion-icon">+</div>
+          </div>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <div class="content-grid">
+                <div class="content-column">
+                  <p>정책 공청회, 규제 심의회, 지방의회 등 공공기관 현장 속기. 공식 기록물로 작성되며 투명성과 공정성을 보장합니다.</p>
+                </div>
+                <div class="content-column">
+                  <h4>납품 실적</h4>
+                  <ul>
+                    <li>환경부 정책 공청회</li>
+                    <li>국토교통부 심의회</li>
+                    <li>보건복지부 간담회</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="cta-buttons">
+                <a href="#contact" class="btn-primary">공공기관 문의 →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div class="accordion-title-wrapper">
+              <h3 class="accordion-title">수행속기 및 자막방송</h3>
+            </div>
+            <div class="accordion-icon">+</div>
+          </div>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <div class="content-grid">
+                <div class="content-column">
+                  <h4>수행속기 (문자통역)</h4>
+                  <ul>
+                    <li>청각장애인 참석 행사</li>
+                    <li>개인 모니터 실시간 송출</li>
+                    <li>접근성 향상</li>
+                  </ul>
+                </div>
+                <div class="content-column">
+                  <h4>실시간 자막 방송</h4>
+                  <ul>
+                    <li>TV 생방송 자막</li>
+                    <li>유튜브 라이브 자막</li>
+                    <li>웨비나 자막 송출</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="cta-buttons">
+                <a href="#contact" class="btn-primary">전문 상담 →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="process-section">
+        <h3 class="process-title">출장 서비스 절차</h3>
+        <div class="process-steps">
+          <div class="process-step">
+            <div class="process-step-number">1</div>
+            <div class="process-step-title">사전 협의</div>
+            <div class="process-step-desc">행사 일시, 장소, 규모 확인</div>
+          </div>
+          <div class="process-step">
+            <div class="process-step-number">2</div>
+            <div class="process-step-title">자료 사전 검토</div>
+            <div class="process-step-desc">발표 자료 및 용어 학습</div>
+          </div>
+          <div class="process-step">
+            <div class="process-step-number">3</div>
+            <div class="process-step-title">현장 투입</div>
+            <div class="process-step-desc">행사 1시간 전 도착 및 세팅</div>
+          </div>
+          <div class="process-step">
+            <div class="process-step-number">4</div>
+            <div class="process-step-title">실시간 기록</div>
+            <div class="process-step-desc">발언 즉시 텍스트 변환</div>
+          </div>
+          <div class="process-step">
+            <div class="process-step-number">5</div>
+            <div class="process-step-title">정리본 납품</div>
+            <div class="process-step-desc">행사 종료 후 1시간 내</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 영상자막 -->
+    <div class="service-section" id="subtitle">
+      <div class="section-header">
+        <div class="section-label">Video Subtitle</div>
+        <h2 class="section-title">영상 자막 제작</h2>
+        <p class="section-description">유튜브부터 교육 콘텐츠, 배리어프리 자막, 공연 실황까지. 정확한 타이핑과 완벽한 타임코드 싱크로 영상의 접근성과 가독성을 높입니다. 모든 자막 파일 형식을 지원합니다.</p>
+      </div>
+
+      <div class="service-accordion">
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div class="accordion-title-wrapper">
+              <h3 class="accordion-title">유튜브 및 SNS 자막</h3>
+            </div>
+            <div class="accordion-icon">+</div>
+          </div>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <div class="content-grid">
+                <div class="content-column">
+                  <h4>대상 콘텐츠</h4>
+                  <ul>
+                    <li>유튜브 영상</li>
+                    <li>인스타그램 릴스</li>
+                    <li>기업 홍보 영상</li>
+                    <li>마케팅 콘텐츠</li>
+                  </ul>
+                </div>
+                <div class="content-column">
+                  <h4>제공 형식</h4>
+                  <ul>
+                    <li>SMI, SRT, VTT, ASS</li>
+                    <li>타임코드 완벽 매칭</li>
+                    <li>가독성 좋은 줄바꿈</li>
+                    <li>효과음 표기 옵션</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="cta-buttons">
+                <a href="#contact" class="btn-primary">견적 문의 →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div class="accordion-title-wrapper">
+              <h3 class="accordion-title">교육 콘텐츠 자막</h3>
+            </div>
+            <div class="accordion-icon">+</div>
+          </div>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <div class="content-grid">
+                <div class="content-column">
+                  <h4>적용 분야</h4>
+                  <ul>
+                    <li>온라인 강의 (MOOC)</li>
+                    <li>대학 강의 영상</li>
+                    <li>사내 교육 자료</li>
+                    <li>기술 튜토리얼</li>
+                  </ul>
+                </div>
+                <div class="content-column">
+                  <h4>전문성</h4>
+                  <ul>
+                    <li>전문 용어 정확 표기</li>
+                    <li>학습 효율 고려</li>
+                    <li>목차 구분 표시</li>
+                    <li>강조 구간 마킹</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="content-highlight">
+                <p>서울대, 연세대, KAIST 등 주요 대학 강의 자막 제작 실적 보유. 교육용 콘텐츠 특성을 완벽히 이해하고 있습니다.</p>
+              </div>
+              <div class="cta-buttons">
+                <a href="#contact" class="btn-primary">견적 문의 →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div class="accordion-title-wrapper">
+              <h3 class="accordion-title">배리어프리 및 공연 자막</h3>
+            </div>
+            <div class="accordion-icon">+</div>
+          </div>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <div class="content-grid">
+                <div class="content-column">
+                  <h4>배리어프리 자막</h4>
+                  <ul>
+                    <li>청각장애인용 영화·드라마</li>
+                    <li>음향효과 상세 표기</li>
+                    <li>배경음악 설명</li>
+                    <li>화자 구분 명확화</li>
+                  </ul>
+                </div>
+                <div class="content-column">
+                  <h4>공연 실황 자막</h4>
+                  <ul>
+                    <li>뮤지컬 및 연극 실황</li>
+                    <li>콘서트 영상</li>
+                    <li>클래식 공연</li>
+                    <li>무대 액션 설명</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="content-highlight">
+                <p>문화 접근성을 높이는 특수 자막. 청각장애인도 완전한 감상이 가능하도록 음향효과, 분위기, 감정 등을 섬세하게 표현합니다.</p>
+              </div>
+              <div class="cta-buttons">
+                <a href="#contact" class="btn-primary">전문 상담 →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div class="accordion-title-wrapper">
+              <h3 class="accordion-title">방송 프리뷰</h3>
+            </div>
+            <div class="accordion-icon">+</div>
+          </div>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <div class="content-grid">
+                <div class="content-column">
+                  <p>TV 프로그램, 예능, 다큐멘터리 등 방송 콘텐츠의 자막 베이스가 되는 대본을 작성합니다. 방송 특성에 맞춘 표현과 포맷을 제공합니다.</p>
+                </div>
+                <div class="content-column">
+                  <h4>제공 내용</h4>
+                  <ul>
+                    <li>타임코드 포함 대본</li>
+                    <li>자막 CG용 원고</li>
+                    <li>나레이션 스크립트</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="cta-buttons">
+                <a href="#contact" class="btn-primary">견적 문의 →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 외국어 -->
+    <div class="service-section" id="foreign">
+      <div class="section-header">
+        <div class="section-label">Foreign Language</div>
+        <h2 class="section-title">외국어 속기</h2>
+        <p class="section-description">영어, 중국어, 일본어 음성을 한국어 또는 원어 텍스트로 변환합니다. 국제 컨퍼런스, 해외 인터뷰, 글로벌 미팅 등 다국어 음성 기록이 필요한 모든 상황에 대응합니다.</p>
+      </div>
+
+      <div class="service-accordion">
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div class="accordion-title-wrapper">
+              <h3 class="accordion-title">영어 음성 녹취</h3>
+            </div>
+            <div class="accordion-icon">+</div>
+          </div>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <div class="content-grid">
+                <div class="content-column">
+                  <h4>변환 방식</h4>
+                  <ul>
+                    <li>영어 음성 → 한국어 텍스트</li>
+                    <li>영어 음성 → 영어 텍스트</li>
+                    <li>영어 음성 → 한영 대역</li>
+                  </ul>
+                </div>
+                <div class="content-column">
+                  <h4>적용 분야</h4>
+                  <ul>
+                    <li>외국인 인터뷰</li>
+                    <li>국제 미팅 기록</li>
+                    <li>영문 컨퍼런스</li>
+                    <li>해외 자료 번역</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="cta-buttons">
+                <a href="#contact" class="btn-primary">견적 문의 →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div class="accordion-title-wrapper">
+              <h3 class="accordion-title">중국어 및 일본어</h3>
+            </div>
+            <div class="accordion-icon">+</div>
+          </div>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <div class="content-grid">
+                <div class="content-column">
+                  <h4>중국어 서비스</h4>
+                  <ul>
+                    <li>중국어 음성 → 한국어</li>
+                    <li>비즈니스 미팅</li>
+                    <li>무역 협상 기록</li>
+                  </ul>
+                </div>
+                <div class="content-column">
+                  <h4>일본어 서비스</h4>
+                  <ul>
+                    <li>일본어 음성 → 한국어</li>
+                    <li>기술 교류 회의</li>
+                    <li>학술 교류</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="content-highlight">
+                <p>원어민 수준의 언어 능력을 갖춘 전문 번역가와 협업하여 정확한 번역과 녹취를 제공합니다.</p>
+              </div>
+              <div class="cta-buttons">
+                <a href="#contact" class="btn-primary">상담 신청 →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div class="accordion-title-wrapper">
+              <h3 class="accordion-title">국제 컨퍼런스 속기</h3>
+            </div>
+            <div class="accordion-icon">+</div>
+          </div>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <div class="content-grid">
+                <div class="content-column">
+                  <p>동시통역 음성을 실시간으로 한국어 텍스트로 기록합니다. 국제 행사, 글로벌 세미나, 해외 연사 초청 행사 등에서 완벽한 기록을 제공합니다.</p>
+                </div>
+                <div class="content-column">
+                  <p>통역사와의 협업을 통해 원어 의미를 정확히 전달하며, 문화적 맥락까지 고려한 고품질 기록을 보장합니다.</p>
+                </div>
+              </div>
+              <div class="cta-buttons">
+                <a href="#contact" class="btn-primary">프로젝트 문의 →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer" id="contact">
+    <div class="footer-content">
+      <div class="footer-logo">누아속기사무소</div>
+      <p class="footer-text">정확하고 신속한 전문 속기 서비스</p>
+      <div class="cta-buttons" style="justify-content: center; margin-bottom: 3rem;">
+        <a href="mailto:nuasteno@gmail.com" class="btn-primary">이메일 문의</a>
+        <a href="tel:02-3489-4433" class="btn-secondary">전화 상담</a>
+      </div>
+      <div class="footer-bottom">
+        <p>T. 02-3489-4433 | M. 010-3489-4433</p>
+        <p>nuasteno@gmail.com</p>
+        <p style="margin-top: 1rem;">© 2025 누아속기사무소. All rights reserved.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Tab Navigation
+    const tabs = document.querySelectorAll('.service-tab');
+    const sections = document.querySelectorAll('.service-section');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetService = tab.dataset.service;
+        
+        // Remove active class from all
+        tabs.forEach(t => t.classList.remove('active'));
+        sections.forEach(s => s.classList.remove('active'));
+        
+        // Add active class to clicked
+        tab.classList.add('active');
+        document.getElementById(targetService).classList.add('active');
+        
+        // Scroll to content
+        window.scrollTo({
+          top: document.querySelector('.services-content').offsetTop - 150,
+          behavior: 'smooth'
+        });
+      });
+    });
+
+    // Accordion
+    const accordionHeaders = document.querySelectorAll('.accordion-header');
+
+    accordionHeaders.forEach(header => {
+      header.addEventListener('click', () => {
+        const item = header.parentElement;
+        const content = item.querySelector('.accordion-content');
+        const inner = item.querySelector('.accordion-content-inner');
+        
+        // Close all other accordions in the same section
+        const allItems = item.parentElement.querySelectorAll('.accordion-item');
+        allItems.forEach(otherItem => {
+          if (otherItem !== item && otherItem.classList.contains('active')) {
+            otherItem.classList.remove('active');
+            otherItem.querySelector('.accordion-content').style.maxHeight = '0';
+          }
+        });
+        
+        // Toggle current
+        if (item.classList.contains('active')) {
+          item.classList.remove('active');
+          content.style.maxHeight = '0';
+        } else {
+          item.classList.add('active');
+          content.style.maxHeight = inner.scrollHeight + 60 + 'px';
+        }
+      });
+    });
+
+    // Hero Animation
+    gsap.from('.hero-title-services', {
+      opacity: 0,
+      y: 30,
+      duration: 0.8,
+      ease: 'power3.out'
+    });
+
+    gsap.from('.hero-subtitle-services', {
+      opacity: 0,
+      y: 20,
+      duration: 0.8,
+      delay: 0.2,
+      ease: 'power3.out'
+    });
+
+    // Section Header Animation
+    const sectionHeaders = document.querySelectorAll('.section-header');
+    sectionHeaders.forEach(header => {
+      gsap.from(header, {
+        opacity: 0,
+        y: 30,
+        duration: 0.8,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: header,
+          start: 'top 80%',
+          toggleActions: 'play none none none',
+          once: true
+        }
+      });
+    });
+
+    // Accordion Items Animation
+    const accordionItems = document.querySelectorAll('.accordion-item');
+    accordionItems.forEach((item, i) => {
+      gsap.from(item, {
+        opacity: 0,
+        x: -20,
+        duration: 0.6,
+        delay: i * 0.1,
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: item,
+          start: 'top 85%',
+          toggleActions: 'play none none none',
+          once: true
+        }
+      });
+    });
+
+    // Process Steps Animation
+    const processSections = document.querySelectorAll('.process-section');
+    processSections.forEach(section => {
+      const steps = section.querySelectorAll('.process-step');
+      
+      steps.forEach((step, i) => {
+        const number = step.querySelector('.process-step-number');
+        const title = step.querySelector('.process-step-title');
+        const desc = step.querySelector('.process-step-desc');
+        
+        ScrollTrigger.create({
+          trigger: section,
+          start: 'top 75%',
+          once: true,
+          onEnter: () => {
+            // Step 등장
+            gsap.to(step, {
+              opacity: 1,
+              duration: 0.4,
+              delay: i * 0.15,
+              ease: 'power2.out'
+            });
+            
+            // 숫자 원 확대 (bounce 효과)
+            gsap.to(number, {
+              scale: 1,
+              duration: 0.6,
+              delay: i * 0.15 + 0.1,
+              ease: 'back.out(1.7)'
+            });
+            
+            // 연결선 나타내기
+            setTimeout(() => {
+              step.classList.add('animated');
+            }, (i * 0.15 + 0.4) * 1000);
+            
+            // 타이틀 등장
+            gsap.to(title, {
+              y: 0,
+              opacity: 1,
+              duration: 0.5,
+              delay: i * 0.15 + 0.3,
+              ease: 'power2.out'
+            });
+            
+            // 설명 등장
+            gsap.to(desc, {
+              y: 0,
+              opacity: 1,
+              duration: 0.5,
+              delay: i * 0.15 + 0.4,
+              ease: 'power2.out'
+            });
+          }
+        });
+      });
+    });
+    
+    // Fixed Nav Scroll Behavior
+    const fixedNavBlack = document.querySelector('.fixed-nav-black');
+    const fixedNavYellow = document.querySelector('.fixed-nav-yellow');
+    
+    if (fixedNavBlack && fixedNavYellow) {
+      ScrollTrigger.create({
+        start: 'top+=150 top',
+        end: 'max',
+        onUpdate: (self) => {
+          if (self.direction === 1) {
+            fixedNavBlack.classList.add('is-collapsed');
+            fixedNavYellow.classList.add('is-collapsed');
+          } else {
+            fixedNavBlack.classList.remove('is-collapsed');
+            fixedNavYellow.classList.remove('is-collapsed');
+          }
+        }
+      });
+    }
+
+    // Smooth scroll for CTA buttons
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        const href = this.getAttribute('href');
+        if (href !== '#') {
+          e.preventDefault();
+          const target = document.querySelector(href);
+          if (target) {
+            window.scrollTo({
+              top: target.offsetTop - 100,
+              behavior: 'smooth'
+            });
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
