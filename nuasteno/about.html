@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="kr" class="kr">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="format-detection" content="telephone=no, address=no, email=no">
+    <meta name="robots" content="index, follow">
+    <title>누아속기사무소 - 소개</title>
+    <meta name="author" content="NUA STENOGRAPHY OFFICE">
+    <meta name="description" content="누아속기사무소는 회의록·녹취록부터 실시간 속기·중계, 법률·공공 기록까지 전 분야를 아우르는 기록 전문 기관입니다. 정확한 검수와 보안, 신속한 납품을 약속합니다.">
+    
+    <!-- Font imports -->
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Poppins:100,100italic,200,200italic,300,300italic,regular,italic,500,500italic,600,600italic,700,700italic,800,800italic,900,900italic" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Ubuntu:300,300italic,regular,italic,500,500italic,700,700italic" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xeicon@2.3.3/xeicon.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+    
+    <!-- GSAP CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollToPlugin.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/TextPlugin.min.js"></script>
+    
+    <style>
+        /* Reset CSS */
+        html, body, div, span, applet, object, iframe,
+        h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+        a, abbr, acronym, address, big, cite, code,
+        del, dfn, em, img, ins, kbd, q, s, samp,
+        small, strike, strong, sub, sup, tt, var,
+        b, u, i, center,
+        dl, dt, dd, ol, ul, li,
+        fieldset, form, label, legend,
+        table, caption, tbody, tfoot, thead, tr, th, td,
+        article, aside, canvas, details, embed, 
+        figure, figcaption, footer, header, hgroup, 
+        menu, nav, output, ruby, section, summary,
+        time, mark, audio, video {
+            margin: 0;
+            padding: 0;
+            border: 0;
+            font-size: 100%;
+            font: inherit;
+            vertical-align: baseline;
+        }
+        article, aside, details, figcaption, figure, 
+        footer, header, hgroup, menu, nav, section {
+            display: block;
+        }
+        body {
+            line-height: 1; 
+            font-family: 'Noto Sans KR', 'Pretendard', sans-serif;
+        }
+        ol, ul {
+            list-style: none;
+        }
+        a {text-decoration:none; color: inherit;}
+        img {max-width: 100%; height: auto; vertical-align: top;}
+
+        /* Scroll styles */
+        html::-webkit-scrollbar {width: 8px;}
+        html::-webkit-scrollbar-thumb {background-color: #2f3542; border-radius: 10px;}
+
+        /* Variables */
+        :root {
+            --primary-color: #2563EB;
+            --white: #ffffff;
+            --black: #000000;
+            --neon-blue: #00f0ff;
+        }
+
+        /* General styles */
+        .wrap {margin: 0 auto; width: 95%;}
+        .wrap[max='1708'] {max-width: 1708px;}
+        .wrap[max='1440'] {max-width: 1440px;}
+        .wrap[max='1920'] {max-width: 1920px;}
+
+        .viewBtn {
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: #fff; 
+            font-size: 18px; 
+            font-weight: 500; 
+            letter-spacing: 0.025em; 
+            font-family: 'Ubuntu'; 
+            position: relative; 
+            padding: calc(25/18*1em) calc(50/18*1em);
+        }
+        .viewBtn::before,
+        .viewBtn::after {
+            content: ''; 
+            position: absolute; 
+            width: 100%; 
+            height: 50%; 
+            background: #000; 
+            z-index: -1; 
+            transition: .15s;
+        }
+        .viewBtn::before {transform: translateX(calc(-25/24*1em)); left: 0; top: 0;}
+        .viewBtn::after {transform: translateX(calc(25/24*1em)); right: 0; bottom: 0;}
+        .viewBtn:hover::before {transform: translateX(0%);}
+        .viewBtn:hover::after {transform: translateX(0%);}
+
+        /* Header styles */
+        .header {
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            background: transparent; 
+            z-index: 100; 
+            padding: 1.5rem 3rem;
+            transition: filter 0.3s ease;
+        }
+        .header .wrap {
+            max-width: 1800px;
+            margin: 0 auto;
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+        }
+        
+        .header .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            font-family: 'Noto Serif KR', serif;
+            color: #000;
+            text-decoration: none;
+            letter-spacing: -1px;
+            margin-left: 2rem;
+        }
+        
+        .header .menu {
+            font-size: 1.05rem; 
+            display: flex; 
+            align-items: center;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .header .menu ul {display: flex; align-items: center; gap: 3rem;}
+        .header .menu li {
+            font-size: inherit; 
+            font-weight: 600; 
+            letter-spacing: 0.025em; 
+            font-family: 'Noto Sans KR'; 
+            color: #000; 
+            position: relative; 
+            transition: .4s;
+        }
+        .header .menu li a {position: relative; z-index: 1; padding: 5px;}
+        .header .menu li::before {
+            content: ''; 
+            z-index: -1; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            display: block; 
+            width: 0%; 
+            height: 100%; 
+            background: #00f0ff; 
+            transition: .4s;
+        }
+        .header .menu li:hover::before {width: 100%;}
+        
+        .header .hamburger {
+            display: none; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            width: 25px; 
+            height: 20px; 
+            gap: 5px; 
+            position: relative; 
+            z-index: 101;
+            cursor: pointer;
+        }
+        .header .hamburger span {
+            display: block; 
+            width: 100%; 
+            height: 2px; 
+            background: #000; 
+            transition: .4s;
+        }
+        .header.HmActive .hamburger span {position: absolute; top: 50%; margin-top: -1px;}
+        .header.HmActive .hamburger span:first-child {transform: rotate(45deg);}
+        .header.HmActive .hamburger span:nth-child(2) {opacity: 0;}
+        .header.HmActive .hamburger span:last-child {transform: rotate(-45deg);}
+
+        /* Quick Contact Buttons */
+        .quick-contact {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+        
+        .quick-contact.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .quick-contact .btn-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quick-contact .btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quick-contact .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: inherit;
+            filter: brightness(1.2);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .quick-contact .btn:hover::before {
+            opacity: 1;
+        }
+
+        .quick-contact .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .quick-contact .btn i,
+        .quick-contact .btn svg {
+            font-size: 24px;
+            width: 24px;
+            height: 24px;
+            color: #fff;
+            z-index: 1;
+            position: relative;
+        }
+
+        .quick-contact .btn-kakao {
+            background: linear-gradient(135deg, #FEE500, #FFD700);
+        }
+
+        .quick-contact .btn-kakao svg {
+            width: 24px;
+            height: 24px;
+            fill: #381E1F;
+        }
+
+        .quick-contact .btn-phone {
+            background: linear-gradient(131deg, #9333ea, #ec4899);
+        }
+
+        .quick-contact .tooltip {
+            position: absolute;
+            right: calc(100% + 10px);
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            font-family: 'Pretendard';
+            font-weight: 500;
+        }
+
+        .quick-contact .tooltip::after {
+            content: '';
+            position: absolute;
+            right: -4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 4px 0 4px 4px;
+            border-color: transparent transparent transparent rgba(0, 0, 0, 0.85);
+        }
+
+        .quick-contact .btn-wrapper:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(-50%) translateX(-5px);
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(147, 51, 234, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(147, 51, 234, 0);
+            }
+        }
+
+        .quick-contact .btn-phone {
+            animation: pulse 2s infinite;
+        }
+
+        /* Footer styles */
+        .footer {
+            background: #0a0a0a;
+            color: #fff;
+            padding: 5rem 3rem 3rem;
+            position: relative;
+        }
+        
+        .footer-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr;
+            gap: 5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .footer-logo {
+            font-size: 2rem;
+            font-weight: 800;
+            font-family: 'Noto Serif KR', serif;
+            margin-bottom: 1.5rem;
+            letter-spacing: -1px;
+        }
+        
+        .footer-description {
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+        
+        .footer-section-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+        }
+        
+        .footer-link {
+            color: #999;
+            text-decoration: none;
+            display: block;
+            margin-bottom: 0.8rem;
+            transition: color 0.3s;
+            font-size: 0.9rem;
+        }
+        
+        .footer-link:hover {
+            color: #fff;
+        }
+        
+        .footer-bottom {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #666;
+            font-size: 0.85rem;
+        }
+        
+        .footer .toTop {
+            position: absolute; 
+            top: 0; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            background: var(--primary-color);
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #fff;
+            cursor: pointer;
+            z-index: 1001;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        
+        .footer .toTop:hover {
+            background: #1d4ed8;
+            transform: translate(-50%, -50%) translateY(-4px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        /* About page specific styles */
+        .about {overflow-x: hidden;}
+
+        /* Section 1 - Intro with animated sound wave icon */
+        .about .s1 {
+            position: relative; 
+            overflow: hidden; 
+            height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+        }
+        .about .s1 .introVisual {
+            opacity: 0; 
+            position: relative; 
+            font-size: clamp(100px, 12vw, 160px); 
+            font-weight: 700; 
+            letter-spacing: 0.01em; 
+            font-family: 'Poppins'; 
+            color: #000; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            gap: 10px;
+        }
+        .about .s1 .introVisual .icon {
+            width: 0; 
+            height: calc(100/160*1em); 
+            overflow: visible;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .sound-wave {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            height: 100px;
+        }
+        .sound-bar {
+            width: 10px;
+            background: #000;
+            border-radius: 5px;
+            animation: sound-wave 1.5s ease-in-out infinite;
+        }
+        .sound-bar:nth-child(1) {
+            height: 35px;
+            animation-delay: 0s;
+        }
+        .sound-bar:nth-child(2) {
+            height: 60px;
+            animation-delay: 0.1s;
+        }
+        .sound-bar:nth-child(3) {
+            height: 85px;
+            animation-delay: 0.2s;
+        }
+        .sound-bar:nth-child(4) {
+            height: 60px;
+            animation-delay: 0.3s;
+        }
+        .sound-bar:nth-child(5) {
+            height: 35px;
+            animation-delay: 0.4s;
+        }
+        @keyframes sound-wave {
+            0%, 100% {
+                transform: scaleY(1);
+            }
+            50% {
+                transform: scaleY(1.2);
+            }
+        }
+        
+        .about .s1 .introVisual span {
+            padding-left: 0;
+        }
+        .about .s1 .introVisual span > * {
+            opacity: 0;
+            display: inline-block;
+        }
+        .about .s1 .introVisual span > *:nth-child(1) {transform: translateY(-10%);}
+        .about .s1 .introVisual span > *:nth-child(2) {transform: translateY(10%);}
+        .about .s1 .introVisual span > *:nth-child(3) {transform: translateY(-10%);}
+        .about .s1 .introVisual span > *:nth-child(4) {transform: translateY(10%);}
+        .about .s1 .scroll {
+            z-index: 1; 
+            position: absolute; 
+            bottom: 0; 
+            left: 50%; 
+            transform: translate(-50%, 50%); 
+            width: 200px;
+            opacity: 1;
+        }
+        .about .s1 .scroll::after {
+            content: ''; 
+            width: 100%; 
+            height: 20px; 
+            background: #000; 
+            position: absolute; 
+            top: 50%; 
+            left: 0; 
+            transform: translateY(-100%); 
+            z-index: 1;
+        }
+        .about .s1 .scroll svg {
+            animation: scroll 10s linear infinite; 
+            width: 100%; 
+            fill: #fff; 
+            height: auto; 
+            transform-origin: center;
+        }
+        @keyframes scroll {
+            0% {transform: rotate(0deg);}
+            100% {transform: rotate(360deg);}
+        }
+        .about .s1 .scroll span {
+            font-size: 23px; 
+            position: absolute; 
+            top: 40%; 
+            left: 50%; 
+            transform: translate(-50%, -100%); 
+            color: #fff; 
+            animation: scroll_arrow 2s ease-in-out infinite;
+        }
+        @keyframes scroll_arrow {
+            0% {transform: translate(-50%, -100%);}
+            50% {transform: translate(-50%, -130%);}
+            100% {transform: translate(-50%, -100%);}
+        }
+        .about .s1 .circle {
+            position: absolute; 
+            bottom: 0; 
+            left: 50%; 
+            transform: translate(-50%, 85%); 
+            width: calc(1752/1920*100vw);
+        }
+        .about .s1 .circle:before {
+            content: ''; 
+            width: 100%; 
+            padding-top: 100%; 
+            display: block; 
+            background: #000; 
+            border-radius: 50%;
+        }
+
+        /* Section 2 - Profile */
+        .about .s2 {background: #000; color: #fff; position: relative;}
+        .about .s2::after {
+            content: ''; 
+            width: 100%; 
+            height: 2px; 
+            background: #000; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            transform: translateY(-50%); 
+            z-index: 1;
+        }
+        .about .s2 .slogan {padding-top: 330px;}
+        .about .s2 .slogan p {
+            font-family: "Poppins"; 
+            font-size: 160px; 
+            letter-spacing: -0.025em; 
+            color: #535353; 
+            line-height: calc(160/160*1em);
+        }
+        .about .s2 .slogan p + p {margin-top: calc(10/160*1em);}
+        .about .s2 .slogan p:nth-child(1) {text-align: left; transform: translateX(-70%);}
+        .about .s2 .slogan p:nth-child(2) {text-align: right; transform: translateX(70%);}
+        .about .s2 .slogan p b {
+            font-weight: 700; 
+            position: relative; 
+            display: inline-block; 
+            color: #ffffff1e;
+        }
+        .about .s2 .slogan p b small {
+            opacity: 0; 
+            font-family: 'Pretendard'; 
+            letter-spacing: -0.025em; 
+            line-height: normal; 
+            white-space: nowrap; 
+            font-weight: 500; 
+            font-size: 20px;
+            font-weight: 500; 
+            color: #00f0ff; 
+            position: absolute; 
+            left: 50%; 
+            transform: translateX(-50%);
+        }
+        .about .s2 .slogan p:nth-child(1) small {
+            bottom: 100%; 
+            margin-left: calc(-40/20*1em); 
+            margin-bottom: calc(20/20*1em);
+        }
+        .about .s2 .slogan p:nth-child(2) small {
+            top: 100%; 
+            margin-left: calc(40/20*1em); 
+            margin-top: calc(20/20*1em);
+        }
+        .about .s2 .profile {display: flex; align-items: flex-start; padding-top: 150px;}
+        .about .s2 .profile .imgWrap {
+            display: flex; 
+            justify-content: center; 
+            width: calc(740/1440*100%);
+        }
+        .about .s2 .profile .imgWrap .img {
+            width: min(435px, 80vw);
+            aspect-ratio: 1 / 1;
+            border-radius: 50%;
+            overflow: hidden;
+            background: #d7c09a;
+            box-shadow: 0 0 0 8px #000;
+            will-change: transform, opacity;
+        }
+        .about .s2 .profile .imgWrap .img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+        .about .s2 .profile .info {padding-top: calc(115/1440*100%); flex-grow: 1;}
+        .about .s2 .profile .info .name {display: flex; flex-direction: column; align-items: flex-start;}
+        .about .s2 .profile .info .name small,
+        .about .s2 .profile .info .name b,
+        .about .s2 .profile .info .his dl dt span,
+        .about .s2 .profile .info .his dl dt b,
+        .about .s2 .profile .info .his dl dd ul li {
+            will-change: transform, opacity;
+        }
+        .about .s2 .profile .info .name small {
+            display: inline-block; 
+            font-family: 'Poppins'; 
+            font-size: 14px; 
+            color: #fff; 
+            opacity: .32; 
+            letter-spacing: 0.01em;
+        }
+        .about .s2 .profile .info .name b {
+            display: inline-block; 
+            font-family: 'Poppins'; 
+            font-size: 61px; 
+            font-weight: 700; 
+            color: #fff; 
+            letter-spacing: -0.01em; 
+            padding-top: calc(5/61*1em);
+        }
+        .about .s2 .profile .info .his {padding-bottom: 130px;}
+        .about .s2 .profile .info .his dl {display: flex; flex-direction: column; align-items: flex-start;}
+        .about .s2 .profile .info .his dl dt {
+            display: flex; 
+            flex-direction: column; 
+            font-size: 24px; 
+            padding-top: calc(60/24*1em);
+        }
+        .about .s2 .profile .info .his dl dt span {
+            font-family: 'Poppins'; 
+            font-size: 14px; 
+            color: #00f0ff; 
+            letter-spacing: 0.025em;
+        }
+        .about .s2 .profile .info .his dl dt b {
+            font-family: 'Poppins'; 
+            font-size: inherit; 
+            font-weight: 700; 
+            color: #fff; 
+            letter-spacing: 0.025em; 
+            padding-top: calc(10/24*1em); 
+            padding-bottom: calc(20/24*1em);
+            line-height: 1.3;
+        }
+        .about .s2 .profile .info .his dl dt b em {font-family: 'Pretendard';}
+        .about .s2 .profile .info .his dl dd {
+            font-size: 16px; 
+            color: #fff; 
+            letter-spacing: 0.025em; 
+            font-family: 'Pretendard'; 
+            font-weight: 300;
+        }
+        .about .s2 .profile .info .his dl dd ul {list-style: none;}
+        .about .s2 .profile .info .his dl dd ul li {
+            word-break: keep-all; 
+            counter-increment: custom; 
+            line-height: calc(26/16*1em); 
+            display: flex; 
+            align-items: flex-start;
+        }
+        .about .s2 .profile .info .his dl dd ul li + li {margin-top: calc(15/16*1em);}
+        .about .s2 .profile .info .his dl dd ul li:before {
+            content: "0"counter(custom); 
+            text-align: center; 
+            font-family: 'Poppins'; 
+            font-size: inherit; 
+            color: inherit; 
+            letter-spacing: 0.025em; 
+            font-weight: inherit; 
+            display: inline-block; 
+            width: calc(25/16*1em); 
+            margin-right: calc(20/16*1em);
+            white-space: nowrap;
+        }
+        .about .s2 .profile .info .his dl dd ul li:first-child {counter-reset: custom;}
+        .about .s2 .profile .info .his dl dd ul li p {display: inline-block;}
+
+        /* Section 3 */
+        .about .s3 {position: relative; padding-top: 310px; padding-bottom: 175px;}
+        .about .s3 svg {display: none;}
+        .about .s3 .objWrap {
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            filter: url(#gooey);
+        }
+        .about .s3 .obj {position: absolute; background: linear-gradient(135deg, #00f0ff, #a259ff); border-radius: 50%; opacity: 0.3;}
+        .about .s3 .obj._big {
+            width: 360px; 
+            height: 360px; 
+            top: 125px; 
+            right: 15px; 
+            animation: obj_big 8s ease-in-out infinite;
+        }
+        .about .s3 .obj._small {
+            width: 100px; 
+            height: 100px; 
+            top: 480px; 
+            right: 15px; 
+            animation: obj_small 5s ease-in-out infinite;
+        }
+        @keyframes obj_big {
+            0% {transform: scale(1) translate(0, 0);}
+            50% {transform: scale(0.9) translate(-30px, -20px);}
+            100% {transform: scale(1) translate(0, 0);}
+        }
+        @keyframes obj_small {
+            0% {transform: scale(1) translate(0, 0);}
+            50% {transform: scale(1.1) translate(-50px, -40px);}
+            100% {transform: scale(1) translate(0, 0);}
+        }
+        .about .s3 .num {
+            position: absolute; 
+            font-size: 230px; 
+            top: 180px; 
+            left: 0%; 
+            width: calc(790/1920*100vw); 
+            height: calc(204/230*1em); 
+            text-align: right;
+        }
+        .about .s3 .num::after {
+            content: ''; 
+            width: 100%; 
+            height: 7px; 
+            background: #000; 
+            position: absolute; 
+            bottom: 0; 
+            right: 0; 
+            transform: translateY(calc(15/230*1em)) translateX(calc(-13.75/230*1em)); 
+            z-index: 1;
+        }
+        .about .s3 .num span {
+            font-family: 'Poppins'; 
+            font-weight: 600; 
+            letter-spacing: -0.025em; 
+            color: #000; 
+            display: inline-block; 
+            height: calc(195/230*1em); 
+            position: relative;
+        }
+        .about .s3 .num span::after {
+            content: ''; 
+            width: calc(118/230*1em); 
+            height: calc(118/230*1em); 
+            background: linear-gradient(135deg, #00f0ff, #a259ff); 
+            border-radius: 50%; 
+            position: absolute; 
+            top: calc(25/230*1em); 
+            left: calc(20/230*1em); 
+            transform: translate(-50%, -50%); 
+            z-index: -1; 
+            animation: num_big 5s ease-in-out infinite;
+            opacity: 0.3;
+        }
+        @keyframes num_big {
+            0% {transform: scale(1) translate(-50%, -50%);}
+            50% {transform: scale(1.1) translate(-50%, calc(-50% - (20px * -1)));}
+            100% {transform: scale(1) translate(-50%, -50%);}
+        }
+        .about .s3 .wrap {position: relative; z-index: 1;}
+        .about .s3 .txt {width: calc(780/1440*100%); margin-left: auto;}
+        .about .s3 .txt > span {
+            font-family: 'Poppins'; 
+            font-size: 18px; 
+            font-weight: 500; 
+            letter-spacing: -0.01em; 
+            color: #000; 
+            display: inline-block;
+        }
+        .about .s3 .txt .slogan {
+            font-family: 'Pretendard'; 
+            line-height: calc(94/64*1em); 
+            font-size: clamp(32px, 4.5vw, 64px);
+            font-weight: 700; 
+            letter-spacing: -0.025em; 
+            color: #aeaeb1; 
+            padding-top: calc(20/64*1em); 
+            padding-bottom: calc(60/64*1em);
+            word-break: keep-all;
+        }
+        .about .s3 .txt .slogan b {color: #000;}
+        .about .s3 .txt dl dt {
+            font-family: 'Pretendard'; 
+            font-size: 26px; 
+            font-weight: 700; 
+            letter-spacing: -0.025em; 
+            color: #000; 
+            padding-bottom: calc(25/26*1em); 
+            line-height: calc(39/26*1em);
+        }
+        .about .s3 .txt dl dd {
+            font-family: 'Pretendard'; 
+            font-size: 16px; 
+            letter-spacing: -0.025em; 
+            color: #000; 
+            line-height: calc(26/16*1em);
+        }
+        .about .s3 .txt dl dd p + p {margin-top: calc(10/16*1em);}
+        .about .s3 .txt .btn .viewBtn {
+            margin-left: calc(25/24*1em); 
+            margin-top: calc(54/24*1em);
+        }
+
+        /* Section 4 - Key Values */
+        .about .s4 .keyWrap {display: flex; flex-direction: column;}
+        .about .s4 .keyWrap dl {display: flex; align-items: flex-start;}
+        .about .s4 .keyWrap dl dt {
+            width: calc(600/1440*100%); 
+            flex-shrink: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: flex-start;
+        }
+        .about .s4 .keyWrap dl dt small {
+            font-family: 'Poppins'; 
+            padding-left: calc(3/14*1em); 
+            font-size: 14px; 
+            font-weight: 500; 
+            color: #000; 
+            letter-spacing: 0.01em; 
+            position: relative;
+        }
+        .about .s4 .keyWrap dl dt small::after {
+            content: ''; 
+            position: absolute; 
+            top: 50%; 
+            right: 0; 
+            transform: translate(60%, -55%); 
+            font-size: calc(36/14*1em); 
+            font-weight: bold; 
+            font-family: 'Pretendard'; 
+            color: #000; 
+            opacity: .21; 
+            letter-spacing: -0.025em;
+        }
+        .about .s4 .keyWrap dl:nth-child(1) dt small::after {content: '01';}
+        .about .s4 .keyWrap dl:nth-child(2) dt small::after {content: '02';}
+        .about .s4 .keyWrap dl:nth-child(3) dt small::after {content: '03';}
+        .about .s4 .keyWrap dl dt p {
+            font-family: 'Pretendard'; 
+            font-size: 38px; 
+            font-weight: 700; 
+            letter-spacing: -0.025em; 
+            color: #000; 
+            padding-top: calc(18/38*1em); 
+            line-height: calc(59/38*1em);
+        }
+        .about .s4 .keyWrap dl dd {
+            border-top: 1px solid #565656; 
+            flex-grow: 1; 
+            padding: 0 calc(10/1440*100%); 
+            margin-top: 5px; 
+            padding-bottom: 110px;
+        }
+        .about .s4 .keyWrap dl dd b {
+            font-family: 'Pretendard'; 
+            font-size: 20px; 
+            font-weight: 700; 
+            letter-spacing: -0.025em; 
+            color: #000;  
+            margin-top: calc(40/20*1em); 
+            margin-bottom: calc(15/20*1em); 
+            text-decoration: underline; 
+            text-decoration-color: #00f0ff; 
+            text-underline-offset: calc(-7/20*1em); 
+            text-decoration-thickness: calc(10/20*1em); 
+            display: inline-block;
+        }
+        .about .s4 .keyWrap dl dd p {
+            font-family: 'Pretendard'; 
+            font-size: 16px; 
+            letter-spacing: -0.025em; 
+            color: #000; 
+            line-height: calc(26/16*1em);
+        }
+        .about .s4 .keyWrap dl dd p + p {margin-top: calc(10/16*1em);}
+
+        /* Section 5 - Partners */
+        .s5 {background: #fff; padding: 100px 0 180px;}
+        .s5 .titleBox {display: flex; flex-direction: column; align-items: center;}
+        .s5 .titleBox span {
+            font-family: 'Pretendard'; 
+            font-size: 16px; 
+            font-weight: 700; 
+            letter-spacing: -0.025em; 
+            color: #000; 
+            display: inline-block;
+        }
+        .s5 .titleBox b {
+            font-family: 'Poppins'; 
+            font-size: 76px; 
+            font-weight: 700; 
+            letter-spacing: -0.01em; 
+            color: #000; 
+            display: inline-block; 
+            padding-top: calc(30/76*1em); 
+            padding-bottom: calc(100/76*1em);
+        }
+        .s5 .mqWrap {position: relative; overflow: hidden; padding: 30px 0;}
+        .s5 .mqWrap::after {
+            content: ''; 
+            width: 100%; 
+            height: 100%; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            z-index: 1; 
+            background: linear-gradient(to right, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 10%, rgba(255,255,255,0) 90%, rgba(255,255,255,1) 100%);
+            pointer-events: none;
+        }
+        .s5 .marquee {width: 100%; position: relative; overflow: hidden; height: 30px; display: flex; align-items: center;}
+        .s5 .marquee + .marquee {margin-top: 40px;}
+        .s5 .marquee .absol {width: 100%; display: flex; align-items: center;}
+        .s5 .marquee .absol .mar_ch {display: flex; align-items: center; gap: 30px;}
+        .s5 .marquee .absol .mar_ch span {
+            font-family: 'Pretendard';
+            font-size: 18px;
+            font-weight: 500;
+            color: #000;
+            white-space: nowrap;
+            flex-shrink: 0;
+            position: relative;
+            padding: 0 30px;
+            border-right: 1px solid #00f0ff;
+        }
+        .s5 .marquee .absol .mar_ch span:last-child {
+            border-right: none;
+        }
+
+        /* Responsive styles */
+        @media screen and (max-width: 820px) {
+            .header .logo {
+                font-size: 1.4rem;
+                margin-left: 0;
+            }
+            
+            .header .menu {
+                box-sizing: border-box; 
+                display: none; 
+                opacity: 0; 
+                position: fixed; 
+                left: 0; 
+                top: 0; 
+                width: 100vw; 
+                height: 100vh; 
+                transform: translateX(100%); 
+                background: #000; 
+                z-index: 100; 
+                padding-top: 100px; 
+                transition: .4s allow-discrete;
+            }
+            .header.HmActive .menu {
+                display: block; 
+                opacity: 1; 
+                transform: translateX(0%);
+            }
+            .header .menu ul {
+                flex-direction: column; 
+                align-items: center; 
+                gap: 0px;
+            }
+            .header .menu li {
+                font-size: 20px; 
+                border-top: 1px solid #333; 
+                width: 100%;
+                color: #fff;
+            }
+            .header .menu li a {
+                padding: 10px 2.5%; 
+                display: block; 
+                box-sizing: border-box; 
+                width: 100%;
+            }
+            .header .hamburger {display: flex;}
+            
+            .about .s2 .slogan {padding: 90px 10%;}
+            .about .s2 .slogan p {font-size: clamp(50px, 85/820*100vw, 85px);}
+            .about .s2 .profile {padding-top: 50px; flex-direction: column; align-items: center;}
+            .about .s3 {padding-top: 340px;}
+            .about .s4 .keyWrap dl {flex-direction: column;}
+            .about .s4 .keyWrap dl dt {width: 100%;}
+            .quick-contact {
+                bottom: 20px;
+                right: 20px;
+            }
+            .quick-contact .btn {
+                width: 50px;
+                height: 50px;
+            }
+            .quick-contact .btn i,
+            .quick-contact .btn svg {
+                font-size: 20px;
+                width: 20px;
+                height: 20px;
+            }
+            
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="wrap" max="1708">
+            <a href="index.html" class="logo">누아속기사무소</a>
+            <div class="menu">
+                <ul>
+                    <li><a href="about.html">소개</a></li>
+                    <li><a href="services.html">서비스</a></li>
+                    <li><a href="pricing.html">요금안내</a></li>
+                    <li><a href="contact.html">문의</a></li>
+                </ul>
+            </div>
+
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Quick Contact Buttons -->
+    <aside class="quick-contact">
+        <div class="btn-wrapper">
+            <div class="tooltip">카톡 상담</div>
+            <a href="https://pf.kakao.com/_xjxeXxj" target="_blank" rel="noopener noreferrer" class="btn btn-kakao">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.707 4.8 4.27 6.054-.188.702-.682 2.545-.78 2.94-.123.49.18.483.376.351.155-.103 2.466-1.675 3.464-2.353.541.08 1.1.123 1.67.123 4.97 0 9-3.185 9-7.115S16.97 3 12 3z"/>
+                </svg>
+            </a>
+        </div>
+        <div class="btn-wrapper">
+            <div class="tooltip">전화 상담</div>
+            <a href="tel:010-3489-4433" class="btn btn-phone">
+                <svg viewBox="0 0 24 24" fill="white">
+                    <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/>
+                </svg>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div id="smooth-wrapper">
+        <div id="smooth-content">
+            <main class="sub about">
+                <!-- Section 1: Intro Visual -->
+                <section class="s1">
+                    <div class="wrap" max="1440">
+                        <div class="introVisual">
+                            <div class="icon">
+                                <div class="sound-wave">
+                                    <div class="sound-bar"></div>
+                                    <div class="sound-bar"></div>
+                                    <div class="sound-bar"></div>
+                                    <div class="sound-bar"></div>
+                                    <div class="sound-bar"></div>
+                                </div>
+                            </div>
+                            <span><span>N</span><span>U</span><span>A</span><span></span></span>
+                        </div>
+                    </div>
+
+                    <div class="scroll">
+                        <svg viewBox="0 0 100 100">
+                            <defs>
+                                <path id="circle"
+                                d="
+                                    M 50, 50
+                                    m -37, 0
+                                    a 37,37 0 1,1 74,0
+                                    a 37,37 0 1,1 -74,0"/>
+                            </defs>
+                            <text font-size="7.8" fill="#fff">
+                                <textPath href="#circle">SCROLL DOWN SCROLL DOWN SCROLL DOWN SCROLL DOWN</textPath>
+                            </text>
+                        </svg>
+                        <span><i class="xi-long-arrow-down"></i></span>
+                    </div>
+                    <div class="circle"></div>
+                </section>
+
+                <!-- Section 2: Profile / Intro -->
+                <section class="s2">
+                    <div class="wrap" max="1440">
+                        <div class="slogan">
+                            <p>Every <b>Record<small>모든 기록이</small></b> is</p>
+                            <p>built on <b>Trust<small>신뢰 위에 쌓입니다</small></b></p>
+                        </div>
+
+                        <div class="profile">
+                            <div class="imgWrap">
+                                <div class="img">
+                                     <img src="about_profile.png" alt="NUA Stenography Office">
+                                </div>
+                            </div>
+
+                            <div class="info">
+                                <div class="name">
+                                    <small>NUA STENOGRAPHY OFFICE</small>
+                                    <b>누아속기사무소</b>
+                                </div>
+                                
+                                <div class="his">
+                                    <dl>
+                                        <dt>
+                                            <span>SERVICE</span>
+                                            <b><em>전문 속기·녹취·기록 서비스</em></b>
+                                        </dt>
+                                        <dd>
+                                            <ul>
+                                                <li><p>회의·행사·세미나 실시간 속기 및 중계 지원</p></li>
+                                                <li><p>회의록·녹취록 제작 (표준 양식·맥락 보존 편집)</p></li>
+                                                <li><p>법률·공공 기록 (재판·조사·공청회 절차 준수)</p></li>
+                                                <li><p>2단계 이상 검수·교정·용어 통일 프로세스</p></li>
+                                                <li><p>기관/기업별 포맷·납품 규격 맞춤 대응</p></li>
+                                            </ul>
+                                        </dd>
+                                    </dl>
+                                    <dl>
+                                        <dt>
+                                            <span>PRINCIPLE</span>
+                                            <b><em>정확성·보안·책임 납품</em></b>
+                                        </dt>
+                                        <dd>
+                                            <ul>
+                                                <li><p>전문 속기사 투입 · 기록 기준 준수</p></li>
+                                                <li><p>기밀 유지 · 접근 권한 최소화</p></li>
+                                                <li><p>일정 합의 · 초안/교정/최종본 단계별 납품</p></li>
+                                                <li><p>사후 지원 (정오표, 추가본, 색인 제공 가능)</p></li>
+                                            </ul>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 3: Vision -->
+                <section class="s3">
+                    <div class="objWrap">
+                        <div class="obj _big"></div>
+                        <div class="obj _small"></div>
+                    </div>
+                    <svg>
+                        <filter id="gooey">
+                            <feGaussianBlur in="SourceGraphic" stdDeviation="25" />
+                            <feColorMatrix values="
+                                        1 0 0 0 0
+                                        0 1 0 0 0
+                                        0 0 1 0 0
+                                        0 0 0 90 -25" />
+                        </filter>
+                    </svg>
+
+                    <div class="num">
+                        <span>No.1</span>
+                    </div>
+
+                    <div class="wrap" max="1440">
+                        <div class="txt">
+                            <span>About NUA Stenography</span>
+                            <p class="slogan">
+                                정확한 기록은 <b>신뢰의 출발점</b>입니다.<br>
+                                회의부터 재판까지, <b>전 분야 기록을 책임</b>집니다.
+                            </p>
+
+                            <dl>
+                                <dt>속기에서 시작해, 신뢰로 완성합니다</dt>
+                                <dd>
+                                    <p>누아속기사무소는 회의·행사·재판·공청회부터 실시간 중계까지</p>
+                                    <p>전(全) 분야 속기 서비스를 제공하는 전문 기록 기관입니다.</p>
+                                    <p>정확한 검수와 보안, 신속한 납품을 약속합니다.</p>
+                                </dd>
+                            </dl>
+
+                            <div class="btn">
+                                <a href="contact.html" class="viewBtn">
+                                    <span>의뢰·문의하기</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 4: Key Strengths -->
+                <section class="s4">
+                    <div class="wrap" max="1440">
+                        <div class="keyWrap">
+                            <dl>
+                                <dt>
+                                    <small>KEY STRENGTH</small>
+                                    <p>검증된 전문성과<br>현장 경험</p>
+                                </dt>
+                                <dd>
+                                    <b>&nbsp;10년 이상 속기 경력의 전문 인력&nbsp;</b>
+                                    <p>국회, 법원, 대형 국제회의부터 기업 행사까지 다양한 현장 경험을 보유한 전문 속기사가 투입됩니다.</p>
+                                    <p>발언 의도와 맥락을 정확히 파악하여 기록합니다.</p>
+                                    <p>상황별 프로토콜과 용어 사전을 체계적으로 관리합니다.</p>
+                                </dd>
+                            </dl>
+                            <dl>
+                                <dt>
+                                    <small>KEY STRENGTH</small>
+                                    <p>철저한 검수와<br>보안 체계</p>
+                                </dt>
+                                <dd>
+                                    <b>&nbsp;2단계 이상 교정·검수 프로세스&nbsp;</b>
+                                    <p>1차 속기 후 전문 에디터의 교정, 용어 통일, 맥락 점검을 거칩니다.</p>
+                                    <p>기밀 유지 협약 체결 및 최소 권한 원칙을 적용합니다.</p>
+                                    <p>안전한 파일 전송 및 보관 시스템을 운영합니다.</p>
+                                </dd>
+                            </dl>
+                            <dl>
+                                <dt>
+                                    <small>KEY STRENGTH</small>
+                                    <p>맞춤형 포맷과<br>신속한 납품</p>
+                                </dt>
+                                <dd>
+                                    <b>&nbsp;기관·기업별 요구사항 완벽 대응&nbsp;</b>
+                                    <p>표준 회의록, 법정 기록, 실시간 중계 자막 등 목적에 맞는 포맷 제공</p>
+                                    <p>초안·교정본·최종본 단계별 공유로 일정 준수</p>
+                                    <p>정오표, 추가본, 색인 등 사후 지원까지 책임집니다</p>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 5: Experience -->
+                <section class="s5">
+                    <div class="wrap" max="1440">
+                        <div class="titleBox">
+                            <span>10년간 쌓아온 신뢰</span>
+                            <b>Experience</b>
+                        </div>
+
+                        <div class="mqWrap">
+                            <!-- marquee 1 - 좌→우 -->
+                            <div class="marquee _1">
+                                <div class="absol">
+                                    <div class="mar_ch">
+                                        <span>국무이리 목요대화 속기 수행</span>
+                                        <span>국가인권위원회 속기 수행</span>
+                                        <span>산업통상자원부 에너지위원회 속기 수행</span>
+                                        <span>교육부 교원간담회 속기 수행</span>
+                                        <span>인사혁신처 공무원 간담회 속기 수행</span>
+                                        <span>국가교육위원회 속기 수행</span>
+                                        <span>서울시 정책박람회 속기 수행</span>
+                                        <span>장애인이동편의증진 특별위원회 속기 수행</span>
+                                        <span>국무조정실 청년기본법 토론회 속기 수행</span>
+                                        <span>한국항만공사 속기 수행</span>
+                                        <span>정부혁신국민포럼 속기 수행</span>
+                                        <span>국회 진보당 중앙위원회 실시간 자막</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- marquee 2 - 우→좌 -->
+                            <div class="marquee _2">
+                                <div class="absol"> 
+                                    <div class="mar_ch">
+                                        <span>APEC 경주 실시간 속기 수행</span>
+                                        <span>세계인권도시포럼 속기 수행</span>
+                                        <span>제10회 아시아미래포럼 속기 수행</span>
+                                        <span>유네스코 세계유산 해석 국제회의 속기 수행</span>
+                                        <span>제10회 문화예술세계이회 실시간 자막</span>
+                                        <span>한국인터넷거버넌스포럼 속기 수행</span>
+                                        <span>사회적기업 국제포럼 속기 수행</span>
+                                        <span>세계도시 혁신정책공유 심포지엄 속기 수행</span>
+                                        <span>보조공학 컨퍼런스 속기 수행</span>
+                                        <span>AI 시대 모두를 위한 교육 컨퍼런스 실시간 자막</span>
+                                        <span>체인지메이커 컨퍼런스 실시간 자막</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- marquee 3 - 좌→우 -->
+                            <div class="marquee _3">
+                                <div class="absol">
+                                    <div class="mar_ch">
+                                        <span>연합뉴스TV 한미·한일 정상회담 동시통역 속기</span>
+                                        <span>MBC 미국 개표방송 실시간 자막</span>
+                                        <span>YTN 윤석열 미 의회 연설 특보 실시간 자막</span>
+                                        <span>서울국제도서전 실시간 자막</span>
+                                        <span>서울문화재단 속기 수행</span>
+                                        <span>서울장애인인권영화제 문자통역</span>
+                                        <span>한국영화진흥위원회 속기 수행</span>
+                                        <span>경희대학교 평화의전당 속기 수행</span>
+                                        <span>연세대학교 장애인권위원회 속기 수행</span>
+                                        <span>민주사회를 위한 변호사 모임 속기 수행</span>
+                                        <span>한국장애인개발원 속기 수행</span>
+                                        <span>파이콘 코리아 속기 수행</span>
+                                        <span>JSConf 속기 수행</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer">
+                <button class="toTop" aria-label="맨 위로">↑</button>
+                
+                <div class="footer-content">
+                    <div>
+                        <div class="footer-logo">누아속기사무소</div>
+                        <p class="footer-description">법원 녹취 전문, 한글속기 1급 자격을 갖춘 전문가들이 정확하고 신속한 서비스를 제공합니다.</p>
+                    </div>
+                    
+                    <div>
+                        <div class="footer-section-title">Contact</div>
+                        <a href="mailto:nuasteno@gmail.com" class="footer-link">nuasteno@gmail.com</a>
+                        <a href="tel:02-3489-4433" class="footer-link">T. 02-3489-4433</a>
+                        <a href="tel:010-3489-4433" class="footer-link">M. 010-3489-4433</a>
+                    </div>
+                    
+                    <div>
+                        <div class="footer-section-title">Location</div>
+                        <p class="footer-link">서울 금천구 가산디지털2로 173, 719호</p>
+                        <p class="footer-link">사업자: 186-24-02138</p>
+                    </div>
+                </div>
+                
+                <div class="footer-bottom">
+                    <p>© 2025 누아속기사무소. All rights reserved.</p>
+                    <p>Designed with precision and care.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+
+        $('.header .hamburger').on('click', function() {
+            $('.header').toggleClass('HmActive');
+        });
+
+        $('.footer .toTop').on('click', function() {
+            gsap.to(window, {
+                scrollTo: 0,
+                duration: 1,
+                ease: 'power1.inOut'
+            });
+        });
+
+        gsap.timeline()
+        .to('.s1 .introVisual', {opacity: 1, duration: .8})
+        .to('.s1 .introVisual .icon', {width: 'calc(120/160*1em)', duration: .6}, '-=80%')
+        .to('.about .s1 .introVisual span', {paddingLeft: 'calc(10/160*1em)', duration: .6}, '-=100%')
+        .to('.about .s1 .introVisual span > *', {transform: 'translateY(0)', opacity: 1, duration: .8, stagger: .1});
+
+        gsap.timeline({
+            scrollTrigger: {
+                trigger: '.about .s1',
+                start: 'top top',
+                end: 'bottom 50%',
+                scrub: 1
+            }
+        })
+        .to('.about .s1 .scroll', {opacity: 0})
+        .to('.about .s1 .circle', {width: '250%'},'-=100%')
+        .to('header', {filter: 'invert(1)'})
+
+        gsap.utils.toArray('.about .s2 .slogan p').forEach(el => {
+            gsap.timeline({
+                scrollTrigger: {
+                    trigger: '.about .s2 .slogan',
+                    start: 'top 100%',
+                    end: 'bottom 30%',
+                    scrub: 1
+                }
+            })
+            .to('header', {filter: 'invert(0)'})
+            .to(el, {x: 0})
+            .to(el.querySelector('b'), {color: '#fff'}, '-=30%')
+            .to(el.querySelector('b small'), {opacity: 1, margin: '0'}, '-=90%')
+        })
+
+        gsap.from('.about .s2 .profile .imgWrap .img', {
+            opacity: 0, duration: .8,
+            scrollTrigger: {
+                trigger: '.about .s2 .profile .imgWrap .img',
+                start: 'top 90%',
+                end: 'bottom 90%',
+                toggleActions: 'play none none reverse'
+            }
+        })
+
+        ScrollTrigger.create({
+            trigger: '.about .s3',
+            start: 'top 30%',
+            end: 'top 30%',
+            onEnter: () => {
+                gsap.to('header', {filter: 'invert(0)'})
+            },
+            onEnterBack: () => {
+                gsap.to('header', {filter: 'invert(1)'})
+            }
+        })
+
+        gsap.timeline({
+            scrollTrigger: {
+                trigger: '.about .s3',
+                start: 'top 80%',
+                end: 'bottom 80%',
+                toggleActions: 'play none none reverse'
+            }
+        })
+        .from('.about .s3 .num', {x: '-100%', duration: .6})
+        .from('.about .s3 .num span', {x: '-100%', opacity: 0, duration: 1.4, ease: 'bounce.out'}, '-=10%')
+
+        gsap.from('.about .s3 .txt > span', {
+            opacity: 0, 
+            y: 30, 
+            duration: .8,
+            scrollTrigger: {
+                trigger: '.about .s3 .txt > span',
+                start: 'top 85%',
+                end: 'bottom 85%',
+                toggleActions: 'play none none reverse'
+            }
+        })
+
+        const sloganTimeline = gsap.timeline({
+            scrollTrigger: {
+                trigger: '.about .s3 .txt .slogan',
+                start: 'top 85%',
+                end: 'bottom 85%',
+                toggleActions: 'play none none reverse'
+            }
+        });
+
+        const sloganElement = document.querySelector('.about .s3 .txt .slogan');
+        if (sloganElement) {
+            const sloganHTML = sloganElement.innerHTML;
+            sloganElement.innerHTML = sloganHTML
+                .replace('정확한 기록은', '<span class="s3-text-1">정확한 기록은</span>')
+                .replace('신뢰의 출발점', '<span class="s3-text-2">신뢰의 출발점</span>')
+                .replace('입니다.', '<span class="s3-text-3">입니다.</span>')
+                .replace('회의부터 재판까지,', '<span class="s3-text-4">회의부터 재판까지,</span>')
+                .replace('전 분야 기록을 책임', '<span class="s3-text-5">전 분야 기록을 책임</span>')
+                .replace('집니다.', '<span class="s3-text-6">집니다.</span>');
+
+            sloganTimeline
+                .from('.s3-text-1', {opacity: 0, y: 20, duration: .5})
+                .from('.s3-text-2', {opacity: 0, y: 20, duration: .6}, '-=0.2')
+                .from('.s3-text-3', {opacity: 0, y: 20, duration: .5}, '-=0.2')
+                .from('.s3-text-4', {opacity: 0, y: 20, duration: .6}, '-=0.2')
+                .from('.s3-text-5', {opacity: 0, y: 20, duration: .6}, '-=0.2')
+                .from('.s3-text-6', {opacity: 0, y: 20, duration: .5}, '-=0.2');
+        }
+
+        gsap.from('.about .s3 .txt dl dt', {
+            opacity: 0, 
+            y: 30, 
+            duration: .8,
+            delay: 0.3,
+            scrollTrigger: {
+                trigger: '.about .s3 .txt dl dt',
+                start: 'top 85%',
+                end: 'bottom 85%',
+                toggleActions: 'play none none reverse'
+            }
+        })
+
+        gsap.from('.about .s3 .txt dl dd p', {
+            opacity: 0, 
+            y: 25, 
+            duration: .8, 
+            stagger: .2,
+            scrollTrigger: {
+                trigger: '.about .s3 .txt dl dd',
+                start: 'top 85%',
+                end: 'bottom 85%',
+                toggleActions: 'play none none reverse'
+            }
+        })
+
+        gsap.from('.about .s3 .txt .btn .viewBtn', {
+            opacity: 0, 
+            scale: 0.9,
+            duration: .8,
+            scrollTrigger: {
+                trigger: '.about .s3 .txt .btn',
+                start: 'top 90%',
+                end: 'bottom 85%',
+                toggleActions: 'play none none reverse'
+            }
+        })
+
+        gsap.utils.toArray('.about .s4 .keyWrap dl').forEach(el => {
+            gsap.timeline({
+                scrollTrigger: {
+                    trigger: el.querySelector('dt'),
+                    start: 'top 80%',
+                    end: 'bottom 80%',
+                    toggleActions: 'play none none reverse'
+                }
+            })
+            .from(el.querySelectorAll('dt > *'), {x: -40, opacity: 0, duration: .6, stagger: .1})
+
+            gsap.timeline({
+                scrollTrigger: {
+                    trigger: el.querySelector('dd'),
+                    start: 'top 80%',
+                    end: 'bottom 80%',
+                    toggleActions: 'play none none reverse'
+                }
+            })
+            .from(el.querySelectorAll('dd > *'), {y: 40, opacity: 0, duration: .6, stagger: .1})
+        });
+
+        gsap.from('.s5 .titleBox > *', {
+            opacity: 0, y: 40, duration: .8, stagger: .1,
+            scrollTrigger: {
+                trigger: '.s5 .titleBox',
+                start: 'top 80%',
+                end: 'bottom 80%',
+                toggleActions: 'play none none reverse'
+            }
+        })
+
+        const s5_1_marquees = document.querySelector('.s5 .marquee._1 .absol');
+        const marqueeChildSize_1 = s5_1_marquees.querySelector('.mar_ch');
+        const childClone_1 = marqueeChildSize_1.cloneNode(true); 
+        s5_1_marquees.appendChild(childClone_1);
+        gsap.fromTo(s5_1_marquees.querySelectorAll('.mar_ch'), {
+            xPercent: 0
+        }, {
+            xPercent: -100,
+            repeat: -1,
+            duration: 30,
+            ease: 'none'
+        });
+
+        const s5_2_marquees = document.querySelector('.s5 .marquee._2 .absol');
+        const marqueeChildSize_2 = s5_2_marquees.querySelector('.mar_ch');
+        const childClone_2 = marqueeChildSize_2.cloneNode(true); 
+        s5_2_marquees.appendChild(childClone_2);
+        gsap.fromTo(s5_2_marquees.querySelectorAll('.mar_ch'), {
+            xPercent: -100
+        }, {
+            xPercent: 0,
+            repeat: -1,
+            duration: 30,
+            ease: 'none'
+        });
+
+        const s5_3_marquees = document.querySelector('.s5 .marquee._3 .absol');
+        const marqueeChildSize_3 = s5_3_marquees.querySelector('.mar_ch');
+        const childClone_3 = marqueeChildSize_3.cloneNode(true); 
+        s5_3_marquees.appendChild(childClone_3);
+        gsap.fromTo(s5_3_marquees.querySelectorAll('.mar_ch'), {
+            xPercent: 0
+        }, {
+            xPercent: -100,
+            repeat: -1,
+            duration: 30,
+            ease: 'none'
+        });
+
+        const quickContact = document.querySelector('.quick-contact');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > window.innerHeight * 0.5) {
+                quickContact.classList.add('visible');
+            } else {
+                quickContact.classList.remove('visible');
+            }
+        });
+    </script>
+</body>
+</html>
