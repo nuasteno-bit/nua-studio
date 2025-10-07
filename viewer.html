@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none">
   <title>속기 뷰어 (단일 파일)</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Jua&family=Do+Hyeon&family=Nanum+Gothic&family=Nanum+Myeongjo&family=Nanum+Pen+Script&family=Gothic+A1&family=IBM+Plex+Sans+KR&family=Pretendard:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -9,6 +10,8 @@
     html, body {
       width: 100vw; height: 100vh; margin: 0; padding: 0;
       background: #000; color: #fff; overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
     }
     
     /* 연결 상태 인디케이터 */
@@ -135,6 +138,7 @@
       display: none;
       transition: all 0.2s ease;
       user-select: none;
+      touch-action: none;
     }
     
     #margin-adjuster.active {
@@ -759,6 +763,20 @@
         width: calc(100% - 20px);
         height: calc(100% - 20px);
       }
+      
+      .tab-btn {
+        font-size: 11px;
+        padding: 10px 12px;
+      }
+      
+      .option-row {
+        flex-wrap: wrap;
+      }
+      
+      .option-row > label {
+        width: 100%;
+        margin-bottom: 5px;
+      }
     }
   </style>
 </head>
@@ -1049,8 +1067,6 @@
               <input type="text" class="color-hex" id="dividerColorHex" value="#4A90E2" maxlength="7">
             </div>
           </div>
-          
-
         </div>
       </div>
       
@@ -1095,7 +1111,9 @@ const CONFIG = {
   SOCKET_URL: 'https://nuastudio.co.kr',
   RECONNECT_DELAY: 1000,
   RECONNECT_DELAY_MAX: 5000,
-  KEEPALIVE_INTERVAL: 15 * 60 * 1000
+  KEEPALIVE_INTERVAL: 15 * 60 * 1000,
+  LONG_PRESS_DURATION: 500,
+  DOUBLE_TAP_DELAY: 300
 };
 
 // URL 파라미터에서 채널 코드 가져오기
@@ -1138,8 +1156,6 @@ let previousDisplay = '';
 let isSubtitleHidden = false;
 let wasHiddenBeforeInput = false;
 
-// 화자 구분 관련
-
 // 여백 조절기 상태
 let marginAdjusterEnabled = false;
 let marginOffset = 0;
@@ -1148,6 +1164,12 @@ let startY = 0;
 let startOffset = 0;
 let maxMargin = 0;
 let ignoreNextClick = false;
+
+// ========== 터치 관련 변수 ==========
+let longPressTimer = null;
+let lastTapTime = 0;
+let touchStartTime = 0;
+let touchMoved = false;
 
 // ========== 스크롤 안정화 관련 변수 ==========
 let lastRenderedText = '';
@@ -1212,6 +1234,139 @@ const presets = {
     shadowY: '1'
   }
 };
+
+// ========== 터치 이벤트 핸들러 ==========
+function setupTouchEvents() {
+  const viewer = document.getElementById('viewer');
+  
+  // 꾹 누르기 (Long Press) - 옵션창 열기
+  viewer.addEventListener('touchstart', (e) => {
+    // 옵션창이나 여백 조절기가 아닌 경우에만
+    if (e.target.closest('.quick-wheel-overlay') || e.target.closest('#margin-adjuster')) {
+      return;
+    }
+    
+    touchStartTime = Date.now();
+    touchMoved = false;
+    
+    // 롱프레스 타이머 시작
+    longPressTimer = setTimeout(() => {
+      if (!touchMoved) {
+        // 500ms 이상 누르고 있으면 옵션창 열기
+        navigator.vibrate && navigator.vibrate(50); // 진동 피드백
+        showQuickWheel();
+      }
+    }, CONFIG.LONG_PRESS_DURATION);
+  }, { passive: true });
+  
+  viewer.addEventListener('touchmove', () => {
+    touchMoved = true;
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+  }, { passive: true });
+  
+  viewer.addEventListener('touchend', (e) => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+    
+    // 더블 탭 감지 - 전체화면 전환
+    if (!touchMoved && (Date.now() - touchStartTime) < 200) {
+      const currentTime = Date.now();
+      const timeSinceLastTap = currentTime - lastTapTime;
+      
+      if (timeSinceLastTap < CONFIG.DOUBLE_TAP_DELAY && timeSinceLastTap > 0) {
+        // 더블 탭 감지됨
+        e.preventDefault();
+        toggleFullscreen();
+        lastTapTime = 0; // 리셋
+      } else {
+        lastTapTime = currentTime;
+      }
+    }
+  });
+  
+  viewer.addEventListener('touchcancel', () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+  });
+}
+
+// 전체화면 토글 함수
+function toggleFullscreen() {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    // 전체화면 진입
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen();
+    } else if (document.documentElement.webkitRequestFullscreen) {
+      document.documentElement.webkitRequestFullscreen();
+    }
+    showNotification('전체화면 모드');
+  } else {
+    // 전체화면 종료
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+    showNotification('창 모드');
+  }
+}
+
+// 전체화면 상태 변경 감지
+function handleFullscreenChange() {
+  const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  
+  if (isFullscreen) {
+    // 전체화면 진입 시 연결 상태 숨김
+    connectionStatus.style.display = 'none';
+  } else {
+    // 전체화면 종료 시 연결 상태 표시
+    connectionStatus.style.display = 'flex';
+  }
+}
+
+// 여백 조절기 터치 지원
+function setupMarginAdjusterTouch() {
+  marginAdjuster.addEventListener('touchstart', (e) => {
+    if (!marginAdjusterEnabled) return;
+    
+    e.preventDefault();
+    isDragging = true;
+    const touch = e.touches[0];
+    startY = touch.clientY;
+    startOffset = marginOffset;
+    maxMargin = Math.floor(viewerText.clientHeight * 0.8);
+    marginAdjuster.classList.add('dragging');
+  }, { passive: false });
+  
+  document.addEventListener('touchmove', (e) => {
+    if (!isDragging) return;
+    
+    e.preventDefault();
+    const touch = e.touches[0];
+    const deltaY = startY - touch.clientY;
+    const newOffset = Math.max(0, Math.min(maxMargin, startOffset + deltaY));
+    
+    if (newOffset !== marginOffset) {
+      marginOffset = newOffset;
+      marginAdjuster.style.bottom = marginOffset + 'px';
+      updateMarginAdjuster();
+    }
+  }, { passive: false });
+  
+  document.addEventListener('touchend', () => {
+    if (isDragging) {
+      isDragging = false;
+      marginAdjuster.classList.remove('dragging');
+    }
+  });
+}
 
 // ========== 스크롤 유틸리티 함수 ==========
 function isNearBottom(el, thresholdPx = 2) {
@@ -1677,7 +1832,7 @@ function toggleSubtitleVisibility(forceShow = null) {
 }
 
 // ========== UI 이벤트 ==========
-// 우클릭 메뉴
+// 우클릭 메뉴 (데스크톱)
 document.addEventListener('contextmenu', (e) => {
   e.preventDefault();
   showQuickWheel();
@@ -1717,7 +1872,7 @@ function setupOptionsDrag() {
   const quickWheel = document.querySelector('.quick-wheel');
   const quickWheelHeader = document.querySelector('.quick-wheel-header');
   
-  // 헤더 클릭 시 드래그 시작
+  // 헤더 클릭 시 드래그 시작 (마우스)
   quickWheelHeader.addEventListener('mousedown', (e) => {
     // X 버튼 클릭은 제외
     if (e.target.classList.contains('close-btn')) return;
@@ -1738,7 +1893,7 @@ function setupOptionsDrag() {
     quickWheelHeader.style.cursor = 'grabbing';
   });
   
-  // 드래그 중
+  // 드래그 중 (마우스)
   document.addEventListener('mousemove', (e) => {
     if (!isDraggingOptions) return;
     
@@ -1750,12 +1905,44 @@ function setupOptionsDrag() {
     quickWheel.style.transform = `translate(${x}px, ${y}px)`;
   });
   
-  // 드래그 종료
+  // 드래그 종료 (마우스)
   document.addEventListener('mouseup', () => {
     if (isDraggingOptions) {
       isDraggingOptions = false;
       quickWheelHeader.style.cursor = 'grab';
     }
+  });
+  
+  // 터치 드래그 (모바일)
+  quickWheelHeader.addEventListener('touchstart', (e) => {
+    if (e.target.classList.contains('close-btn')) return;
+    
+    isDraggingOptions = true;
+    const touch = e.touches[0];
+    
+    const rect = quickWheel.getBoundingClientRect();
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    
+    optionsInitialX = rect.left + rect.width / 2 - centerX;
+    optionsInitialY = rect.top + rect.height / 2 - centerY;
+    
+    optionsDragStartX = touch.clientX - optionsInitialX;
+    optionsDragStartY = touch.clientY - optionsInitialY;
+  });
+  
+  document.addEventListener('touchmove', (e) => {
+    if (!isDraggingOptions) return;
+    
+    const touch = e.touches[0];
+    const x = touch.clientX - optionsDragStartX;
+    const y = touch.clientY - optionsDragStartY;
+    
+    quickWheel.style.transform = `translate(${x}px, ${y}px)`;
+  });
+  
+  document.addEventListener('touchend', () => {
+    isDraggingOptions = false;
   });
 }
 
@@ -1819,7 +2006,7 @@ function updateMarginAdjuster() {
   viewerText.scrollTop = viewerText.scrollHeight;
 }
 
-// 드래그 이벤트
+// 드래그 이벤트 (마우스)
 marginAdjuster.addEventListener('mousedown', e => {
   if (!marginAdjusterEnabled) return;
   isDragging = true;
@@ -2211,15 +2398,10 @@ document.getElementById('subtitleVisible').addEventListener('change', (e) => {
   toggleSubtitleVisibility(e.target.checked);
 });
 
-// 전체화면 토글
+// 데스크톱 전체화면 토글 (더블클릭)
 document.body.addEventListener('dblclick', e => {
   if (e.target.closest('.quick-wheel-overlay')) return;
-  
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen();
-  } else {
-    document.exitFullscreen();
-  }
+  toggleFullscreen();
 });
 
 // 단축키 이벤트
@@ -2236,11 +2418,7 @@ document.addEventListener('keydown', (e) => {
       
     case 'Enter':
       e.preventDefault();
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-      } else {
-        document.exitFullscreen();
-      }
+      toggleFullscreen();
       break;
       
     case 'ArrowUp':
@@ -2284,6 +2462,16 @@ window.addEventListener('load', () => {
   // 옵션창 드래그 설정
   setupOptionsDrag();
   
+  // 터치 이벤트 설정
+  setupTouchEvents();
+  
+  // 여백 조절기 터치 지원
+  setupMarginAdjusterTouch();
+  
+  // 전체화면 이벤트 리스너
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+  
   // X 버튼 클릭 이벤트
   document.getElementById('closeOptionsBtn').addEventListener('click', closeQuickWheel);
   
@@ -2295,7 +2483,12 @@ window.addEventListener('load', () => {
   
   // 단축키 안내 (3초 후)
   setTimeout(() => {
-    showNotification('단축키: Enter(전체화면), ↑↓(글자크기), H(자막 숨김)', 5000);
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+      showNotification('꾹 터치: 설정, 더블 터치: 전체화면, H키: 자막 숨김', 5000);
+    } else {
+      showNotification('단축키: Enter(전체화면), ↑↓(글자크기), H(자막 숨김)', 5000);
+    }
   }, 3000);
 });
 
