@@ -12,7 +12,7 @@
         hostname === 'nuastudio.co.kr' ||
         hostname === 'www.nuastudio.co.kr';
 
-    const RENDER_API = 'https://nua-studio.onrender.com';
+    const RENDER_API = 'https://live.nuastudio.co.kr';
 
     let SOCKET_URL;
 
@@ -62,3 +62,4 @@
     console.log('Environment:', window.CONFIG.environment);
     console.log('========================');
 })();
+
