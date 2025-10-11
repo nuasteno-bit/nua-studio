@@ -26,6 +26,7 @@
       "main.js",
       "preload.js",
       "electron-viewer.html",
+      "electron-quick-menu.html",
       "electron-options.html",
       "login-dialog.html",
       "final_logo.ico",
