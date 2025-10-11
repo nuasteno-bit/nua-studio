@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Quick Menu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Pretendard:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            overflow: hidden;
+        }
+        
+        .quick-wheel {
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .quick-wheel-header {
+            padding: 20px 25px 15px;
+            border-bottom: 1px solid #e0e0e0;
+            position: relative;
+            background: #fff;
+            flex-shrink: 0;
+            cursor: move;
+            cursor: grab;
+            user-select: none;
+            -webkit-app-region: drag;
+        }
+        
+        .quick-wheel-header:active {
+            cursor: grabbing;
+        }
+        
+        .quick-wheel-header h3 {
+            font-size: 20px;
+            color: #000;
+            font-weight: 700;
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+            margin: 0;
+            pointer-events: none;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #f5f5f5;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            font-size: 18px;
+            color: #666;
+            -webkit-app-region: no-drag;
+        }
+        
+        .close-btn:hover {
+            background: #00f0ff;
+            color: #fff;
+            transform: scale(1.1);
+        }
+        
+        .tab-nav {
+            display: flex;
+            background: #f8f8f8;
+            padding: 5px;
+            margin: 15px 25px 0;
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            color: #999;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Pretendard', sans-serif;
+            border-radius: 8px;
+        }
+        
+        .tab-btn:hover {
+            color: #333;
+        }
+        
+        .tab-btn.active {
+            color: #000;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px 25px;
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            background: #fff;
+            color: #333;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .tab-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .tab-content::-webkit-scrollbar-track {
+            background: #f8f8f8;
+            border-radius: 3px;
+        }
+        
+        .tab-content::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+        
+        .option-group {
+            margin-bottom: 20px;
+        }
+        
+        .option-group-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #00c4d4;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .option-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .option-row > label {
+            width: 80px;
+            flex-shrink: 0;
+            color: #666;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        input[type="color"] {
+            width: 40px;
+            height: 30px;
+            border: 1px solid #e0e0e0;
+            background: #fff;
+            cursor: pointer;
+            border-radius: 6px;
+            padding: 2px;
+        }
+        
+        input[type="text"].color-hex {
+            width: 75px;
+            height: 30px;
+            font-size: 11px;
+            padding: 0 8px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            background: #fff;
+            color: #333;
+            text-align: center;
+            font-family: 'Poppins', monospace;
+            text-transform: uppercase;
+            transition: border-color 0.2s;
+        }
+        
+        input[type="text"].color-hex:focus {
+            outline: none;
+            border-color: #00f0ff;
+        }
+        
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #00f0ff;
+            cursor: pointer;
+        }
+        
+        input[type="number"] {
+            width: 60px;
+            height: 30px;
+            font-size: 12px;
+            padding: 0 8px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            background: #fff;
+            color: #333;
+            text-align: center;
+            font-family: 'Pretendard', sans-serif;
+            transition: border-color 0.2s;
+        }
+        
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #00f0ff;
+        }
+        
+        input[type="range"] {
+            width: 100px;
+            height: 5px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #e0e0e0;
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            background: linear-gradient(135deg, #00f0ff, #00c4d4);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        select {
+            flex: 1;
+            height: 30px;
+            font-size: 12px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            background: #fff;
+            color: #333;
+            padding: 0 8px;
+            font-family: 'Pretendard', sans-serif;
+            cursor: pointer;
+        }
+        
+        .num-btns {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+        
+        .num-btns button {
+            width: 20px;
+            height: 12px;
+            font-size: 8px;
+            border: none;
+            background: #f0f0f0;
+            color: #666;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            line-height: 1;
+        }
+        
+        .num-btns button:hover {
+            background: #00f0ff;
+            color: #fff;
+        }
+        
+        .unit-label {
+            color: #999;
+            font-size: 12px;
+        }
+        
+        .color-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex: 1;
+        }
+        
+        .align-btn, .valign-btn {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #e0e0e0;
+            background: #fff;
+            color: #666;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+        }
+        
+        .align-btn:hover, .valign-btn:hover {
+            background: #f0f0f0;
+            border-color: #ccc;
+        }
+        
+        .align-btn.active, .valign-btn.active {
+            background: linear-gradient(135deg, #00f0ff, #00c4d4);
+            border-color: transparent;
+            color: #fff;
+        }
+        
+        .preset-add-section {
+            background: #f8f8f8;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .preset-add-row {
+            display: flex;
+            gap: 10px;
+        }
+        
+        #newPresetName {
+            flex: 1;
+            height: 40px;
+            padding: 0 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: 'Pretendard', sans-serif;
+            background: #fff;
+        }
+        
+        #addPresetBtn {
+            padding: 0 20px;
+            height: 40px;
+            background: #000;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Pretendard', sans-serif;
+            transition: all 0.2s ease;
+        }
+        
+        #addPresetBtn:hover {
+            background: #333;
+        }
+        
+        .preset-grid {
+            display: grid;
+            gap: 10px;
+        }
+        
+        .preset-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .preset-item:hover {
+            border-color: #00f0ff;
+            background: #f0fdff;
+            transform: translateX(5px);
+        }
+        
+        .preset-item.selected {
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(0, 196, 212, 0.1));
+            border-color: #00f0ff;
+        }
+        
+        .preset-item.default {
+            background: #f8f8f8;
+        }
+        
+        .preset-name {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .preset-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .preset-btn {
+            padding: 6px 14px;
+            font-size: 11px;
+            border: 1px solid #e0e0e0;
+            background: #fff;
+            color: #666;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+        }
+        
+        .preset-btn:hover {
+            background: #f0f0f0;
+            border-color: #ccc;
+        }
+        
+        .preset-btn.apply {
+            background: linear-gradient(135deg, #00f0ff, #00c4d4);
+            border-color: transparent;
+            color: white;
+        }
+        
+        .preset-btn.apply:hover {
+            background: linear-gradient(135deg, #00c4d4, #00a0b0);
+        }
+        
+        .preset-btn.delete {
+            color: #ff4444;
+            border-color: #ffdddd;
+        }
+        
+        .preset-btn.delete:hover {
+            background: #fff0f0;
+            border-color: #ff4444;
+        }
+        
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .quick-action-item {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 18px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .quick-action-item:hover {
+            background: linear-gradient(135deg, #00f0ff, #00c4d4);
+            border-color: transparent;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 240, 255, 0.3);
+        }
+        
+        .quick-action-item:hover .action-icon,
+        .quick-action-item:hover .action-label {
+            color: #fff;
+        }
+        
+        .action-icon {
+            font-size: 24px;
+            color: #333;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            transition: color 0.2s;
+        }
+        
+        .action-label {
+            font-size: 12px;
+            color: #666;
+            font-family: 'Pretendard', sans-serif;
+            transition: color 0.2s;
+        }
+        
+        .wheel-exit {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .wheel-btn.exit-small {
+            width: auto;
+            padding: 8px 16px;
+            background: #f5f5f5;
+            color: #666;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            font-family: 'Pretendard', sans-serif;
+            transition: all 0.2s;
+        }
+        
+        .wheel-btn.exit-small:hover {
+            background: #ff4444;
+            color: #fff;
+            border-color: #ff4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="quick-wheel">
+        <div class="quick-wheel-header">
+            <h3>Viewer Settings</h3>
+            <button class="close-btn" id="closeBtn">✕</button>
+        </div>
+        
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="tab0">빠른설정</button>
+            <button class="tab-btn" data-tab="tab1">기본설정</button>
+            <button class="tab-btn" data-tab="tab2">레이아웃</button>
+            <button class="tab-btn" data-tab="tab3">화자구분</button>
+            <button class="tab-btn" data-tab="tab4">프리셋</button>
+        </div>
+        
+        <!-- 탭 0: 빠른 설정 -->
+        <div id="tab0" class="tab-content active">
+            <div class="quick-actions-grid">
+                <div class="quick-action-item" data-action="font-up">
+                    <div class="action-icon">A+</div>
+                    <div class="action-label">글자 크게</div>
+                </div>
+                <div class="quick-action-item" data-action="font-down">
+                    <div class="action-icon">A-</div>
+                    <div class="action-label">글자 작게</div>
+                </div>
+                <div class="quick-action-item" data-action="transparent">
+                    <div class="action-icon">○</div>
+                    <div class="action-label">투명 모드</div>
+                </div>
+                <div class="quick-action-item" data-action="border">
+                    <div class="action-icon">□</div>
+                    <div class="action-label">테두리</div>
+                </div>
+                <div class="quick-action-item" data-action="subtitle-toggle">
+                    <div class="action-icon">👁</div>
+                    <div class="action-label">자막 표시/숨김</div>
+                </div>
+                <div class="quick-action-item" data-action="save-text">
+                    <div class="action-icon">💾</div>
+                    <div class="action-label">텍스트 저장</div>
+                </div>
+                <div class="quick-action-item" data-action="fullscreen">
+                    <div class="action-icon">⛶</div>
+                    <div class="action-label">전체화면</div>
+                </div>
+            </div>
+            
+            <div class="wheel-exit">
+                <button class="wheel-btn exit-small" data-action="exit">
+                    <span>× 앱 종료</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 탭 1: 기본 설정 -->
+        <div id="tab1" class="tab-content">
+            <div class="option-group">
+                <div class="option-group-title">Display</div>
+                
+                <div class="option-row">
+                    <label>배경색</label>
+                    <div class="color-input-group">
+                        <input type="color" id="bgColor" value="#000000">
+                        <input type="text" class="color-hex" id="bgColorHex" value="#000000" maxlength="7">
+                        <input type="range" id="bgAlpha" min="0" max="100" value="100">
+                        <span class="unit-label" id="bgAlphaLabel" style="min-width: 35px;">100%</span>
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>글자색</label>
+                    <div class="color-input-group">
+                        <input type="color" id="fontColor" value="#ffffff">
+                        <input type="text" class="color-hex" id="fontColorHex" value="#FFFFFF" maxlength="7">
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>글꼴</label>
+                    <select id="fontFamily">
+                        <option value="'Noto Sans KR', sans-serif">Noto Sans KR</option>
+                        <option value="'Pretendard', sans-serif">Pretendard</option>
+                        <option value="sans-serif">기본 고딕</option>
+                        <option value="serif">기본 명조</option>
+                        <option value="'Nanum Gothic', sans-serif">나눔고딕</option>
+                        <option value="'Nanum Myeongjo', serif">나눔명조</option>
+                        <option value="'Nanum Pen Script', cursive">나눔펜체</option>
+                        <option value="'Jua', sans-serif">주아체</option>
+                        <option value="'Do Hyeon', sans-serif">도현체</option>
+                        <option value="'Gothic A1', sans-serif">고딕 A1</option>
+                        <option value="'IBM Plex Sans KR', sans-serif">IBM Plex 한글</option>
+                    </select>
+                </div>
+                
+                <div class="option-row">
+                    <label>글자크기</label>
+                    <input type="number" id="fontSize" min="10" max="200" value="32">
+                    <span class="unit-label">px</span>
+                    <div class="num-btns">
+                        <button type="button" id="fontSizeUp">▲</button>
+                        <button type="button" id="fontSizeDown">▼</button>
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>자간</label>
+                    <input type="number" id="letterSpacing" min="-5" max="20" value="0" step="0.5">
+                    <span class="unit-label">px</span>
+                    <div class="num-btns">
+                        <button type="button" id="letterSpacingUp">▲</button>
+                        <button type="button" id="letterSpacingDown">▼</button>
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>행간</label>
+                    <input type="number" id="lineHeight" min="1" max="3" value="1.5" step="0.1">
+                    <span class="unit-label">배</span>
+                    <div class="num-btns">
+                        <button type="button" id="lineHeightUp">▲</button>
+                        <button type="button" id="lineHeightDown">▼</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="option-group">
+                <div class="option-group-title">Effects</div>
+                
+                <div class="option-row">
+                    <label>테두리</label>
+                    <div class="color-input-group">
+                        <input type="checkbox" id="outlineOn">
+                        <input type="color" id="outlineColor" value="#000000">
+                        <input type="text" class="color-hex" id="outlineColorHex" value="#000000" maxlength="7">
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>굵기</label>
+                    <input type="number" id="outlineWidth" min="0" max="10" value="2" step="0.1">
+                    <span class="unit-label">px</span>
+                    <div class="num-btns">
+                        <button type="button" id="outlineWidthUp">▲</button>
+                        <button type="button" id="outlineWidthDown">▼</button>
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>그림자</label>
+                    <div class="color-input-group">
+                        <input type="checkbox" id="shadowOn">
+                        <input type="color" id="shadowColor" value="#000000">
+                        <input type="text" class="color-hex" id="shadowColorHex" value="#000000" maxlength="7">
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>흐림</label>
+                    <input type="number" id="shadowBlur" min="0" max="20" value="3" step="0.5">
+                    <span class="unit-label">px</span>
+                    <div class="num-btns">
+                        <button type="button" id="shadowBlurUp">▲</button>
+                        <button type="button" id="shadowBlurDown">▼</button>
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>X 방향</label>
+                    <input type="number" id="shadowX" min="-20" max="20" value="2" step="0.5">
+                    <span class="unit-label">px</span>
+                    <div class="num-btns">
+                        <button type="button" id="shadowXUp">▲</button>
+                        <button type="button" id="shadowXDown">▼</button>
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>Y 방향</label>
+                    <input type="number" id="shadowY" min="-20" max="20" value="2" step="0.5">
+                    <span class="unit-label">px</span>
+                    <div class="num-btns">
+                        <button type="button" id="shadowYUp">▲</button>
+                        <button type="button" id="shadowYDown">▼</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 탭 2: 레이아웃 -->
+        <div id="tab2" class="tab-content">
+            <div class="option-group">
+                <div class="option-group-title">Display Control</div>
+                
+                <div class="option-row">
+                    <label>자막 표시</label>
+                    <input type="checkbox" id="subtitleVisible" checked>
+                    <span style="color: #888; font-size: 11px; margin-left: 8px;">체크 해제 시 자막 숨김 (단축키: H)</span>
+                </div>
+            </div>
+            
+            <div class="option-group">
+                <div class="option-group-title">Alignment</div>
+                
+                <div class="option-row">
+                    <label>가로정렬</label>
+                    <div style="display: flex; gap: 5px;">
+                        <button type="button" class="align-btn active" data-align="left">◀</button>
+                        <button type="button" class="align-btn" data-align="center">■</button>
+                        <button type="button" class="align-btn" data-align="right">▶</button>
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>세로정렬</label>
+                    <div style="display: flex; gap: 5px;">
+                        <button type="button" class="valign-btn active" data-valign="top">▲</button>
+                        <button type="button" class="valign-btn" data-valign="middle">■</button>
+                        <button type="button" class="valign-btn" data-valign="bottom">▼</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="option-group">
+                <div class="option-group-title">Spacing</div>
+                
+                <div class="option-row">
+                    <label>여백조절기</label>
+                    <input type="checkbox" id="marginAdjusterToggle">
+                    <span style="color: #888; font-size: 11px; margin-left: 8px;">하단 드래그바</span>
+                </div>
+                
+                <div class="option-row">
+                    <label>상단여백</label>
+                    <input type="number" id="marginTop" min="0" max="200" value="10" step="5">
+                    <span class="unit-label">px</span>
+                    <div class="num-btns">
+                        <button type="button" id="marginTopUp">▲</button>
+                        <button type="button" id="marginTopDown">▼</button>
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>하단여백</label>
+                    <input type="number" id="marginBottom" min="0" max="400" value="10" step="5">
+                    <span class="unit-label">px</span>
+                    <div class="num-btns">
+                        <button type="button" id="marginBottomUp">▲</button>
+                        <button type="button" id="marginBottomDown">▼</button>
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>좌측여백</label>
+                    <input type="number" id="marginLeft" min="0" max="200" value="10" step="5">
+                    <span class="unit-label">px</span>
+                    <div class="num-btns">
+                        <button type="button" id="marginLeftUp">▲</button>
+                        <button type="button" id="marginLeftDown">▼</button>
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>우측여백</label>
+                    <input type="number" id="marginRight" min="0" max="200" value="10" step="5">
+                    <span class="unit-label">px</span>
+                    <div class="num-btns">
+                        <button type="button" id="marginRightUp">▲</button>
+                        <button type="button" id="marginRightDown">▼</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 탭 3: 화자 구분 -->
+        <div id="tab3" class="tab-content">
+            <div class="option-group">
+                <div class="option-group-title">Speaker Identification</div>
+                
+                <div class="option-row">
+                    <label>화자 구분</label>
+                    <input type="checkbox" id="speakerEnabled" checked>
+                    <span style="color: #888; font-size: 11px; margin-left: 8px;">활성화</span>
+                </div>
+                
+                <div class="option-row">
+                    <label>구분 스타일</label>
+                    <select id="speakerStyle">
+                        <option value="divider">세로선 구분</option>
+                        <option value="pipe">파이프 문자 ( | )</option>
+                        <option value="minimal">미니멀 (은은하게)</option>
+                        <option value="none">구분선 없음</option>
+                    </select>
+                </div>
+                
+                <div class="option-row">
+                    <label>화자 배경</label>
+                    <div class="color-input-group">
+                        <input type="checkbox" id="speakerBgEnabled" checked>
+                        <input type="color" id="speakerBgColor" value="#ffffff">
+                        <input type="range" id="speakerBgAlpha" min="0" max="30" value="8">
+                        <span class="unit-label" id="speakerBgAlphaLabel" style="min-width: 35px;">8%</span>
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>구분선 색상</label>
+                    <div class="color-input-group">
+                        <input type="checkbox" id="colorDividerEnabled">
+                        <input type="color" id="dividerColor" value="#4A90E2">
+                        <input type="text" class="color-hex" id="dividerColorHex" value="#4A90E2" maxlength="7">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 탭 4: 프리셋 -->
+        <div id="tab4" class="tab-content">
+            <div class="preset-add-section">
+                <div class="preset-add-row">
+                    <input type="text" id="newPresetName" placeholder="새 프리셋 이름 입력...">
+                    <button id="addPresetBtn">현재 설정 저장</button>
+                </div>
+            </div>
+            
+            <div class="preset-section">
+                <div class="option-group-title">기본 프리셋</div>
+                <div class="preset-grid" id="defaultPresets"></div>
+            </div>
+            
+            <div class="preset-section">
+                <div class="option-group-title">내 프리셋</div>
+                <div class="preset-grid" id="userPresets"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+const isElectron = typeof window.electronAPI !== 'undefined';
+
+const defaultPresets = {
+    'basic': {
+        name: '기본 자막',
+        bgColor: '#000000',
+        bgAlpha: '100',
+        fontColor: '#ffffff',
+        fontSize: '32',
+        fontFamily: "'Noto Sans KR', sans-serif",
+        letterSpacing: '0',
+        lineHeight: '1.5',
+        outlineOn: false,
+        shadowOn: false,
+        isTransparent: false
+    },
+    'chroma': {
+        name: '크로마키 방송',
+        bgColor: '#00ff00',
+        bgAlpha: '100',
+        fontColor: '#ffffff',
+        fontSize: '36',
+        fontFamily: "'Noto Sans KR', sans-serif",
+        letterSpacing: '0',
+        lineHeight: '1.5',
+        outlineOn: false,
+        shadowOn: true,
+        shadowColor: '#000000',
+        shadowBlur: '3',
+        shadowX: '2',
+        shadowY: '2',
+        isTransparent: false
+    },
+    'official': {
+        name: '공식 행사',
+        bgColor: '#003d7a',
+        bgAlpha: '85',
+        fontColor: '#ffffff',
+        fontSize: '34',
+        fontFamily: "'Noto Sans KR', sans-serif",
+        letterSpacing: '0',
+        lineHeight: '1.5',
+        outlineOn: false,
+        shadowOn: false,
+        isTransparent: false
+    }
+};
+
+function getCurrentSettings() {
+    return {
+        bgColor: document.getElementById('bgColor').value,
+        bgAlpha: document.getElementById('bgAlpha').value,
+        fontColor: document.getElementById('fontColor').value,
+        fontSize: document.getElementById('fontSize').value,
+        fontFamily: document.getElementById('fontFamily').value,
+        letterSpacing: document.getElementById('letterSpacing').value,
+        lineHeight: document.getElementById('lineHeight').value,
+        outlineOn: document.getElementById('outlineOn').checked,
+        outlineColor: document.getElementById('outlineColor').value,
+        outlineWidth: document.getElementById('outlineWidth').value,
+        shadowOn: document.getElementById('shadowOn').checked,
+        shadowColor: document.getElementById('shadowColor').value,
+        shadowBlur: document.getElementById('shadowBlur').value,
+        shadowX: document.getElementById('shadowX').value,
+        shadowY: document.getElementById('shadowY').value,
+        textAlign: document.querySelector('.align-btn.active')?.dataset.align || 'left',
+        verticalAlign: document.querySelector('.valign-btn.active')?.dataset.valign || 'top',
+        marginTop: document.getElementById('marginTop').value,
+        marginBottom: document.getElementById('marginBottom').value,
+        marginLeft: document.getElementById('marginLeft').value,
+        marginRight: document.getElementById('marginRight').value,
+        marginAdjusterEnabled: document.getElementById('marginAdjusterToggle').checked,
+        speakerEnabled: document.getElementById('speakerEnabled').checked,
+        speakerStyle: document.getElementById('speakerStyle').value,
+        speakerBgEnabled: document.getElementById('speakerBgEnabled').checked,
+        speakerBgColor: document.getElementById('speakerBgColor').value,
+        speakerBgAlpha: document.getElementById('speakerBgAlpha').value,
+        colorDividerEnabled: document.getElementById('colorDividerEnabled').checked,
+        dividerColor: document.getElementById('dividerColor').value,
+        subtitleVisible: document.getElementById('subtitleVisible').checked
+    };
+}
+
+function applySettings(settings) {
+    Object.keys(settings).forEach(key => {
+        const el = document.getElementById(key);
+        if (el) {
+            if (el.type === 'checkbox') {
+                el.checked = settings[key];
+            } else {
+                el.value = settings[key];
+            }
+        }
+    });
+    
+    if (settings.bgAlpha) document.getElementById('bgAlphaLabel').textContent = settings.bgAlpha + '%';
+    if (settings.bgColor) document.getElementById('bgColorHex').value = settings.bgColor.toUpperCase();
+    if (settings.fontColor) document.getElementById('fontColorHex').value = settings.fontColor.toUpperCase();
+    if (settings.outlineColor) document.getElementById('outlineColorHex').value = settings.outlineColor.toUpperCase();
+    if (settings.shadowColor) document.getElementById('shadowColorHex').value = settings.shadowColor.toUpperCase();
+    if (settings.dividerColor) document.getElementById('dividerColorHex').value = settings.dividerColor.toUpperCase();
+    if (settings.speakerBgAlpha) document.getElementById('speakerBgAlphaLabel').textContent = settings.speakerBgAlpha + '%';
+    
+    if (settings.marginAdjusterEnabled !== undefined) {
+        document.getElementById('marginAdjusterToggle').checked = settings.marginAdjusterEnabled;
+    }
+    
+    if (settings.textAlign) {
+        document.querySelectorAll('.align-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.align === settings.textAlign);
+        });
+    }
+    
+    if (settings.verticalAlign) {
+        document.querySelectorAll('.valign-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.valign === settings.verticalAlign);
+        });
+    }
+}
+
+function applyToViewer() {
+    if (!isElectron) return;
+    const settings = getCurrentSettings();
+    window.electronAPI.applyQuickMenuSettings(settings);
+}
+
+function setupColorSync(colorId, hexId) {
+    const colorInput = document.getElementById(colorId);
+    const hexInput = document.getElementById(hexId);
+    
+    colorInput.addEventListener('input', () => {
+        hexInput.value = colorInput.value.toUpperCase();
+        applyToViewer();
+    });
+    
+    hexInput.addEventListener('input', (e) => {
+        let value = e.target.value;
+        if (!value.startsWith('#')) value = '#' + value;
+        value = value.slice(0, 7);
+        e.target.value = value.toUpperCase();
+        
+        if (/^#[0-9A-F]{6}$/i.test(value)) {
+            colorInput.value = value;
+            applyToViewer();
+        }
+    });
+}
+
+class PresetManager {
+    constructor() {
+        this.defaultPresets = defaultPresets;
+        this.userPresets = this.loadUserPresets();
+        this.renderPresets();
+    }
+    
+    loadUserPresets() {
+        const saved = localStorage.getItem('userPresets');
+        return saved ? JSON.parse(saved) : {};
+    }
+    
+    saveUserPresets() {
+        localStorage.setItem('userPresets', JSON.stringify(this.userPresets));
+    }
+    
+    addUserPreset(name) {
+        if (!name || name.trim() === '') {
+            alert('프리셋 이름을 입력해주세요');
+            return false;
+        }
+        
+        if (this.defaultPresets[name] || this.userPresets[name]) {
+            alert('이미 존재하는 프리셋입니다');
+            return false;
+        }
+        
+        const currentSettings = getCurrentSettings();
+        this.userPresets[name] = {
+            name: name,
+            ...currentSettings,
+            createdAt: Date.now()
+        };
+        
+        this.saveUserPresets();
+        this.renderPresets();
+        document.getElementById('newPresetName').value = '';
+        return true;
+    }
+    
+    removeUserPreset(key) {
+        if (!this.userPresets[key]) return false;
+        delete this.userPresets[key];
+        this.saveUserPresets();
+        this.renderPresets();
+        return true;
+    }
+    
+    applyPreset(preset) {
+        console.log('[Preset] Applying preset:', preset.name);
+        applySettings(preset);
+        applyToViewer();
+    }
+    
+    renderPresets() {
+        const defaultContainer = document.getElementById('defaultPresets');
+        const userContainer = document.getElementById('userPresets');
+        
+        defaultContainer.innerHTML = '';
+        Object.entries(this.defaultPresets).forEach(([key, preset]) => {
+            defaultContainer.appendChild(this.createPresetElement(key, preset, true));
+        });
+        
+        userContainer.innerHTML = '';
+        if (Object.keys(this.userPresets).length === 0) {
+            userContainer.innerHTML = '<div style="color: #999; text-align: center; padding: 20px;">저장된 프리셋이 없습니다</div>';
+        } else {
+            Object.entries(this.userPresets).forEach(([key, preset]) => {
+                userContainer.appendChild(this.createPresetElement(key, preset, false));
+            });
+        }
+    }
+    
+    createPresetElement(key, preset, isDefault) {
+        const div = document.createElement('div');
+        div.className = `preset-item ${isDefault ? 'default' : 'custom'}`;
+        div.innerHTML = `
+            <div class="preset-name">${preset.name}</div>
+            <div class="preset-actions">
+                <button class="preset-btn apply">적용</button>
+                ${!isDefault ? '<button class="preset-btn delete">삭제</button>' : ''}
+            </div>
+        `;
+        
+        div.querySelector('.apply').addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.applyPreset(preset);
+            document.querySelectorAll('.preset-item').forEach(el => el.classList.remove('selected'));
+            div.classList.add('selected');
+        });
+        
+        const deleteBtn = div.querySelector('.delete');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (confirm(`"${preset.name}" 프리셋을 삭제하시겠습니까?`)) {
+                    this.removeUserPreset(key);
+                }
+            });
+        }
+        
+        return div;
+    }
+}
+
+let presetManager;
+
+// 탭 전환
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const targetTab = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(targetTab).classList.add('active');
+    });
+});
+
+// 닫기 버튼
+document.getElementById('closeBtn').addEventListener('click', () => {
+    console.log('[QuickMenu] Close button clicked');
+    if (isElectron) {
+        window.electronAPI.closeQuickMenu();
+    }
+});
+
+// 빠른 액션 버튼들
+document.querySelectorAll('.quick-action-item').forEach(item => {
+    item.addEventListener('click', () => {
+        const action = item.dataset.action;
+        console.log('[QuickMenu] Quick action clicked:', action);
+        if (isElectron) {
+            window.electronAPI.quickAction(action);
+        }
+    });
+});
+
+document.querySelector('.wheel-btn.exit-small').addEventListener('click', () => {
+    console.log('[QuickMenu] Exit button clicked');
+    if (isElectron) {
+        window.electronAPI.quickAction('exit');
+    }
+});
+
+// 모든 input에 applyToViewer 연결
+const inputs = ['bgColor', 'bgAlpha', 'fontColor', 'fontSize', 'fontFamily', 'letterSpacing', 'lineHeight',
+    'outlineOn', 'outlineColor', 'outlineWidth', 'shadowOn', 'shadowColor', 'shadowBlur', 'shadowX', 'shadowY',
+    'marginTop', 'marginBottom', 'marginLeft', 'marginRight', 'marginAdjusterToggle',
+    'speakerEnabled', 'speakerStyle', 'speakerBgEnabled', 'speakerBgColor', 'speakerBgAlpha',
+    'colorDividerEnabled', 'dividerColor', 'subtitleVisible'];
+
+inputs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+        el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', applyToViewer);
+    }
+});
+
+document.getElementById('bgAlpha').addEventListener('input', (e) => {
+    document.getElementById('bgAlphaLabel').textContent = e.target.value + '%';
+    applyToViewer(); // 투명도 변경도 즉시 적용
+});
+
+document.getElementById('speakerBgAlpha').addEventListener('input', (e) => {
+    document.getElementById('speakerBgAlphaLabel').textContent = e.target.value + '%';
+});
+
+// 정렬 버튼들
+document.querySelectorAll('.align-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.align-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        applyToViewer();
+    });
+});
+
+document.querySelectorAll('.valign-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.valign-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        applyToViewer();
+    });
+});
+
+// 숫자 증감 버튼들
+const numBtns = {
+    fontSize: [1, 10, 200],
+    letterSpacing: [0.5, -5, 20],
+    lineHeight: [0.1, 1, 3],
+    outlineWidth: [0.1, 0, 10],
+    shadowBlur: [0.5, 0, 20],
+    shadowX: [0.5, -20, 20],
+    shadowY: [0.5, -20, 20],
+    marginTop: [5, 0, 200],
+    marginBottom: [5, 0, 400],
+    marginLeft: [5, 0, 200],
+    marginRight: [5, 0, 200]
+};
+
+Object.keys(numBtns).forEach(id => {
+    const [step, min, max] = numBtns[id];
+    document.getElementById(id + 'Up')?.addEventListener('click', () => {
+        const input = document.getElementById(id);
+        input.value = Math.min(max, Number(input.value) + step).toFixed(step < 1 ? 1 : 0);
+        applyToViewer();
+    });
+    document.getElementById(id + 'Down')?.addEventListener('click', () => {
+        const input = document.getElementById(id);
+        input.value = Math.max(min, Number(input.value) - step).toFixed(step < 1 ? 1 : 0);
+        applyToViewer();
+    });
+});
+
+// 초기화
+window.addEventListener('load', () => {
+    setupColorSync('bgColor', 'bgColorHex');
+    setupColorSync('fontColor', 'fontColorHex');
+    setupColorSync('outlineColor', 'outlineColorHex');
+    setupColorSync('shadowColor', 'shadowColorHex');
+    setupColorSync('dividerColor', 'dividerColorHex');
+    
+    presetManager = new PresetManager();
+    
+    document.getElementById('addPresetBtn').addEventListener('click', () => {
+        const name = document.getElementById('newPresetName').value.trim();
+        presetManager.addUserPreset(name);
+    });
+    
+    // 뷰어로부터 현재 설정 요청
+    if (isElectron) {
+        window.electronAPI.requestCurrentSettings();
+    }
+});
+
+// 뷰어로부터 설정 받기
+if (isElectron) {
+    window.electronAPI.onLoadSettings((settings) => {
+        applySettings(settings);
+    });
+}
+    </script>
+</body>
+</html>
