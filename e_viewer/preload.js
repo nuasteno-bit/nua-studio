@@ -1,6 +1,5 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-// Renderer 프로세스에 노출할 API
 contextBridge.exposeInMainWorld('electronAPI', {
   // 채널 연결 (로그인 창에서 사용)
   connectChannel: (data) => ipcRenderer.invoke('connect-channel', data),
@@ -17,6 +16,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 전체화면 해제
   exitFullscreen: () => ipcRenderer.send('exit-fullscreen'),
   
+  // 앱 종료
+  exitApp: () => ipcRenderer.send('exit-app'),
+  
   // 옵션 창 열기
   openOptions: (settings) => ipcRenderer.send('open-options', settings),
   
@@ -29,25 +31,36 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 컨텍스트 메뉴 표시
   showContextMenu: (options) => ipcRenderer.send('show-context-menu', options),
   
+  // Quick Menu 관련 (추가)
+  openQuickMenu: () => ipcRenderer.send('open-quick-menu'),
+  closeQuickMenu: () => ipcRenderer.send('close-quick-menu'),
+  requestCurrentSettings: () => ipcRenderer.send('request-current-settings'),
+  sendSettingsToMenu: (settings) => ipcRenderer.send('send-settings-to-menu', settings),
+  applyQuickMenuSettings: (settings) => ipcRenderer.send('apply-quick-menu-settings', settings),
+  quickAction: (action) => ipcRenderer.send('quick-action', action),
+  confirmExit: () => ipcRenderer.invoke('confirm-exit'),
+  onLoadSettings: (callback) => {
+    ipcRenderer.on('load-settings', (event, settings) => callback(settings));
+  },
+  
   // 이벤트 리스너 등록
   on: (channel, callback) => {
-    // 허용된 채널 목록
     const validChannels = [
-      'deep-link-join',           // 딥링크로 채널 참가
-      'channel-code',              // 채널 코드 전달 (legacy)
-      'update-settings',           // 설정 업데이트
-      'toggle-transparent',        // 투명 모드 토글
-      'toggle-scrollbar',          // 스크롤바 토글
-      'always-on-top-changed',     // 항상 위 상태 변경
-      'load-settings'              // 설정 로드 (옵션 창)
+      'deep-link-join',
+      'channel-code',
+      'update-settings',
+      'send-current-settings-to-menu',
+      'quick-action',
+      'toggle-transparent',
+      'toggle-scrollbar',
+      'always-on-top-changed',
+      'load-settings'
     ];
     
     if (validChannels.includes(channel)) {
-      // IPC 이벤트를 한 번만 등록하도록 처리
       const subscription = (event, ...args) => callback(...args);
       ipcRenderer.on(channel, subscription);
       
-      // 구독 해제 함수 반환
       return () => {
         ipcRenderer.removeListener(channel, subscription);
       };
@@ -78,6 +91,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       'deep-link-join',
       'channel-code',
       'update-settings',
+      'send-current-settings-to-menu',
+      'quick-action',
       'toggle-transparent',
       'toggle-scrollbar',
       'always-on-top-changed',
@@ -90,7 +105,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   }
 });
 
-// 개발 모드에서만 콘솔 로깅 활성화
 if (process.env.NODE_ENV === 'development') {
   contextBridge.exposeInMainWorld('debug', {
     log: (...args) => console.log('[Renderer]', ...args),
