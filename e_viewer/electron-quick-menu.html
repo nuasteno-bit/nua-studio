@@ -556,6 +556,16 @@
                     <div class="action-icon">👁</div>
                     <div class="action-label">자막 표시/숨김</div>
                 </div>
+                <!-- 스크롤 토글 추가 -->
+                <div class="quick-action-item" data-action="scroll-toggle">
+                    <div class="action-icon">↕</div>
+                    <div class="action-label">스크롤 ON/OFF</div>
+                </div>
+                <!-- 항상 위 추가 -->
+                <div class="quick-action-item" data-action="always-on-top">
+                    <div class="action-icon">📌</div>
+                    <div class="action-label">항상 위</div>
+                </div>
                 <div class="quick-action-item" data-action="save-text">
                     <div class="action-icon">💾</div>
                     <div class="action-label">텍스트 저장</div>
@@ -644,6 +654,35 @@
                 </div>
             </div>
             
+            <!-- 어절 배경색 섹션 추가 -->
+            <div class="option-group">
+                <div class="option-group-title">Word Background</div>
+                
+                <div class="option-row">
+                    <label>어절배경</label>
+                    <div class="color-input-group">
+                        <input type="checkbox" id="wordBgEnabled">
+                        <input type="color" id="wordBgColor" value="#ffffff">
+                        <input type="text" class="color-hex" id="wordBgColorHex" value="#FFFFFF" maxlength="7">
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>투명도</label>
+                    <input type="range" id="wordBgAlpha" min="5" max="50" value="15">
+                    <span class="unit-label" id="wordBgAlphaLabel" style="min-width: 35px;">15%</span>
+                </div>
+                
+                <div class="option-row">
+                    <label>스타일</label>
+                    <select id="wordBgStyle">
+                        <option value="minimal">미니멀</option>
+                        <option value="subtle" selected>은은하게</option>
+                        <option value="full">강조</option>
+                    </select>
+                </div>
+            </div>
+            
             <div class="option-group">
                 <div class="option-group-title">Effects</div>
                 
@@ -716,6 +755,20 @@
                     <label>자막 표시</label>
                     <input type="checkbox" id="subtitleVisible" checked>
                     <span style="color: #888; font-size: 11px; margin-left: 8px;">체크 해제 시 자막 숨김 (단축키: H)</span>
+                </div>
+                
+                <!-- 스크롤 옵션 추가 -->
+                <div class="option-row">
+                    <label>스크롤</label>
+                    <input type="checkbox" id="scrollEnabled" checked>
+                    <span style="color: #888; font-size: 11px; margin-left: 8px;">체크 해제 시 스크롤 비활성화 (S)</span>
+                </div>
+                
+                <!-- 항상 위 옵션 추가 -->
+                <div class="option-row">
+                    <label>항상 위</label>
+                    <input type="checkbox" id="alwaysOnTop">
+                    <span style="color: #888; font-size: 11px; margin-left: 8px;">다른 창 위에 표시 (T)</span>
                 </div>
             </div>
             
@@ -935,7 +988,13 @@ function getCurrentSettings() {
         speakerBgAlpha: document.getElementById('speakerBgAlpha').value,
         colorDividerEnabled: document.getElementById('colorDividerEnabled').checked,
         dividerColor: document.getElementById('dividerColor').value,
-        subtitleVisible: document.getElementById('subtitleVisible').checked
+        subtitleVisible: document.getElementById('subtitleVisible').checked,
+        scrollEnabled: document.getElementById('scrollEnabled').checked, // 추가
+        alwaysOnTop: document.getElementById('alwaysOnTop').checked, // 추가
+        wordBgEnabled: document.getElementById('wordBgEnabled').checked, // 추가
+        wordBgColor: document.getElementById('wordBgColor').value, // 추가
+        wordBgAlpha: document.getElementById('wordBgAlpha').value, // 추가
+        wordBgStyle: document.getElementById('wordBgStyle').value // 추가
     };
 }
 
@@ -958,6 +1017,8 @@ function applySettings(settings) {
     if (settings.shadowColor) document.getElementById('shadowColorHex').value = settings.shadowColor.toUpperCase();
     if (settings.dividerColor) document.getElementById('dividerColorHex').value = settings.dividerColor.toUpperCase();
     if (settings.speakerBgAlpha) document.getElementById('speakerBgAlphaLabel').textContent = settings.speakerBgAlpha + '%';
+    if (settings.wordBgColor) document.getElementById('wordBgColorHex').value = settings.wordBgColor.toUpperCase(); // 추가
+    if (settings.wordBgAlpha) document.getElementById('wordBgAlphaLabel').textContent = settings.wordBgAlpha + '%'; // 추가
     
     if (settings.marginAdjusterEnabled !== undefined) {
         document.getElementById('marginAdjusterToggle').checked = settings.marginAdjusterEnabled;
@@ -1153,7 +1214,8 @@ const inputs = ['bgColor', 'bgAlpha', 'fontColor', 'fontSize', 'fontFamily', 'le
     'outlineOn', 'outlineColor', 'outlineWidth', 'shadowOn', 'shadowColor', 'shadowBlur', 'shadowX', 'shadowY',
     'marginTop', 'marginBottom', 'marginLeft', 'marginRight', 'marginAdjusterToggle',
     'speakerEnabled', 'speakerStyle', 'speakerBgEnabled', 'speakerBgColor', 'speakerBgAlpha',
-    'colorDividerEnabled', 'dividerColor', 'subtitleVisible'];
+    'colorDividerEnabled', 'dividerColor', 'subtitleVisible',
+    'scrollEnabled', 'alwaysOnTop', 'wordBgEnabled', 'wordBgColor', 'wordBgAlpha', 'wordBgStyle']; // 추가
 
 inputs.forEach(id => {
     const el = document.getElementById(id);
@@ -1169,6 +1231,11 @@ document.getElementById('bgAlpha').addEventListener('input', (e) => {
 
 document.getElementById('speakerBgAlpha').addEventListener('input', (e) => {
     document.getElementById('speakerBgAlphaLabel').textContent = e.target.value + '%';
+});
+
+// 어절 배경 투명도 추가
+document.getElementById('wordBgAlpha').addEventListener('input', (e) => {
+    document.getElementById('wordBgAlphaLabel').textContent = e.target.value + '%';
 });
 
 // 정렬 버튼들
@@ -1224,6 +1291,7 @@ window.addEventListener('load', () => {
     setupColorSync('outlineColor', 'outlineColorHex');
     setupColorSync('shadowColor', 'shadowColorHex');
     setupColorSync('dividerColor', 'dividerColorHex');
+    setupColorSync('wordBgColor', 'wordBgColorHex'); // 추가
     
     presetManager = new PresetManager();
     
