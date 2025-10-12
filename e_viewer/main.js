@@ -124,7 +124,7 @@ function createViewerWindow(channel, token = null) {
     minHeight: 80,
     frame: false,
     transparent: true,
-    backgroundColor: '#01000000',
+    backgroundColor: '#00000000',
     hasShadow: false,
     skipTaskbar: false,
     alwaysOnTop: false,
@@ -147,25 +147,13 @@ function createViewerWindow(channel, token = null) {
   
   viewerWindow.once('ready-to-show', () => {
     viewerWindow.setTitle('NUA Subtitle Viewer');
+    viewerWindow.show();
     
-    if (process.platform === 'win32') {
-      viewerWindow.setBackgroundColor('#FF000000');
-      viewerWindow.show();
-      
-      setTimeout(() => {
-        viewerWindow.setBackgroundColor('#00000000');
-        viewerWindow.setIgnoreMouseEvents(false);
-      }, 100);
-    } else {
-      viewerWindow.setBackgroundColor('#00000000');
-      viewerWindow.show();
-    }
-    
+    // Windows 렌더링 버그 수정: 크기 변경으로 강제 리페인트
     setTimeout(() => {
       viewerWindow.setTitle('');
-      viewerWindow.setIgnoreMouseEvents(false);
       const [width, height] = viewerWindow.getSize();
-      viewerWindow.setSize(width + 1, height);
+      viewerWindow.setSize(width, height + 1);
       setTimeout(() => {
         viewerWindow.setSize(width, height);
       }, 50);
@@ -178,16 +166,7 @@ function createViewerWindow(channel, token = null) {
     }
   });
   
-  viewerWindow.on('blur', () => {
-    setTimeout(() => {
-      viewerWindow.setTitle('');
-      viewerWindow.setBackgroundColor('#01000000');
-      viewerWindow.setIgnoreMouseEvents(false);
-    }, 10);
-  });
-  
   viewerWindow.on('closed', () => {
-    // Quick Menu도 닫기
     if (quickMenuWindow && !quickMenuWindow.isDestroyed()) {
       quickMenuWindow.close();
     }
@@ -198,7 +177,6 @@ function createViewerWindow(channel, token = null) {
   return viewerWindow;
 }
 
-// Quick Menu 창 생성
 function createQuickMenuWindow() {
   if (quickMenuWindow && !quickMenuWindow.isDestroyed()) {
     quickMenuWindow.show();
@@ -233,12 +211,10 @@ function createQuickMenuWindow() {
   });
 }
 
-// Quick Menu 열기
 ipcMain.on('open-quick-menu', () => {
   createQuickMenuWindow();
 });
 
-// Quick Menu 닫기
 ipcMain.on('close-quick-menu', () => {
   console.log('[Main] Closing Quick Menu');
   if (quickMenuWindow && !quickMenuWindow.isDestroyed()) {
@@ -246,39 +222,33 @@ ipcMain.on('close-quick-menu', () => {
   }
 });
 
-// Quick Menu → Viewer 설정 전송
 ipcMain.on('apply-quick-menu-settings', (event, settings) => {
   if (viewerWindow && !viewerWindow.isDestroyed()) {
     viewerWindow.webContents.send('update-settings', settings);
   }
 });
 
-// Quick Menu에서 빠른 액션 실행
 ipcMain.on('quick-action', (event, action) => {
   if (viewerWindow && !viewerWindow.isDestroyed()) {
     viewerWindow.webContents.send('quick-action', action);
   }
 });
 
-// Quick Menu가 현재 설정 요청
 ipcMain.on('request-current-settings', () => {
   if (viewerWindow && !viewerWindow.isDestroyed()) {
     viewerWindow.webContents.send('send-current-settings-to-menu');
   }
 });
 
-// Viewer → Quick Menu 설정 전송
 ipcMain.on('send-settings-to-menu', (event, settings) => {
   if (quickMenuWindow && !quickMenuWindow.isDestroyed()) {
     quickMenuWindow.webContents.send('load-settings', settings);
   }
 });
 
-// 앱 종료 확인 대화상자
 ipcMain.handle('confirm-exit', async (event) => {
   console.log('[Main] Exit confirmation requested');
   
-  // Quick Menu를 먼저 닫기 (대화상자가 가려지지 않도록)
   if (quickMenuWindow && !quickMenuWindow.isDestroyed()) {
     quickMenuWindow.close();
   }
@@ -294,27 +264,13 @@ ipcMain.handle('confirm-exit', async (event) => {
   });
   
   console.log('[Main] User selected:', result.response === 1 ? '종료' : '취소');
-  return result.response === 1; // 종료 버튼 클릭 시 true
+  return result.response === 1;
 });
 
 ipcMain.on('toggle-transparent-main', (event, isTransparent) => {
   if (!viewerWindow) return;
   
-  if (isTransparent) {
-    viewerWindow.setBackgroundColor('#FF000000');
-    
-    setTimeout(() => {
-      viewerWindow.setBackgroundColor('#01000000');
-      viewerWindow.setIgnoreMouseEvents(false);
-      viewerWindow.focus();
-      viewerWindow.blur();
-      viewerWindow.focus();
-    }, 50);
-  } else {
-    viewerWindow.setBackgroundColor('#FF000000');
-    viewerWindow.setIgnoreMouseEvents(false);
-  }
-  
+  // Windows 렌더링 강제 갱신
   const [width, height] = viewerWindow.getSize();
   viewerWindow.setSize(width + 1, height + 1);
   setTimeout(() => {
@@ -492,6 +448,17 @@ ipcMain.handle('close-window', () => {
   if (mainWindow) {
     mainWindow.close();
   }
+});
+
+// Windows 렌더링 강제 갱신 핸들러 추가
+ipcMain.on('force-repaint', () => {
+  if (!viewerWindow || viewerWindow.isDestroyed()) return;
+  
+  const [width, height] = viewerWindow.getSize();
+  viewerWindow.setSize(width + 1, height + 1);
+  setTimeout(() => {
+    viewerWindow.setSize(width, height);
+  }, 50);
 });
 
 app.whenReady().then(() => {
