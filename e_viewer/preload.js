@@ -31,7 +31,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 컨텍스트 메뉴 표시
   showContextMenu: (options) => ipcRenderer.send('show-context-menu', options),
   
-  // Quick Menu 관련 (추가)
+  // Quick Menu 관련
   openQuickMenu: () => ipcRenderer.send('open-quick-menu'),
   closeQuickMenu: () => ipcRenderer.send('close-quick-menu'),
   requestCurrentSettings: () => ipcRenderer.send('request-current-settings'),
@@ -42,6 +42,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onLoadSettings: (callback) => {
     ipcRenderer.on('load-settings', (event, settings) => callback(settings));
   },
+  
+  // Windows 렌더링 강제 갱신
+  forceRepaint: () => ipcRenderer.send('force-repaint'),
   
   // 이벤트 리스너 등록
   on: (channel, callback) => {
@@ -112,3 +115,8 @@ if (process.env.NODE_ENV === 'development') {
     warn: (...args) => console.warn('[Renderer]', ...args)
   });
 }
+
+// process.platform을 렌더러에서 사용할 수 있도록 노출
+contextBridge.exposeInMainWorld('process', {
+  platform: process.platform
+});
