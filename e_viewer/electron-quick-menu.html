@@ -516,6 +516,80 @@
             color: #fff;
             border-color: #ff4444;
         }
+        
+        /* 커스텀 확인 모달 */
+        .confirm-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            border-radius: 20px;
+        }
+        
+        .confirm-modal.show {
+            display: flex;
+        }
+        
+        .confirm-content {
+            background: #fff;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 350px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .confirm-content p {
+            margin: 0 0 25px;
+            color: #333;
+            font-size: 15px;
+            font-family: 'Pretendard', sans-serif;
+            line-height: 1.5;
+        }
+        
+        .confirm-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .confirm-btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Pretendard', sans-serif;
+            transition: all 0.2s;
+        }
+        
+        .confirm-btn.cancel {
+            background: #f5f5f5;
+            color: #666;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .confirm-btn.cancel:hover {
+            background: #e0e0e0;
+        }
+        
+        .confirm-btn.confirm {
+            background: #ff4444;
+            color: #fff;
+        }
+        
+        .confirm-btn.confirm:hover {
+            background: #ff2222;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 68, 68, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -553,15 +627,13 @@
                     <div class="action-label">테두리</div>
                 </div>
                 <div class="quick-action-item" data-action="subtitle-toggle">
-                    <div class="action-icon">👁</div>
+                    <div class="action-icon">💬</div>
                     <div class="action-label">자막 표시/숨김</div>
                 </div>
-                <!-- 스크롤 토글 추가 -->
                 <div class="quick-action-item" data-action="scroll-toggle">
                     <div class="action-icon">↕</div>
                     <div class="action-label">스크롤 ON/OFF</div>
                 </div>
-                <!-- 항상 위 추가 -->
                 <div class="quick-action-item" data-action="always-on-top">
                     <div class="action-icon">📌</div>
                     <div class="action-label">항상 위</div>
@@ -654,7 +726,7 @@
                 </div>
             </div>
             
-            <!-- 어절 배경색 섹션 추가 -->
+            <!-- 어절 배경색 섹션 -->
             <div class="option-group">
                 <div class="option-group-title">Word Background</div>
                 
@@ -669,7 +741,7 @@
                 
                 <div class="option-row">
                     <label>투명도</label>
-                    <input type="range" id="wordBgAlpha" min="5" max="50" value="15">
+                    <input type="range" id="wordBgAlpha" min="5" max="100" value="15">
                     <span class="unit-label" id="wordBgAlphaLabel" style="min-width: 35px;">15%</span>
                 </div>
                 
@@ -680,6 +752,24 @@
                         <option value="subtle" selected>은은하게</option>
                         <option value="full">강조</option>
                     </select>
+                </div>
+                
+                <!-- 새로 추가: 배경색 한 줄로 -->
+                <div class="option-row">
+                    <label>한줄로</label>
+                    <input type="checkbox" id="wordBgContinuous">
+                    <span style="color: #888; font-size: 11px; margin-left: 8px;">공백도 배경색 연결</span>
+                </div>
+                
+                <!-- 새로 추가: 배경색 위아래 여백 -->
+                <div class="option-row">
+                    <label>위아래여백</label>
+                    <input type="number" id="wordBgPaddingY" min="-5" max="10" value="0" step="0.5">
+                    <span class="unit-label">px</span>
+                    <div class="num-btns">
+                        <button type="button" id="wordBgPaddingYUp">▲</button>
+                        <button type="button" id="wordBgPaddingYDown">▼</button>
+                    </div>
                 </div>
             </div>
             
@@ -757,14 +847,12 @@
                     <span style="color: #888; font-size: 11px; margin-left: 8px;">체크 해제 시 자막 숨김 (단축키: H)</span>
                 </div>
                 
-                <!-- 스크롤 옵션 추가 -->
                 <div class="option-row">
                     <label>스크롤</label>
                     <input type="checkbox" id="scrollEnabled" checked>
                     <span style="color: #888; font-size: 11px; margin-left: 8px;">체크 해제 시 스크롤 비활성화 (S)</span>
                 </div>
                 
-                <!-- 항상 위 옵션 추가 -->
                 <div class="option-row">
                     <label>항상 위</label>
                     <input type="checkbox" id="alwaysOnTop">
@@ -908,8 +996,20 @@
         </div>
     </div>
     
+    <!-- 커스텀 확인 모달 -->
+    <div class="confirm-modal" id="confirmModal">
+        <div class="confirm-content">
+            <p id="confirmMessage"></p>
+            <div class="confirm-buttons">
+                <button class="confirm-btn cancel">취소</button>
+                <button class="confirm-btn confirm">삭제</button>
+            </div>
+        </div>
+    </div>
+    
     <script>
 const isElectron = typeof window.electronAPI !== 'undefined';
+let currentViewerSettings = {};
 
 const defaultPresets = {
     'basic': {
@@ -957,6 +1057,39 @@ const defaultPresets = {
     }
 };
 
+// 커스텀 확인 대화상자 함수
+function showConfirm(message) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirmModal');
+        const messageEl = document.getElementById('confirmMessage');
+        const cancelBtn = modal.querySelector('.cancel');
+        const okBtn = modal.querySelector('.confirm');
+        
+        messageEl.textContent = message;
+        modal.classList.add('show');
+        
+        const handleCancel = () => {
+            modal.classList.remove('show');
+            cleanup();
+            resolve(false);
+        };
+        
+        const handleOk = () => {
+            modal.classList.remove('show');
+            cleanup();
+            resolve(true);
+        };
+        
+        const cleanup = () => {
+            cancelBtn.removeEventListener('click', handleCancel);
+            okBtn.removeEventListener('click', handleOk);
+        };
+        
+        cancelBtn.addEventListener('click', handleCancel);
+        okBtn.addEventListener('click', handleOk);
+    });
+}
+
 function getCurrentSettings() {
     return {
         bgColor: document.getElementById('bgColor').value,
@@ -989,16 +1122,21 @@ function getCurrentSettings() {
         colorDividerEnabled: document.getElementById('colorDividerEnabled').checked,
         dividerColor: document.getElementById('dividerColor').value,
         subtitleVisible: document.getElementById('subtitleVisible').checked,
-        scrollEnabled: document.getElementById('scrollEnabled').checked, // 추가
-        alwaysOnTop: document.getElementById('alwaysOnTop').checked, // 추가
-        wordBgEnabled: document.getElementById('wordBgEnabled').checked, // 추가
-        wordBgColor: document.getElementById('wordBgColor').value, // 추가
-        wordBgAlpha: document.getElementById('wordBgAlpha').value, // 추가
-        wordBgStyle: document.getElementById('wordBgStyle').value // 추가
+        scrollEnabled: document.getElementById('scrollEnabled').checked,
+        alwaysOnTop: document.getElementById('alwaysOnTop').checked,
+        wordBgEnabled: document.getElementById('wordBgEnabled').checked,
+        wordBgColor: document.getElementById('wordBgColor').value,
+        wordBgAlpha: document.getElementById('wordBgAlpha').value,
+        wordBgStyle: document.getElementById('wordBgStyle').value,
+        wordBgContinuous: document.getElementById('wordBgContinuous').checked,
+        wordBgPaddingY: document.getElementById('wordBgPaddingY').value,
+        isTransparent: currentViewerSettings.isTransparent || false
     };
 }
 
 function applySettings(settings) {
+    currentViewerSettings = { ...settings };
+    
     Object.keys(settings).forEach(key => {
         const el = document.getElementById(key);
         if (el) {
@@ -1017,8 +1155,8 @@ function applySettings(settings) {
     if (settings.shadowColor) document.getElementById('shadowColorHex').value = settings.shadowColor.toUpperCase();
     if (settings.dividerColor) document.getElementById('dividerColorHex').value = settings.dividerColor.toUpperCase();
     if (settings.speakerBgAlpha) document.getElementById('speakerBgAlphaLabel').textContent = settings.speakerBgAlpha + '%';
-    if (settings.wordBgColor) document.getElementById('wordBgColorHex').value = settings.wordBgColor.toUpperCase(); // 추가
-    if (settings.wordBgAlpha) document.getElementById('wordBgAlphaLabel').textContent = settings.wordBgAlpha + '%'; // 추가
+    if (settings.wordBgColor) document.getElementById('wordBgColorHex').value = settings.wordBgColor.toUpperCase();
+    if (settings.wordBgAlpha) document.getElementById('wordBgAlphaLabel').textContent = settings.wordBgAlpha + '%';
     
     if (settings.marginAdjusterEnabled !== undefined) {
         document.getElementById('marginAdjusterToggle').checked = settings.marginAdjusterEnabled;
@@ -1158,9 +1296,10 @@ class PresetManager {
         
         const deleteBtn = div.querySelector('.delete');
         if (deleteBtn) {
-            deleteBtn.addEventListener('click', (e) => {
+            deleteBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                if (confirm(`"${preset.name}" 프리셋을 삭제하시겠습니까?`)) {
+                const confirmed = await showConfirm(`"${preset.name}" 프리셋을 삭제하시겠습니까?`);
+                if (confirmed) {
                     this.removeUserPreset(key);
                 }
             });
@@ -1215,7 +1354,8 @@ const inputs = ['bgColor', 'bgAlpha', 'fontColor', 'fontSize', 'fontFamily', 'le
     'marginTop', 'marginBottom', 'marginLeft', 'marginRight', 'marginAdjusterToggle',
     'speakerEnabled', 'speakerStyle', 'speakerBgEnabled', 'speakerBgColor', 'speakerBgAlpha',
     'colorDividerEnabled', 'dividerColor', 'subtitleVisible',
-    'scrollEnabled', 'alwaysOnTop', 'wordBgEnabled', 'wordBgColor', 'wordBgAlpha', 'wordBgStyle']; // 추가
+    'scrollEnabled', 'alwaysOnTop', 'wordBgEnabled', 'wordBgColor', 'wordBgAlpha', 'wordBgStyle',
+    'wordBgContinuous', 'wordBgPaddingY'];
 
 inputs.forEach(id => {
     const el = document.getElementById(id);
@@ -1226,14 +1366,13 @@ inputs.forEach(id => {
 
 document.getElementById('bgAlpha').addEventListener('input', (e) => {
     document.getElementById('bgAlphaLabel').textContent = e.target.value + '%';
-    applyToViewer(); // 투명도 변경도 즉시 적용
+    applyToViewer();
 });
 
 document.getElementById('speakerBgAlpha').addEventListener('input', (e) => {
     document.getElementById('speakerBgAlphaLabel').textContent = e.target.value + '%';
 });
 
-// 어절 배경 투명도 추가
 document.getElementById('wordBgAlpha').addEventListener('input', (e) => {
     document.getElementById('wordBgAlphaLabel').textContent = e.target.value + '%';
 });
@@ -1267,7 +1406,8 @@ const numBtns = {
     marginTop: [5, 0, 200],
     marginBottom: [5, 0, 400],
     marginLeft: [5, 0, 200],
-    marginRight: [5, 0, 200]
+    marginRight: [5, 0, 200],
+    wordBgPaddingY: [0.5, -5, 10]
 };
 
 Object.keys(numBtns).forEach(id => {
@@ -1291,7 +1431,7 @@ window.addEventListener('load', () => {
     setupColorSync('outlineColor', 'outlineColorHex');
     setupColorSync('shadowColor', 'shadowColorHex');
     setupColorSync('dividerColor', 'dividerColorHex');
-    setupColorSync('wordBgColor', 'wordBgColorHex'); // 추가
+    setupColorSync('wordBgColor', 'wordBgColorHex');
     
     presetManager = new PresetManager();
     
