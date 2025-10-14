@@ -136,9 +136,12 @@ function createViewerWindow(channel, token = null) {
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
       webSecurity: true,
-      allowRunningInsecureContent: false
+      allowRunningInsecureContent: false,
+      devTools: true
     }
   });
+
+  console.log('[Main] Window created with clickable mode enabled');
 
   viewerWindow.channelCode = channel;
   viewerWindow.channelToken = token;
@@ -149,7 +152,7 @@ function createViewerWindow(channel, token = null) {
     viewerWindow.setTitle('NUA Subtitle Viewer');
     viewerWindow.show();
     
-    // Windows 렌더링 버그 수정: 크기 변경으로 강제 리페인트
+    // Windows 레이아웃 버그 수정: 태스크바 깜빡임 방지
     setTimeout(() => {
       viewerWindow.setTitle('');
       const [width, height] = viewerWindow.getSize();
@@ -203,9 +206,18 @@ function createQuickMenuWindow() {
   });
   
   quickMenuWindow.loadFile('electron-quick-menu.html');
+  
   quickMenuWindow.once('ready-to-show', () => {
     quickMenuWindow.show();
   });
+  
+  // 포커스 잃으면 자동으로 닫기
+  quickMenuWindow.on('blur', () => {
+    if (quickMenuWindow && !quickMenuWindow.isDestroyed()) {
+      quickMenuWindow.close();
+    }
+  });
+  
   quickMenuWindow.on('closed', () => {
     quickMenuWindow = null;
   });
@@ -267,14 +279,22 @@ ipcMain.handle('confirm-exit', async (event) => {
   return result.response === 1;
 });
 
+// 🔑 핵심 수정 2: 투명 모드 토글 시에도 클릭 가능 유지!
 ipcMain.on('toggle-transparent-main', (event, isTransparent) => {
   if (!viewerWindow) return;
   
-  // Windows 렌더링 강제 갱신
+  // 투명 모드에서도 클릭 활성화
+  viewerWindow.setIgnoreMouseEvents(false);
+  console.log('[Main] Force clickable mode, transparent:', isTransparent);
+  
+  // Windows 레이아웃 강제 갱신
   const [width, height] = viewerWindow.getSize();
   viewerWindow.setSize(width + 1, height + 1);
   setTimeout(() => {
     viewerWindow.setSize(width, height);
+    // 리사이즈 후에도 다시 설정
+    viewerWindow.setIgnoreMouseEvents(false);
+    console.log('[Main] Re-applied clickable after resize');
   }, 50);
 });
 
@@ -450,7 +470,7 @@ ipcMain.handle('close-window', () => {
   }
 });
 
-// Windows 렌더링 강제 갱신 핸들러 추가
+// Windows 레이아웃 강제 갱신 핸들러
 ipcMain.on('force-repaint', () => {
   if (!viewerWindow || viewerWindow.isDestroyed()) return;
   
@@ -460,6 +480,14 @@ ipcMain.on('force-repaint', () => {
     viewerWindow.setSize(width, height);
   }, 50);
 });
+
+// 🔑 핵심 수정 3: 안전장치 - 주기적으로 클릭 가능 상태 유지
+// 5초마다 체크해서 클릭이 통과되는 버그 방지
+setInterval(() => {
+  if (viewerWindow && !viewerWindow.isDestroyed()) {
+    viewerWindow.setIgnoreMouseEvents(false);
+  }
+}, 5000);
 
 app.whenReady().then(() => {
   console.log('[App] Ready. Pending deep link:', pendingDeepLink);
