@@ -517,7 +517,6 @@
             border-color: #ff4444;
         }
         
-        /* 커스텀 확인 모달 */
         .confirm-modal {
             position: fixed;
             top: 0;
@@ -754,14 +753,12 @@
                     </select>
                 </div>
                 
-                <!-- 새로 추가: 배경색 한 줄로 -->
                 <div class="option-row">
                     <label>한줄로</label>
                     <input type="checkbox" id="wordBgContinuous">
                     <span style="color: #888; font-size: 11px; margin-left: 8px;">공백도 배경색 연결</span>
                 </div>
                 
-                <!-- 새로 추가: 배경색 위아래 여백 -->
                 <div class="option-row">
                     <label>위아래여백</label>
                     <input type="number" id="wordBgPaddingY" min="-5" max="10" value="0" step="0.5">
@@ -861,6 +858,29 @@
             </div>
             
             <div class="option-group">
+                <div class="option-group-title">Auto Position</div>
+                
+                <div class="option-row">
+                    <label>줄 수</label>
+                    <select id="autoLayoutLines">
+                        <option value="1">1줄</option>
+                        <option value="2">2줄</option>
+                        <option value="3" selected>3줄</option>
+                        <option value="4">4줄</option>
+                        <option value="5">5줄</option>
+                    </select>
+                </div>
+                
+                <div class="option-row">
+                    <label>자동 맞춤</label>
+                    <div style="display: flex; gap: 8px; flex: 1;">
+                        <button type="button" class="preset-btn apply" id="autoPositionTop" style="flex: 1;">상단 맞춤</button>
+                        <button type="button" class="preset-btn apply" id="autoPositionBottom" style="flex: 1;">하단 맞춤</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="option-group">
                 <div class="option-group-title">Alignment</div>
                 
                 <div class="option-row">
@@ -950,6 +970,7 @@
                         <option value="divider">세로선 구분</option>
                         <option value="pipe">파이프 문자 ( | )</option>
                         <option value="minimal">미니멀 (은은하게)</option>
+                        <option value="label">라벨 분리 (화자 고정)</option>
                         <option value="none">구분선 없음</option>
                     </select>
                 </div>
@@ -1057,7 +1078,6 @@ const defaultPresets = {
     }
 };
 
-// 커스텀 확인 대화상자 함수
 function showConfirm(message) {
     return new Promise((resolve) => {
         const modal = document.getElementById('confirmModal');
@@ -1130,6 +1150,7 @@ function getCurrentSettings() {
         wordBgStyle: document.getElementById('wordBgStyle').value,
         wordBgContinuous: document.getElementById('wordBgContinuous').checked,
         wordBgPaddingY: document.getElementById('wordBgPaddingY').value,
+        autoLayoutLines: document.getElementById('autoLayoutLines').value,
         isTransparent: currentViewerSettings.isTransparent || false
     };
 }
@@ -1355,12 +1376,27 @@ const inputs = ['bgColor', 'bgAlpha', 'fontColor', 'fontSize', 'fontFamily', 'le
     'speakerEnabled', 'speakerStyle', 'speakerBgEnabled', 'speakerBgColor', 'speakerBgAlpha',
     'colorDividerEnabled', 'dividerColor', 'subtitleVisible',
     'scrollEnabled', 'alwaysOnTop', 'wordBgEnabled', 'wordBgColor', 'wordBgAlpha', 'wordBgStyle',
-    'wordBgContinuous', 'wordBgPaddingY'];
+    'wordBgContinuous', 'wordBgPaddingY', 'autoLayoutLines'];
 
 inputs.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
         el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', applyToViewer);
+    }
+});
+
+// 자동 맞춤 버튼
+document.getElementById('autoPositionTop')?.addEventListener('click', () => {
+    const lines = document.getElementById('autoLayoutLines').value;
+    if (isElectron) {
+        window.electronAPI.quickAction('auto-position-top');
+    }
+});
+
+document.getElementById('autoPositionBottom')?.addEventListener('click', () => {
+    const lines = document.getElementById('autoLayoutLines').value;
+    if (isElectron) {
+        window.electronAPI.quickAction('auto-position-bottom');
     }
 });
 
