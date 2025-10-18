@@ -10,6 +10,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   maximize: () => ipcRenderer.send('maximize'),
   close: () => ipcRenderer.send('close'),
   
+  // 🆕 자동 레이아웃: 창 크기 + 위치 자동 조절 (한 번만 실행)
+  resizeWindow: (width, height, position) => ipcRenderer.invoke('resize-window-auto', width, height, position),
+  
   // 항상 위 토글
   toggleAlwaysOnTop: () => ipcRenderer.send('toggle-always-on-top'),
   
