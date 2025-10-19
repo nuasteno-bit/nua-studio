@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, net, Menu, dialog, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, net, Menu, dialog, screen, globalShortcut } = require('electron');
 const path = require('path');
 
 app.setName('NUA Subtitle Viewer');
@@ -152,7 +152,7 @@ function createViewerWindow(channel, token = null) {
     viewerWindow.setTitle('NUA Subtitle Viewer');
     viewerWindow.show();
     
-    // Windows ë ˆì´ì•„ì›ƒ ë²„ê·¸ ìˆ˜ì •: íƒœìŠ¤í¬ë°” ê¹œë¹¡ìž„ ë°©ì§€
+    // Windows 렌더링 버그 수정: 타이틀바 깜빡임 방지
     setTimeout(() => {
       viewerWindow.setTitle('');
       const [width, height] = viewerWindow.getSize();
@@ -211,7 +211,7 @@ function createQuickMenuWindow() {
     quickMenuWindow.show();
   });
   
-  // í¬ì»¤ìŠ¤ ìžƒìœ¼ë©´ ìžë™ìœ¼ë¡œ ë‹«ê¸°
+  // 포커스 잃으면 자동으로 닫기
   quickMenuWindow.on('blur', () => {
     if (quickMenuWindow && !quickMenuWindow.isDestroyed()) {
       quickMenuWindow.close();
@@ -221,6 +221,51 @@ function createQuickMenuWindow() {
   quickMenuWindow.on('closed', () => {
     quickMenuWindow = null;
   });
+}
+
+// 🆕 전역 단축키 등록 함수
+function registerGlobalShortcuts() {
+  // Alt+`: 테두리
+  globalShortcut.register('Alt+`', () => {
+    if (viewerWindow && !viewerWindow.isDestroyed()) {
+      viewerWindow.webContents.send('quick-action', 'border');
+      console.log('[GlobalShortcut] Alt+` pressed - Toggle border');
+    }
+  });
+  
+  // Alt+1: 자막 숨김/표시
+  globalShortcut.register('Alt+1', () => {
+    if (viewerWindow && !viewerWindow.isDestroyed()) {
+      viewerWindow.webContents.send('quick-action', 'subtitle-toggle');
+      console.log('[GlobalShortcut] Alt+1 pressed - Toggle subtitle');
+    }
+  });
+  
+  // Alt+2: 투명 모드
+  globalShortcut.register('Alt+2', () => {
+    if (viewerWindow && !viewerWindow.isDestroyed()) {
+      viewerWindow.webContents.send('quick-action', 'transparent');
+      console.log('[GlobalShortcut] Alt+2 pressed - Toggle transparent');
+    }
+  });
+  
+  // Alt+3: 글자 크게
+  globalShortcut.register('Alt+3', () => {
+    if (viewerWindow && !viewerWindow.isDestroyed()) {
+      viewerWindow.webContents.send('quick-action', 'font-up');
+      console.log('[GlobalShortcut] Alt+3 pressed - Font size up');
+    }
+  });
+  
+  // Alt+4: 글자 작게
+  globalShortcut.register('Alt+4', () => {
+    if (viewerWindow && !viewerWindow.isDestroyed()) {
+      viewerWindow.webContents.send('quick-action', 'font-down');
+      console.log('[GlobalShortcut] Alt+4 pressed - Font size down');
+    }
+  });
+  
+  console.log('[GlobalShortcut] 전역 단축키 등록 완료');
 }
 
 ipcMain.on('open-quick-menu', () => {
@@ -267,32 +312,32 @@ ipcMain.handle('confirm-exit', async (event) => {
   
   const result = await dialog.showMessageBox(viewerWindow, {
     type: 'question',
-    buttons: ['ì·¨ì†Œ', 'ì¢…ë£Œ'],
+    buttons: ['취소', '종료'],
     defaultId: 0,
     cancelId: 0,
-    title: 'ì•± ì¢…ë£Œ',
-    message: 'ì•±ì„ ì¢…ë£Œí•˜ì‹œê² ìŠµë‹ˆê¹Œ?',
+    title: '앱 종료',
+    message: '앱을 종료하시겠습니까?',
     noLink: true
   });
   
-  console.log('[Main] User selected:', result.response === 1 ? 'ì¢…ë£Œ' : 'ì·¨ì†Œ');
+  console.log('[Main] User selected:', result.response === 1 ? '종료' : '취소');
   return result.response === 1;
 });
 
-// íˆ¬ëª… ëª¨ë“œ í† ê¸€ ì‹œì—ë„ í´ë¦­ ê°€ëŠ¥ ìœ ì§€
+// 투명 모드 토글 시 클릭 가능 상태 유지
 ipcMain.on('toggle-transparent-main', (event, isTransparent) => {
   if (!viewerWindow) return;
   
-  // íˆ¬ëª… ëª¨ë“œì—ì„œë„ í´ë¦­ í™œì„±í™”
+  // 투명 모드에서도 클릭 활성화
   viewerWindow.setIgnoreMouseEvents(false);
   console.log('[Main] Force clickable mode, transparent:', isTransparent);
   
-  // Windows ë ˆì´ì•„ì›ƒ ê°•ì œ ê°±ì‹ 
+  // Windows 렌더링 강제 갱신
   const [width, height] = viewerWindow.getSize();
   viewerWindow.setSize(width + 1, height + 1);
   setTimeout(() => {
     viewerWindow.setSize(width, height);
-    // ë¦¬ì‚¬ì´ì¦ˆ í›„ì—ë„ ë‹¤ì‹œ ì„¤ì •
+    // 리사이즈 후에도 다시 설정
     viewerWindow.setIgnoreMouseEvents(false);
     console.log('[Main] Re-applied clickable after resize');
   }, 50);
@@ -301,13 +346,13 @@ ipcMain.on('toggle-transparent-main', (event, isTransparent) => {
 ipcMain.on('show-context-menu', (event, { isTransparent, isScrollbarHidden, x, y }) => {
   const menu = Menu.buildFromTemplate([
     {
-      label: viewerWindow.isFullScreen() ? 'ì „ì²´í™”ë©´ í•´ì œ' : 'ì „ì²´í™”ë©´',
+      label: viewerWindow.isFullScreen() ? '전체화면 해제' : '전체화면',
       click: () => {
         viewerWindow.setFullScreen(!viewerWindow.isFullScreen());
       }
     },
     {
-      label: 'íˆ¬ëª… ë°°ê²½',
+      label: '투명 배경',
       type: 'checkbox',
       checked: isTransparent,
       click: () => {
@@ -315,7 +360,7 @@ ipcMain.on('show-context-menu', (event, { isTransparent, isScrollbarHidden, x, y
       }
     },
     {
-      label: 'ìŠ¤í¬ë¡¤ë°” ìˆ¨ê¸°ê¸°',
+      label: '스크롤바 숨기기',
       type: 'checkbox',
       checked: isScrollbarHidden,
       click: () => {
@@ -324,7 +369,7 @@ ipcMain.on('show-context-menu', (event, { isTransparent, isScrollbarHidden, x, y
     },
     { type: 'separator' },
     {
-      label: 'í•­ìƒ ìœ„ì—',
+      label: '항상 위',
       type: 'checkbox',
       checked: viewerWindow.isAlwaysOnTop(),
       click: () => {
@@ -335,7 +380,7 @@ ipcMain.on('show-context-menu', (event, { isTransparent, isScrollbarHidden, x, y
     },
     { type: 'separator' },
     {
-      label: 'ì°½ ìœ„ì¹˜ ì´ˆê¸°í™”',
+      label: '창 위치 초기화',
       click: () => {
         viewerWindow.center();
         viewerWindow.setSize(800, 600);
@@ -343,7 +388,7 @@ ipcMain.on('show-context-menu', (event, { isTransparent, isScrollbarHidden, x, y
     },
     { type: 'separator' },
     {
-      label: 'ë‹«ê¸°',
+      label: '닫기',
       click: () => {
         viewerWindow.close();
       }
@@ -385,25 +430,25 @@ ipcMain.handle('connect-channel', async (event, { channel, passkey }) => {
               createViewerWindow(channel, passkey);
               resolve({ success: true });
             } else {
-              resolve({ success: false, error: 'ì±„ë„ì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤' });
+              resolve({ success: false, error: '채널을 찾을 수 없습니다' });
             }
           } catch (parseError) {
             console.error('[Channel] Parse error:', parseError);
-            resolve({ success: false, error: 'API ì‘ë‹µ ì²˜ë¦¬ ì˜¤ë¥˜' });
+            resolve({ success: false, error: 'API 응답 처리 오류' });
           }
         });
       });
       
       request.on('error', (error) => {
         console.error('[Channel] Connection error:', error);
-        resolve({ success: false, error: 'ì„œë²„ ì—°ê²° ì‹¤íŒ¨' });
+        resolve({ success: false, error: '서버 연결 실패' });
       });
       
       request.end();
     });
   } catch (error) {
     console.error('[Channel] Error:', error);
-    return { success: false, error: 'ì—°ê²° ì˜¤ë¥˜' };
+    return { success: false, error: '연결 오류' };
   }
 });
 
@@ -434,7 +479,7 @@ ipcMain.on('open-options', (event, currentSettings) => {
   optionWindow = new BrowserWindow({
     width: 520,
     height: 600,
-    title: 'ìžë§‰ ë·°ì–´ ì„¤ì •',
+    title: '자막 뷰어 설정',
     parent: viewerWindow,
     frame: false,
     transparent: true,
@@ -470,7 +515,7 @@ ipcMain.handle('close-window', () => {
   }
 });
 
-// Windows ë ˆì´ì•„ì›ƒ ê°•ì œ ê°±ì‹  í•¸ë“¤ëŸ¬
+// Windows 렌더링 강제 갱신 핸들러
 ipcMain.on('force-repaint', () => {
   if (!viewerWindow || viewerWindow.isDestroyed()) return;
   
@@ -481,12 +526,12 @@ ipcMain.on('force-repaint', () => {
   }, 50);
 });
 
-// ðŸ†• ìžë™ ë§žì¶¤: ì°½ í¬ê¸° + ìœ„ì¹˜ ìžë™ ì¡°ì ˆ (ë©€í‹° ëª¨ë‹ˆí„° ì§€ì›, í•œ ë²ˆë§Œ ì‹¤í–‰)
+// 🆕 자동 맞춤: 창 크기 + 위치 자동 조절 (멀티 모니터 지원, 한 번만 실행)
 ipcMain.handle('resize-window-auto', (event, width, height, position) => {
   if (!viewerWindow || viewerWindow.isDestroyed()) return false;
   
   try {
-    // í˜„ìž¬ ì°½ì´ ìžˆëŠ” ëª¨ë‹ˆí„° ì°¾ê¸°
+    // 현재 창이 있는 모니터 찾기
     const windowBounds = viewerWindow.getBounds();
     const displays = screen.getAllDisplays();
     const currentDisplay = screen.getDisplayNearestPoint({ 
@@ -494,7 +539,7 @@ ipcMain.handle('resize-window-auto', (event, width, height, position) => {
       y: windowBounds.y + windowBounds.height / 2 
     });
     
-    // workArea = ìž‘ì—… í‘œì‹œì¤„ì„ ì œì™¸í•œ ì‹¤ì œ ì‚¬ìš© ê°€ëŠ¥ ì˜ì—­
+    // workArea = 작업 표시줄을 제외한 실제 사용 가능 영역
     const workArea = currentDisplay.workArea;
     
     console.log('[Main] Current display:', {
@@ -502,11 +547,11 @@ ipcMain.handle('resize-window-auto', (event, width, height, position) => {
       workArea: workArea
     });
     
-    // í•´ë‹¹ ëª¨ë‹ˆí„°ì˜ ì „ì²´ ë„ˆë¹„ ì‚¬ìš©
+    // 해당 모니터의 전체 너비 사용
     const newWidth = workArea.width;
     const newHeight = Math.max(80, Math.round(height));
     
-    // ìœ„ì¹˜ ê³„ì‚°: í•´ë‹¹ ëª¨ë‹ˆí„°ì˜ ìƒë‹¨ or í•˜ë‹¨
+    // 위치 계산: 해당 모니터의 상단 or 하단
     let x = workArea.x;
     let y = position === 'top' ? workArea.y : (workArea.y + workArea.height - newHeight);
     
@@ -517,12 +562,12 @@ ipcMain.handle('resize-window-auto', (event, width, height, position) => {
       position
     });
     
-    // ìž‘ì—… í‘œì‹œì¤„ ìœ„ì— í‘œì‹œ (í•­ìƒ ìœ„ê°€ êº¼ì ¸ìžˆìœ¼ë©´ ì¼œê¸°)
+    // 작업 표시줄 위에 표시 (항상 위가 꺼져있으면 켜기)
     if (!viewerWindow.isAlwaysOnTop()) {
       viewerWindow.setAlwaysOnTop(true, 'normal');
     }
     
-    // ìœ„ì¹˜ + í¬ê¸° ì„¤ì • (í•œ ë²ˆë§Œ, ì´í›„ ì‚¬ìš©ìž ìžìœ )
+    // 위치 + 크기 설정 (한 번만, 이벤트 사슬 차단)
     viewerWindow.setBounds({
       x: x,
       y: y,
@@ -530,7 +575,7 @@ ipcMain.handle('resize-window-auto', (event, width, height, position) => {
       height: newHeight
     });
     
-    // Windows ë ˆì´ì•„ì›ƒ ë²„ê·¸ ë°©ì§€
+    // Windows 렌더링 버그 방지
     setTimeout(() => {
       viewerWindow.setBounds({
         x: x,
@@ -547,8 +592,8 @@ ipcMain.handle('resize-window-auto', (event, width, height, position) => {
   }
 });
 
-// ì•ˆì „ìž¥ì¹˜ - ì£¼ê¸°ì ìœ¼ë¡œ í´ë¦­ ê°€ëŠ¥ ìƒíƒœ ìœ ì§€
-// 5ì´ˆë§ˆë‹¤ ì²´í¬í•´ì„œ í´ë¦­ì´ í†µê³¼ë˜ëŠ” ë²„ê·¸ ë°©ì§€
+// 안정장치 - 주기적으로 클릭 가능 상태 유지
+// 5초마다 체크해서 클릭이 불가능한 버그 방지
 setInterval(() => {
   if (viewerWindow && !viewerWindow.isDestroyed()) {
     viewerWindow.setIgnoreMouseEvents(false);
@@ -557,6 +602,9 @@ setInterval(() => {
 
 app.whenReady().then(() => {
   console.log('[App] Ready. Pending deep link:', pendingDeepLink);
+  
+  // 🆕 전역 단축키 등록
+  registerGlobalShortcuts();
   
   if (process.platform === 'win32' && process.argv.length > 1) {
     const deepLinkUrl = process.argv.find(arg => arg.startsWith('nuaviewer://'));
@@ -587,4 +635,10 @@ app.on('activate', () => {
       createLoginWindow();
     }
   }
+});
+
+// 🆕 앱 종료 시 전역 단축키 해제
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
+  console.log('[GlobalShortcut] 전역 단축키 해제');
 });
