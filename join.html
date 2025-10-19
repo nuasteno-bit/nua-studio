@@ -1550,23 +1550,17 @@
                     return;
                 }
                 
-                // 딥링크로 전용뷰어 실행
-                const deepLink = `nuaviewer://join?channel=${channelCode}`;
-                window.location.href = deepLink;
-                
-                // 3초 후 앱이 실행되지 않았을 경우
-                setTimeout(() => {
-                    if (document.visibilityState === 'visible') {
-                        const userConfirm = confirm(
-                            'NUA 뷰어가 실행되지 않았나요?\n' +
-                            '다운로드 페이지로 이동하시겠습니까?'
-                        );
-                        
-                        if (userConfirm) {
-                            window.location.href = BASE + 'download/nuaviewer.html';
-                        }
-                    }
-                }, 3000);
+                // 런처 다운로드
+const launcherUrl = '/download/nua-launcher.exe';
+const link = document.createElement('a');
+link.href = launcherUrl;
+link.download = 'nua-launcher.exe';
+document.body.appendChild(link);
+link.click();
+document.body.removeChild(link);
+
+// 안내 메시지
+alert('NUA 런처를 다운로드했습니다.\n\n다운로드된 파일을 실행하면 NUA 뷰어가 자동으로 설치되고\n채널 ' + channelCode + '에 접속됩니다.');
             });
         }
 
