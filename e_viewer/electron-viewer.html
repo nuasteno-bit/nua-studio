@@ -315,16 +315,13 @@
             opacity: 1;
             transform: translateX(-50%) translateY(-10px);
         }
-        
         .speaker-line {
-            display: flex;
-            align-items: baseline;
+            display: block;
             padding: 0;
             margin: 0;
             min-height: auto;
             box-sizing: border-box;
             line-height: inherit;
-            flex-shrink: 0;
         }
         
         .speaker-name {
@@ -334,19 +331,18 @@
             font-weight: 700;
             margin-right: 20px;
             white-space: nowrap;
-            flex-shrink: 0;
             line-height: inherit;
-            display: inline-flex;
-            align-items: baseline;
+            display: inline;
             vertical-align: baseline;
         }
         
         .speaker-divider {
             width: 2px;
-            align-self: stretch;
+            height: 1em;
             background: rgba(255, 255, 255, 0.3);
-            margin-right: 20px;
-            flex-shrink: 0;
+            margin: 0 20px;
+            display: inline-block;
+            vertical-align: middle;
         }
         
         .speaker-pipe {
@@ -354,12 +350,12 @@
             margin: 0 20px;
             font-weight: 300;
             line-height: inherit;
+            display: inline;
         }
         
         .speaker-content {
-            flex: 1;
+            display: inline;
             line-height: inherit;
-            min-width: 0;
             word-break: break-word;
         }
         
@@ -522,6 +518,7 @@ let currentSettings = {
     fontColor: '#ffffff',
     fontSize: '32',
     fontFamily: "'Noto Sans KR', sans-serif",
+fontWeight: '400',
     letterSpacing: '0',
     lineHeight: '1.5',
     outlineOn: false,
@@ -583,7 +580,7 @@ function loadLastSettings() {
         isTransparent = currentSettings.isTransparent;
         
         if (isTransparent) {
-            const transparentBg = 'rgba(0, 0, 0, 0.01)';
+            const transparentBg = 'rgba(0, 0, 0, 0.004)';
             document.body.style.backgroundColor = transparentBg;
             document.getElementById('viewer').style.backgroundColor = transparentBg;
             document.documentElement.classList.add('transparent-mode');
@@ -730,7 +727,18 @@ function applyMargins(smooth = false) {
 }
 
 function applySettings(settings) {
+    // ✅ 기존 투명 상태 보존
+    const preservedTransparent = isTransparent;
+    
     currentSettings = { ...currentSettings, ...settings };
+    
+    // ✅ settings에 isTransparent가 없으면 기존 상태 유지
+    if (settings.isTransparent === undefined) {
+        isTransparent = preservedTransparent;
+        currentSettings.isTransparent = preservedTransparent;
+    } else {
+        isTransparent = settings.isTransparent;
+    }
     
     if (settings.bgColor && settings.bgAlpha !== undefined) {
         const bgHex = settings.bgColor;
@@ -741,8 +749,13 @@ function applySettings(settings) {
         const b = parseInt(bgHex.slice(5, 7), 16);
         const bgRgba = `rgba(${r}, ${g}, ${b}, ${safeAlpha})`;
         
-        document.getElementById('viewer').style.backgroundColor = bgRgba;
-        if (!isTransparent) {
+        // ✅ 투명 모드 체크 추가
+        if (isTransparent) {
+            const transparentBg = 'rgba(0, 0, 0, 0.004)';
+            document.body.style.backgroundColor = transparentBg;
+            document.getElementById('viewer').style.backgroundColor = transparentBg;
+        } else {
+            document.getElementById('viewer').style.backgroundColor = bgRgba;
             document.body.style.backgroundColor = bgRgba;
         }
     }
@@ -761,7 +774,12 @@ function applySettings(settings) {
         viewerText.style.fontFamily = settings.fontFamily;
         speakerFixedHeader.style.fontFamily = settings.fontFamily;
     }
-    
+  
+  if (settings.fontWeight) {
+        viewerText.style.fontWeight = settings.fontWeight;
+        speakerFixedHeader.style.fontWeight = settings.fontWeight;
+    }
+
     if (settings.letterSpacing !== undefined) {
         viewerText.style.letterSpacing = settings.letterSpacing + 'px';
         speakerFixedHeader.style.letterSpacing = settings.letterSpacing + 'px';
@@ -1425,7 +1443,7 @@ function toggleTransparent() {
         document.documentElement.classList.add('transparent-mode');
         document.body.classList.add('transparent-mode');
         
-        const transparentBg = 'rgba(0, 0, 0, 0.05)';
+        const transparentBg = 'rgba(0, 0, 0, 0.004)';
         document.body.style.backgroundColor = transparentBg;
         document.getElementById('viewer').style.backgroundColor = transparentBg;
         
