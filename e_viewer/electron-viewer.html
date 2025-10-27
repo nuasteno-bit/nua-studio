@@ -242,6 +242,35 @@
         body.speaker-fixed-mode #speaker-fixed-header {
             display: inline-block;
         }
+
+        /* 🔥 이전 화자 구분 - 혼동 방지 */
+        .previous-speaker {
+            opacity: 0.45;
+            transition: opacity 0.3s ease;
+        }
+        
+        .previous-speaker .speaker-content {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* 🔥 인라인 화자 표시 (선택적) */
+        .inline-speaker-indicator {
+            display: inline-block;
+            font-size: 0.7em;
+            padding: 1px 6px;
+            margin-right: 8px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.15);
+            opacity: 0.7;
+            font-weight: 600;
+            vertical-align: baseline;
+        }
+        
+        .previous-speaker .inline-speaker-indicator {
+            opacity: 0.5;
+        }
+        
+        
         
         #viewer-text {
             position: absolute;
@@ -259,8 +288,11 @@
             scrollbar-width: thin;
             scrollbar-color: #8884 #0000;
             background: none;
-            word-break: break-all;
-            white-space: pre-wrap;
+            /* word-break: break-all; - 한글 어절 단위 줄바꿈을 위해 제거 */
+                  white-space: pre-wrap;          /* 기존 유지 */
+  word-break: keep-all;           /* 단어(어절) 단위로 줄바꿈 */
+  overflow-wrap: break-word;      /* 긴 영어 단어는 다음 줄로 */
+            line-break: auto;           /* 자연스러운 줄바꿈 */
             padding: 0;
             font-size: inherit;
             font-family: inherit;
@@ -328,8 +360,8 @@
             background: rgba(255, 255, 255, 0.08);
             padding: 3px 15px;
             border-radius: 4px;
-            font-weight: 700;
-            margin-right: 20px;
+            /* font-weight는 동적으로 설정됨 */
+            margin-right: 13px;
             white-space: nowrap;
             line-height: inherit;
             display: inline;
@@ -337,14 +369,14 @@
         }
         
         .speaker-divider {
-            width: 2px;
-            height: 1em;
-            background: rgba(255, 255, 255, 0.3);
-            margin: 0 20px;
             display: inline-block;
-            vertical-align: middle;
+            width: 2px;
+            height: 1.6em;
+            margin: 0 14px 0 10px;
+            background: rgba(255,255,255,0.35);
+            border-radius: 1px;
+            vertical-align: -0.4em;
         }
-        
         .speaker-pipe {
             color: rgba(255, 255, 255, 0.4);
             margin: 0 20px;
@@ -356,7 +388,9 @@
         .speaker-content {
             display: inline;
             line-height: inherit;
-            word-break: break-word;
+            white-space: pre-wrap;
+            word-break: keep-all;
+            overflow-wrap: break-word;
         }
         
         .speaker-line.no-speaker {
@@ -369,7 +403,9 @@
             padding: 2px 6px;
             margin: 0 2px 2px 0;
             border-radius: 4px;
-            word-break: inherit;
+            white-space: pre-wrap;
+            word-break: keep-all;
+            overflow-wrap: break-word;
             transition: background-color 0.2s ease;
             vertical-align: baseline;
         }
@@ -463,7 +499,8 @@
 const isElectron = typeof window.electronAPI !== 'undefined';
 
 const CONFIG = {
-    SOCKET_URL: 'https://live.nuastudio.co.kr',
+      SOCKET_URL: 'https://live.nuastudio.co.kr', 
+  CHANNEL_API: '/api/channel',
     RECONNECT_DELAY: 1000,
     RECONNECT_DELAY_MAX: 5000,
     KEEPALIVE_INTERVAL: 15 * 60 * 1000,
@@ -512,6 +549,9 @@ let speakerHeaderStable = true;
 let speakerFixedModeEnabled = true;
 let lastSpeakerFixedMode = false;
 
+// 🔥 고정모드 전환 튜닝 값
+const FIXED_SWITCH_LINES = 2;  // 새 화자 라벨 이후 최소 몇 줄이 더 쌓여야 고정 전환할지
+
 let currentSettings = {
     bgColor: '#000000',
     bgAlpha: '100',
@@ -540,6 +580,18 @@ fontWeight: '400',
     speakerBgEnabled: true,
     speakerBgColor: '#ffffff',
     speakerBgAlpha: '8',
+    speakerHeaderColor: '#ffffff',
+    speakerHeaderWeight: '700',
+    speakerHeaderOpacity: '100',
+    speakerHeaderLetterSpacing: '0',
+    speakerHeaderOutlineOn: false,
+    speakerHeaderOutlineColor: '#000000',
+    speakerHeaderOutlineWidth: '2',
+    speakerHeaderShadowOn: true,
+    speakerHeaderShadowColor: '#000000',
+    speakerHeaderShadowBlur: '4',
+    speakerHeaderShadowX: '2',
+    speakerHeaderShadowY: '2',
     colorDividerEnabled: false,
     dividerColor: '#4A90E2',
     subtitleVisible: true,
@@ -777,12 +829,12 @@ function applySettings(settings) {
   
   if (settings.fontWeight) {
         viewerText.style.fontWeight = settings.fontWeight;
-        speakerFixedHeader.style.fontWeight = settings.fontWeight;
+        // 🔥 화자 헤더는 독립적인 fontWeight 사용 (updateSpeakerFixedHeaderStyle에서 처리)
     }
 
     if (settings.letterSpacing !== undefined) {
         viewerText.style.letterSpacing = settings.letterSpacing + 'px';
-        speakerFixedHeader.style.letterSpacing = settings.letterSpacing + 'px';
+        // 🔥 화자 헤더는 독립적인 letterSpacing 사용
     }
     
     if (settings.lineHeight) {
@@ -859,6 +911,7 @@ function applySettings(settings) {
 function updateSpeakerFixedHeaderStyle() {
     if (!speakerFixedModeEnabled) return;
     
+    // 배경 설정
     const speakerBgEnabled = currentSettings.speakerBgEnabled;
     const speakerBgColor = currentSettings.speakerBgColor || '#ffffff';
     const speakerBgAlpha = parseInt(currentSettings.speakerBgAlpha || '8') / 100;
@@ -871,6 +924,52 @@ function updateSpeakerFixedHeaderStyle() {
     } else {
         speakerFixedHeader.style.background = 'rgba(255, 255, 255, 0.08)';
     }
+    
+    // 🆕 화자 헤더 글자 스타일 설정
+    // 기본 스타일
+    speakerFixedHeader.style.color = currentSettings.speakerHeaderColor || '#ffffff';
+    speakerFixedHeader.style.fontWeight = currentSettings.speakerHeaderWeight || '700';
+    
+    // 투명도
+    const headerOpacity = parseInt(currentSettings.speakerHeaderOpacity || '100') / 100;
+    speakerFixedHeader.style.opacity = headerOpacity;
+    
+    // 자간
+    const headerLetterSpacing = parseFloat(currentSettings.speakerHeaderLetterSpacing || '0');
+    speakerFixedHeader.style.letterSpacing = `${headerLetterSpacing}px`;
+    
+    // 외곽선
+    let textStroke = '';
+    if (currentSettings.speakerHeaderOutlineOn) {
+        const outlineColor = currentSettings.speakerHeaderOutlineColor || '#000000';
+        const outlineWidth = parseFloat(currentSettings.speakerHeaderOutlineWidth || '2');
+        textStroke = `-webkit-text-stroke: ${outlineWidth}px ${outlineColor};`;
+        speakerFixedHeader.style.webkitTextStroke = `${outlineWidth}px ${outlineColor}`;
+    } else {
+        speakerFixedHeader.style.webkitTextStroke = '';
+    }
+    
+    // 그림자
+    let textShadow = '';
+    if (currentSettings.speakerHeaderShadowOn) {
+        const shadowColor = currentSettings.speakerHeaderShadowColor || '#000000';
+        const shadowBlur = parseFloat(currentSettings.speakerHeaderShadowBlur || '4');
+        const shadowX = parseFloat(currentSettings.speakerHeaderShadowX || '2');
+        const shadowY = parseFloat(currentSettings.speakerHeaderShadowY || '2');
+        textShadow = `${shadowX}px ${shadowY}px ${shadowBlur}px ${shadowColor}`;
+        speakerFixedHeader.style.textShadow = textShadow;
+    } else {
+        speakerFixedHeader.style.textShadow = '';
+    }
+    
+    console.log('[SpeakerHeader] Style updated:', {
+        color: speakerFixedHeader.style.color,
+        fontWeight: speakerFixedHeader.style.fontWeight,
+        opacity: speakerFixedHeader.style.opacity,
+        letterSpacing: speakerFixedHeader.style.letterSpacing,
+        outline: currentSettings.speakerHeaderOutlineOn,
+        shadow: currentSettings.speakerHeaderShadowOn
+    });
 }
 
 function scrollToBottom() {
@@ -984,7 +1083,7 @@ function initSocket() {
     socket.on('text_sent', (data) => {
         lastTextSentTime = Date.now();
         lastAccumulatedLength = (data.accumulatedText || '').length;
-        ignoreInputUntil = Date.now() + 1000;
+        ignoreInputUntil = Date.now() + 250;
         
         accumulatedText = data.accumulatedText || '';
         currentActiveInput = '';
@@ -1137,39 +1236,80 @@ function detectLastSpeaker(text) {
     return '';
 }
 
-// 🔥 화자 상태 안정화
+/* REPLACE: shouldShowFixedHeader */
 function shouldShowFixedHeader(text) {
-    if (!speakerFixedModeEnabled) return false;
-    if (currentSettings.speakerStyle !== 'label') return false;
-    
-    const visibleLines = parseInt(currentSettings.autoLayoutLines) || 3;
-    const lines = text.split('\n').slice(-visibleLines);
-    
-    const speakers = new Set();
-    lines.forEach(line => {
-        const match = line.match(/^-(.+?):/);
-        if (match) speakers.add(match[1].trim());
-    });
-    
-    // 화자 1명 감지
-    if (speakers.size === 1) {
-        const newSpeaker = Array.from(speakers)[0];
-        if (newSpeaker !== lastDetectedSpeaker) {
-            lastDetectedSpeaker = newSpeaker;
-        }
-        speakerHeaderStable = true;
-        return true;
-    } 
-    // 화자 없음 → 마지막 화자 유지
-    else if (speakers.size === 0) {
-        return speakerHeaderStable && lastDetectedSpeaker !== '';
-    } 
-    // 화자 2명 이상 → 헤더 숨김
-    else {
-        speakerHeaderStable = false;
-        return false;
+  if (!speakerFixedModeEnabled) return false;
+  if (currentSettings.speakerStyle !== 'label') return false;
+
+  const visibleLines = parseInt(currentSettings.autoLayoutLines) || 3;
+  const lines = text.split('\n');
+  const startIndex = Math.max(0, lines.length - visibleLines);
+  const slice = lines.slice(startIndex);
+
+  // 가시영역 내 화자 라벨과 그 인덱스 수집
+  const speakersInView = [];
+  const speakerIndices = [];
+  
+  slice.forEach((line, i) => {
+    const match = line.match(/^-(.+?):/);
+    if (match) {
+      const speaker = match[1].trim();
+      speakersInView.push(speaker);
+      speakerIndices.push(startIndex + i);  // 전체 텍스트 기준 인덱스
     }
+  });
+
+  // 가시영역에 화자 라벨이 하나도 없으면: 마지막 화자 유지
+  if (speakersInView.length === 0) {
+    return (lastDetectedSpeaker !== '' || lastKnownSpeaker !== '');
+  }
+
+  // 가시영역에 여러 화자가 섞여 있는지 확인
+  const uniqueSpeakers = new Set(speakersInView);
+  
+  if (uniqueSpeakers.size > 1) {
+    // 🔥 여러 화자가 섞여있으면: 기본 모드 유지
+    // 하지만 마지막 화자는 기록 (참고용)
+    const lastSpeakerInView = speakersInView[speakersInView.length - 1];
+    lastDetectedSpeaker = lastSpeakerInView;
+    return false;
+  }
+
+  // 여기 오면 가시영역에는 '한 명의 화자'만 존재
+  const onlySpeaker = speakersInView[0];
+  
+  // 🔥 핵심: 가시 영역 첫 줄이 화자 라벨로 시작하는지 확인
+  // 첫 줄이 평문(라벨 없음)이면 = 이전 화자의 잔여 내용
+  const firstLineIndex = speakerIndices[0];
+  const firstVisibleLineIndex = startIndex;
+  
+  if (firstLineIndex !== firstVisibleLineIndex) {
+    // 가시 영역 첫 줄이 화자 라벨이 아님 = 이전 화자의 평문이 남아있음
+    // → 고정 모드로 전환하지 않음
+    lastDetectedSpeaker = onlySpeaker;
+    return false;
+  }
+  
+  // 앵커(가장 아래 라벨 줄)의 인덱스
+  const anchorIndex = speakerIndices[speakerIndices.length - 1];
+  
+  // 앵커 이후 줄 수 계산 (전체 텍스트 기준)
+  const afterAnchorLines = (lines.length - 1) - anchorIndex;
+  
+  // 🔥 라인 기준 지연: 앵커 이후 최소 N줄 이상 쌓여야 고정 전환
+  const enoughLines = afterAnchorLines >= FIXED_SWITCH_LINES;
+  
+  if (enoughLines) {
+    // 충분한 줄이 쌓였으면 고정 모드 전환
+    lastDetectedSpeaker = onlySpeaker;
+    return true;
+  } else {
+    // 아직 충분한 줄이 없으면 기본 모드 유지
+    lastDetectedSpeaker = onlySpeaker;
+    return false;
+  }
 }
+
 
 function updateSpeakerFixedHeader(speaker, shouldShow) {
     if (!shouldShow) {
@@ -1236,6 +1376,7 @@ function renderFormattedText(text) {
             
             if (speakerStyle === 'label' && showFixedHeader) {
                 lineDiv.classList.add('no-speaker');
+                
                 const contentSpan = document.createElement('span');
                 contentSpan.className = 'speaker-content';
                 
@@ -1250,6 +1391,35 @@ function renderFormattedText(text) {
                 const speakerSpan = document.createElement('span');
                 speakerSpan.className = 'speaker-name';
                 speakerSpan.textContent = speaker;
+                // 🔥 화자 헤더 스타일을 인라인 라벨에도 동일하게 적용
+speakerSpan.style.color = currentSettings.speakerHeaderColor || '#ffffff';
+speakerSpan.style.fontWeight = currentSettings.speakerHeaderWeight || '700';
+speakerSpan.style.opacity = (parseInt(currentSettings.speakerHeaderOpacity || '100') / 100);
+speakerSpan.style.letterSpacing = (parseFloat(currentSettings.speakerHeaderLetterSpacing || '0')) + 'px';
+
+// 선택적으로 외곽선(테두리) 적용
+if (currentSettings.speakerHeaderOutlineOn) {
+  const outlineColor = currentSettings.speakerHeaderOutlineColor || '#000000';
+  const outlineWidth = parseFloat(currentSettings.speakerHeaderOutlineWidth || '2');
+  speakerSpan.style.webkitTextStroke = `${outlineWidth}px ${outlineColor}`;
+} else {
+  speakerSpan.style.webkitTextStroke = '';
+}
+
+// 선택적으로 그림자 효과 적용
+if (currentSettings.speakerHeaderShadowOn) {
+  const sc = currentSettings.speakerHeaderShadowColor || '#000000';
+  const sb = parseFloat(currentSettings.speakerHeaderShadowBlur || '4');
+  const sx = parseFloat(currentSettings.speakerHeaderShadowX || '2');
+  const sy = parseFloat(currentSettings.speakerHeaderShadowY || '2');
+  speakerSpan.style.textShadow = `${sx}px ${sy}px ${sb}px ${sc}`;
+} else {
+  speakerSpan.style.textShadow = '';
+}
+                // 🔥 인라인 모드에서도 폰트 설정 적용
+                speakerSpan.style.fontSize = currentSettings.fontSize + 'px';
+                speakerSpan.style.fontFamily = currentSettings.fontFamily;
+                
                 
                 if (useBg) {
                     const bgColor = currentSettings.speakerBgColor;
