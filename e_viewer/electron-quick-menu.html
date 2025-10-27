@@ -589,6 +589,119 @@
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(255, 68, 68, 0.3);
         }
+        
+        /* 프리셋 파일 공유 섹션 */
+        .preset-file-section {
+            margin: 15px 0;
+            padding: 20px;
+            background: #f8f8f8;
+            border-radius: 12px;
+            border: 2px dashed #e0e0e0;
+            transition: all 0.3s ease;
+        }
+        
+        .preset-file-section.drag-over {
+            border-color: #00f0ff;
+            background: rgba(0, 240, 255, 0.05);
+            transform: scale(1.02);
+        }
+        
+        .preset-file-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #00c4d4;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .preset-file-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .preset-file-btn {
+            flex: 1;
+            min-width: 140px;
+            padding: 12px 20px;
+            background: #fff;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'Pretendard', sans-serif;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .preset-file-btn:hover {
+            background: linear-gradient(135deg, #00f0ff, #00c4d4);
+            color: #fff;
+            border-color: transparent;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 240, 255, 0.3);
+        }
+        
+        .preset-file-btn .icon {
+            font-size: 16px;
+        }
+        
+        .preset-drop-zone {
+            margin-top: 15px;
+            padding: 30px 20px;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            text-align: center;
+            background: #fff;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .preset-drop-zone:hover {
+            border-color: #00f0ff;
+            background: rgba(0, 240, 255, 0.02);
+        }
+        
+        .preset-drop-zone.drag-over {
+            border-color: #00f0ff;
+            background: rgba(0, 240, 255, 0.1);
+            transform: scale(1.02);
+        }
+        
+        .preset-drop-zone p {
+            margin: 0;
+            color: #999;
+            font-size: 13px;
+            font-family: 'Pretendard', sans-serif;
+        }
+        
+        .preset-drop-zone p.main {
+            color: #666;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .preset-drop-zone .icon {
+            font-size: 32px;
+            color: #00f0ff;
+            margin-bottom: 10px;
+        }
+        
+        /* 히든 파일 인풋 */
+        input[type="file"]#preset-file-input {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -1009,6 +1122,108 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- 🆕 화자 헤더 독립 스타일 -->
+            <div class="option-group">
+                <div class="option-group-title">Speaker Header Style</div>
+                
+                <div class="option-row">
+                    <label>글자 색상</label>
+                    <div class="color-input-group">
+                        <input type="color" id="speakerHeaderColor" value="#ffffff">
+                        <input type="text" class="color-hex" id="speakerHeaderColorHex" value="#FFFFFF" maxlength="7">
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>글자 굵기</label>
+                    <select id="speakerHeaderWeight">
+                        <option value="100">얇게 (100)</option>
+                        <option value="200">가벼움 (200)</option>
+                        <option value="300">Light (300)</option>
+                        <option value="400">보통 (400)</option>
+                        <option value="500">Medium (500)</option>
+                        <option value="600">반굵게 (600)</option>
+                        <option value="700" selected>굵게 (700)</option>
+                        <option value="800">Extra Bold (800)</option>
+                        <option value="900">매우굵게 (900)</option>
+                    </select>
+                </div>
+                
+                <div class="option-row">
+                    <label>투명도</label>
+                    <input type="range" id="speakerHeaderOpacity" min="0" max="100" value="100">
+                    <span class="unit-label" id="speakerHeaderOpacityLabel" style="min-width: 40px;">100%</span>
+                </div>
+                
+                <div class="option-row">
+                    <label>자간</label>
+                    <input type="number" id="speakerHeaderLetterSpacing" min="-5" max="10" value="0" step="0.5">
+                    <span class="unit-label">px</span>
+                    <div class="num-btns">
+                        <button type="button" id="speakerHeaderLetterSpacingUp">▲</button>
+                        <button type="button" id="speakerHeaderLetterSpacingDown">▼</button>
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>외곽선</label>
+                    <div class="color-input-group">
+                        <input type="checkbox" id="speakerHeaderOutlineOn">
+                        <input type="color" id="speakerHeaderOutlineColor" value="#000000">
+                        <input type="text" class="color-hex" id="speakerHeaderOutlineColorHex" value="#000000" maxlength="7">
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>굵기</label>
+                    <input type="number" id="speakerHeaderOutlineWidth" min="0" max="10" value="2" step="0.1">
+                    <span class="unit-label">px</span>
+                    <div class="num-btns">
+                        <button type="button" id="speakerHeaderOutlineWidthUp">▲</button>
+                        <button type="button" id="speakerHeaderOutlineWidthDown">▼</button>
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>그림자</label>
+                    <div class="color-input-group">
+                        <input type="checkbox" id="speakerHeaderShadowOn" checked>
+                        <input type="color" id="speakerHeaderShadowColor" value="#000000">
+                        <input type="text" class="color-hex" id="speakerHeaderShadowColorHex" value="#000000" maxlength="7">
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>흐림</label>
+                    <input type="number" id="speakerHeaderShadowBlur" min="0" max="20" value="4" step="0.5">
+                    <span class="unit-label">px</span>
+                    <div class="num-btns">
+                        <button type="button" id="speakerHeaderShadowBlurUp">▲</button>
+                        <button type="button" id="speakerHeaderShadowBlurDown">▼</button>
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>X 방향</label>
+                    <input type="number" id="speakerHeaderShadowX" min="-20" max="20" value="2" step="0.5">
+                    <span class="unit-label">px</span>
+                    <div class="num-btns">
+                        <button type="button" id="speakerHeaderShadowXUp">▲</button>
+                        <button type="button" id="speakerHeaderShadowXDown">▼</button>
+                    </div>
+                </div>
+                
+                <div class="option-row">
+                    <label>Y 방향</label>
+                    <input type="number" id="speakerHeaderShadowY" min="-20" max="20" value="2" step="0.5">
+                    <span class="unit-label">px</span>
+                    <div class="num-btns">
+                        <button type="button" id="speakerHeaderShadowYUp">▲</button>
+                        <button type="button" id="speakerHeaderShadowYDown">▼</button>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <!-- 탭 4: 프리셋 -->
@@ -1019,6 +1234,31 @@
                     <button id="addPresetBtn">현재 설정 저장</button>
                 </div>
             </div>
+            
+            <!-- 프리셋 파일 공유 섹션 -->
+            <div class="preset-file-section">
+                <div class="preset-file-title">
+                    <span>📦</span> 프리셋 파일 관리
+                </div>
+                <div class="preset-file-buttons">
+                    <button class="preset-file-btn" id="exportPresetsBtn">
+                        <span class="icon">💾</span>
+                        <span>파일로 내보내기</span>
+                    </button>
+                    <button class="preset-file-btn" id="importPresetsBtn">
+                        <span class="icon">📂</span>
+                        <span>파일에서 가져오기</span>
+                    </button>
+                </div>
+                <div class="preset-drop-zone" id="presetDropZone">
+                    <div class="icon">📥</div>
+                    <p class="main">프리셋 파일을 여기에 드래그하세요</p>
+                    <p>또는 클릭하여 파일 선택</p>
+                </div>
+            </div>
+            
+            <!-- 히든 파일 인풋 -->
+            <input type="file" id="preset-file-input" accept=".json">
             
             <div class="preset-section">
                 <div class="option-group-title">기본 프리셋</div>
@@ -1155,6 +1395,18 @@ fontWeight: document.getElementById('fontWeight').value,
         speakerBgEnabled: document.getElementById('speakerBgEnabled').checked,
         speakerBgColor: document.getElementById('speakerBgColor').value,
         speakerBgAlpha: document.getElementById('speakerBgAlpha').value,
+        speakerHeaderColor: document.getElementById('speakerHeaderColor').value,
+        speakerHeaderWeight: document.getElementById('speakerHeaderWeight').value,
+        speakerHeaderOpacity: document.getElementById('speakerHeaderOpacity').value,
+        speakerHeaderLetterSpacing: document.getElementById('speakerHeaderLetterSpacing').value,
+        speakerHeaderOutlineOn: document.getElementById('speakerHeaderOutlineOn').checked,
+        speakerHeaderOutlineColor: document.getElementById('speakerHeaderOutlineColor').value,
+        speakerHeaderOutlineWidth: document.getElementById('speakerHeaderOutlineWidth').value,
+        speakerHeaderShadowOn: document.getElementById('speakerHeaderShadowOn').checked,
+        speakerHeaderShadowColor: document.getElementById('speakerHeaderShadowColor').value,
+        speakerHeaderShadowBlur: document.getElementById('speakerHeaderShadowBlur').value,
+        speakerHeaderShadowX: document.getElementById('speakerHeaderShadowX').value,
+        speakerHeaderShadowY: document.getElementById('speakerHeaderShadowY').value,
         colorDividerEnabled: document.getElementById('colorDividerEnabled').checked,
         dividerColor: document.getElementById('dividerColor').value,
         subtitleVisible: document.getElementById('subtitleVisible').checked,
@@ -1345,6 +1597,113 @@ class PresetManager {
         
         return div;
     }
+    
+    // 프리셋을 JSON 파일로 내보내기
+    exportToFile() {
+        try {
+            const exportData = {
+                version: '1.0',
+                exportDate: new Date().toISOString(),
+                defaultPresets: this.defaultPresets,
+                userPresets: this.userPresets
+            };
+            
+            const jsonString = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T').join('_').split('.')[0];
+            const filename = `NUA_Presets_${timestamp}.json`;
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            console.log('[Preset] Exported to file:', filename);
+            alert(`프리셋이 "${filename}" 파일로 저장되었습니다!`);
+            return true;
+        } catch (error) {
+            console.error('[Preset] Export error:', error);
+            alert('프리셋 내보내기 실패: ' + error.message);
+            return false;
+        }
+    }
+    
+    // JSON 파일에서 프리셋 가져오기
+    importFromFile() {
+        const fileInput = document.getElementById('preset-file-input');
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            this.processImportFile(file);
+            fileInput.value = ''; // 리셋
+        };
+        fileInput.click();
+    }
+    
+    // 파일 처리
+    processImportFile(file) {
+        if (!file.name.endsWith('.json')) {
+            alert('JSON 파일만 가져올 수 있습니다.');
+            return false;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const jsonData = e.target.result;
+                this.importFromJSON(jsonData);
+            } catch (error) {
+                console.error('[Preset] Import error:', error);
+                alert('프리셋 가져오기 실패: ' + error.message);
+            }
+        };
+        reader.readAsText(file);
+    }
+    
+    // JSON 데이터로 프리셋 가져오기
+    importFromJSON(jsonString) {
+        try {
+            const data = JSON.parse(jsonString);
+            
+            if (!data.userPresets && !data.defaultPresets) {
+                throw new Error('유효하지 않은 프리셋 파일입니다.');
+            }
+            
+            // 사용자 프리셋 병합 (기존 것은 유지)
+            if (data.userPresets) {
+                let importCount = 0;
+                Object.entries(data.userPresets).forEach(([key, preset]) => {
+                    if (!this.userPresets[key]) {
+                        this.userPresets[key] = preset;
+                        importCount++;
+                    } else {
+                        console.log('[Preset] Skipped duplicate:', key);
+                    }
+                });
+                
+                if (importCount > 0) {
+                    this.saveUserPresets();
+                    this.renderPresets();
+                    console.log('[Preset] Imported', importCount, 'presets');
+                    alert(`${importCount}개의 프리셋을 가져왔습니다!`);
+                } else {
+                    alert('이미 모든 프리셋이 존재합니다.');
+                }
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('[Preset] JSON parse error:', error);
+            alert('프리셋 가져오기 실패: ' + error.message);
+            return false;
+        }
+    }
 }
 
 let presetManager;
@@ -1391,6 +1750,9 @@ const inputs = ['bgColor', 'bgAlpha', 'fontColor', 'fontSize', 'fontFamily', 'fo
     'outlineOn', 'outlineColor', 'outlineWidth', 'shadowOn', 'shadowColor', 'shadowBlur', 'shadowX', 'shadowY',
     'marginTop', 'marginBottom', 'marginLeft', 'marginRight', 'marginAdjusterToggle',
     'speakerEnabled', 'speakerStyle', 'speakerBgEnabled', 'speakerBgColor', 'speakerBgAlpha',
+    'speakerHeaderColor', 'speakerHeaderWeight', 'speakerHeaderOpacity', 'speakerHeaderLetterSpacing',
+    'speakerHeaderOutlineOn', 'speakerHeaderOutlineColor', 'speakerHeaderOutlineWidth',
+    'speakerHeaderShadowOn', 'speakerHeaderShadowColor', 'speakerHeaderShadowBlur', 'speakerHeaderShadowX', 'speakerHeaderShadowY',
     'colorDividerEnabled', 'dividerColor', 'subtitleVisible',
     'scrollEnabled', 'alwaysOnTop', 'wordBgEnabled', 'wordBgColor', 'wordBgAlpha', 'wordBgStyle',
     'wordBgContinuous', 'wordBgPaddingY', 'autoLayoutLines'];
@@ -1430,6 +1792,11 @@ document.getElementById('wordBgAlpha').addEventListener('input', (e) => {
     document.getElementById('wordBgAlphaLabel').textContent = e.target.value + '%';
 });
 
+document.getElementById('speakerHeaderOpacity').addEventListener('input', (e) => {
+    document.getElementById('speakerHeaderOpacityLabel').textContent = e.target.value + '%';
+    applyToViewer();
+});
+
 // 정렬 버튼들
 document.querySelectorAll('.align-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1460,7 +1827,12 @@ const numBtns = {
     marginBottom: [5, 0, 400],
     marginLeft: [5, 0, 200],
     marginRight: [5, 0, 200],
-    wordBgPaddingY: [0.5, -5, 10]
+    wordBgPaddingY: [0.5, -5, 10],
+    speakerHeaderLetterSpacing: [0.5, -5, 10],
+    speakerHeaderOutlineWidth: [0.1, 0, 10],
+    speakerHeaderShadowBlur: [0.5, 0, 20],
+    speakerHeaderShadowX: [0.5, -20, 20],
+    speakerHeaderShadowY: [0.5, -20, 20]
 };
 
 Object.keys(numBtns).forEach(id => {
@@ -1485,6 +1857,9 @@ window.addEventListener('load', () => {
     setupColorSync('shadowColor', 'shadowColorHex');
     setupColorSync('dividerColor', 'dividerColorHex');
     setupColorSync('wordBgColor', 'wordBgColorHex');
+    setupColorSync('speakerHeaderColor', 'speakerHeaderColorHex');
+    setupColorSync('speakerHeaderOutlineColor', 'speakerHeaderOutlineColorHex');
+    setupColorSync('speakerHeaderShadowColor', 'speakerHeaderShadowColorHex');
     
     presetManager = new PresetManager();
     
@@ -1492,6 +1867,63 @@ window.addEventListener('load', () => {
         const name = document.getElementById('newPresetName').value.trim();
         presetManager.addUserPreset(name);
     });
+    
+    // 프리셋 파일 내보내기 버튼
+    document.getElementById('exportPresetsBtn').addEventListener('click', () => {
+        presetManager.exportToFile();
+    });
+    
+    // 프리셋 파일 가져오기 버튼
+    document.getElementById('importPresetsBtn').addEventListener('click', () => {
+        presetManager.importFromFile();
+    });
+    
+    // 드롭존 클릭 이벤트
+    const dropZone = document.getElementById('presetDropZone');
+    dropZone.addEventListener('click', () => {
+        presetManager.importFromFile();
+    });
+    
+    // 드래그 앤 드롭 이벤트
+    const fileSection = document.querySelector('.preset-file-section');
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+        fileSection.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.classList.add('drag-over');
+            fileSection.classList.add('drag-over');
+        }, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.classList.remove('drag-over');
+            fileSection.classList.remove('drag-over');
+        }, false);
+    });
+    
+    dropZone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            presetManager.processImportFile(files[0]);
+        }
+    }, false);
+    
+    fileSection.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            presetManager.processImportFile(files[0]);
+        }
+    }, false);
     
     // 뷰어로부터 현재 설정 요청
     if (isElectron) {
