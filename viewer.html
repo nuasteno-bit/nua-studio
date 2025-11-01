@@ -59,6 +59,20 @@
       100% { transform: scale(1); opacity: 1; }
     }
     
+    /* 어절 페이드인 효과 */
+    @keyframes wordFadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    
+    .word-fade {
+      animation: wordFadeIn 0.25s ease-out forwards;
+    }
+    
     #viewer {
       position: relative;
       width: 100vw; height: 100vh;
@@ -82,7 +96,7 @@
       scrollbar-width: thin;
       scrollbar-color: #8884 #0000;
       background: none;
-      word-break: break-all;
+      word-break: keep-all; overflow-wrap: break-word;
       white-space: pre-wrap;
       padding: 0;
       font-size: inherit;
@@ -691,14 +705,12 @@
      * - min-height: auto (1em 제거로 line-height 불일치 해소)
      */
     .speaker-line {
-      display: flex;
-      align-items: baseline;
+      display: block;
       padding: 0;
       margin: 0;
       min-height: auto;
       box-sizing: border-box;
       line-height: inherit;
-      flex-shrink: 0;
     }
     
     /* 화자 이름 영역 */
@@ -707,22 +719,23 @@
       padding: 3px 15px;
       border-radius: 4px;
       font-weight: 700;
-      margin-right: 20px;
+      margin-right: 13px;
       white-space: nowrap;
-      flex-shrink: 0;
+      display: inline;
+      vertical-align: baseline;
       line-height: inherit;
-      display: inline-flex;
-      align-items: baseline;
       box-sizing: border-box;
     }
     
     /* 세로 구분선 */
     .speaker-divider {
+      display: inline-block;
       width: 2px;
-      align-self: stretch;
-      background: rgba(255, 255, 255, 0.3);
-      margin-right: 20px;
-      flex-shrink: 0;
+      height: 1.6em;
+      background: rgba(255, 255, 255, 0.35);
+      border-radius: 1px;
+      margin: 0 14px 0 10px;
+      vertical-align: -0.4em;
     }
     
     /* 파이프 문자 구분 */
@@ -731,26 +744,55 @@
       margin: 0 20px;
       font-weight: 300;
       line-height: inherit;
+      display: inline;
     }
     
     /* 화자 내용 영역 */
     .speaker-content {
-      flex: 1;
+      display: inline;
       line-height: inherit;
-      min-width: 0;
-      word-break: break-word;
+      white-space: pre-wrap;
+      word-break: keep-all;
+      overflow-wrap: break-word;
       box-sizing: border-box;
     }
     
     /* 화자가 없는 일반 텍스트 라인 - 동일한 구조 유지 */
     .speaker-line.no-speaker {
-      display: flex;
-      align-items: baseline;
+      display: block;
       line-height: inherit;
       padding: 0;
       margin: 0;
       min-height: auto;
       box-sizing: border-box;
+    }
+    
+    .speaker-line.no-speaker .speaker-content {
+      display: inline;
+      white-space: pre-wrap;
+      word-break: keep-all;
+      overflow-wrap: break-word;
+    }
+    
+    /* 라벨 스타일: 화자명과 내용을 세로로 배치 */
+    .speaker-line.label-style {
+      display: block;
+    }
+    
+    .speaker-line.label-style .speaker-name {
+      display: inline-block;
+      margin-bottom: 6px;
+      margin-right: 0 !important;
+      width: auto;
+    }
+    
+    .speaker-line.label-style .speaker-content {
+      display: block;
+      margin-left: 0;
+      width: 100%;
+      white-space: pre-wrap;
+      word-break: keep-all;
+      overflow-wrap: break-word;
     }
     
     /* 반응형 */
@@ -778,6 +820,484 @@
         margin-bottom: 5px;
       }
     }
+    
+    /* ========== 화자 고정 헤더 (일렉트론 뷰어) ========== */
+    #speaker-fixed-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(10px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: all 0.3s ease;
+      border-bottom: 2px solid rgba(0, 240, 255, 0.3);
+    }
+    
+    #speaker-fixed-header.active {
+      display: flex;
+    }
+    
+    #speaker-fixed-header .speaker-label {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      padding: 8px 20px;
+      border-radius: 20px;
+      transition: all 0.3s ease;
+      font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+    }
+    
+    /* ========== 화자 색상 관리 UI ========== */
+    .speaker-color-section {
+      margin-top: 20px;
+    }
+    
+    .speaker-add-form {
+      background: #f8f8f8;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .speaker-add-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+    
+    .speaker-add-row input[type="text"] {
+      flex: 1;
+      height: 36px;
+      padding: 0 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: 'Pretendard', sans-serif;
+    }
+    
+    .speaker-add-row input[type="color"] {
+      width: 50px;
+      height: 36px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    
+    .speaker-add-row input[type="range"] {
+      flex: 1;
+      height: 5px;
+    }
+    
+    .speaker-add-row input[type="number"] {
+      width: 70px;
+      height: 36px;
+      text-align: center;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    
+    #addSpeakerBtn {
+      width: 100%;
+      height: 40px;
+      background: linear-gradient(135deg, #00f0ff, #00c4d4);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: 'Pretendard', sans-serif;
+    }
+    
+    #addSpeakerBtn:hover {
+      background: linear-gradient(135deg, #00c4d4, #00a0b0);
+      transform: translateY(-1px);
+    }
+    
+    .speaker-color-list {
+      max-height: 400px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .speaker-color-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      transition: all 0.2s ease;
+    }
+    
+    .speaker-color-item:hover {
+      border-color: #00f0ff;
+      background: #f0fdff;
+      transform: translateX(3px);
+    }
+    
+    .speaker-color-preview {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      border: 2px solid #e0e0e0;
+      flex-shrink: 0;
+    }
+    
+    .speaker-color-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      font-family: 'Pretendard', sans-serif;
+    }
+    
+    .speaker-color-code {
+      font-size: 11px;
+      color: #999;
+      font-family: 'Poppins', monospace;
+    }
+    
+    .speaker-color-actions {
+      margin-left: auto;
+      display: flex;
+      gap: 6px;
+    }
+    
+    .speaker-color-btn {
+      width: 32px;
+      height: 32px;
+      border: 1px solid #e0e0e0;
+      background: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+    }
+    
+    .speaker-color-btn:hover {
+      background: #f0f0f0;
+      border-color: #ccc;
+    }
+    
+    .speaker-color-btn.edit:hover {
+      background: #e3f2fd;
+      border-color: #2196f3;
+      color: #2196f3;
+    }
+    
+    .speaker-color-btn.delete:hover {
+      background: #ffebee;
+      border-color: #f44336;
+      color: #f44336;
+    }
+    
+    /* ========== continuous 모드 (연결형 배경) ========== */
+    .speaker-bg.continuous {
+      border-radius: 0;
+      margin: -2px 0;
+    }
+    
+    .speaker-bg.continuous:first-child {
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+      margin-top: 0;
+    }
+    
+    .speaker-bg.continuous:last-child {
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
+      margin-bottom: 0;
+    }
+    
+    /* ========== 항상 위 인디케이터 ========== */
+    #always-on-top-indicator {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      padding: 6px 12px;
+      border-radius: 15px;
+      font-size: 11px;
+      font-family: 'Pretendard', sans-serif;
+      background: rgba(0, 240, 255, 0.9);
+      color: #000;
+      z-index: 10001;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    #always-on-top-indicator.active {
+      display: flex;
+      opacity: 1;
+    }
+    
+    /* ========== 알림 토스트 ========== */
+    #notification {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 24px;
+      background: rgba(0, 0, 0, 0.9);
+      color: #fff;
+      border-radius: 25px;
+      font-size: 14px;
+      font-family: 'Pretendard', sans-serif;
+      z-index: 10002;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+    }
+    
+    #notification.show {
+      opacity: 1;
+    }
+    
+    /* ========== 스크롤바 스타일 개선 ========== */
+    #viewer-text::-webkit-scrollbar {
+      width: 12px;
+      background: transparent;
+    }
+    
+    #viewer-text::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+    }
+    
+    #viewer-text::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      border: 2px solid transparent;
+      background-clip: content-box;
+    }
+    
+    #viewer-text::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.4);
+      background-clip: content-box;
+    }
+    
+    #viewer-text.hide-scrollbar {
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE/Edge */
+    }
+    
+    #viewer-text.hide-scrollbar::-webkit-scrollbar {
+      width: 0 !important;
+      height: 0 !important;
+      display: none !important;
+    }
+    
+    #viewer-text.hide-scrollbar::-webkit-scrollbar-track {
+      display: none !important;
+    }
+    
+    #viewer-text.hide-scrollbar::-webkit-scrollbar-thumb {
+      display: none !important;
+    }
+    
+    /* ========== 화자 편집 모달 스타일 ========== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      backdrop-filter: blur(4px);
+    }
+    
+    .modal-container {
+      background: #2a2a2a;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 450px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      animation: modalSlideIn 0.3s ease-out;
+    }
+    
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-header h3 {
+      margin: 0;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      color: #999;
+      font-size: 28px;
+      cursor: pointer;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    
+    .modal-close:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+    
+    .modal-body {
+      padding: 20px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    
+    .edit-form-group {
+      margin-bottom: 16px;
+    }
+    
+    .edit-form-group label {
+      display: block;
+      color: #ccc;
+      font-size: 13px;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    
+    .edit-form-group input[type="color"] {
+      width: 100%;
+      height: 50px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      cursor: pointer;
+      background: transparent;
+    }
+    
+    .edit-form-group input[type="text"],
+    .edit-form-group input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    
+    .edit-form-group input[type="text"]:focus,
+    .edit-form-group input[type="number"]:focus {
+      outline: none;
+      border-color: #00f0ff;
+      background: rgba(0, 240, 255, 0.05);
+    }
+    
+    .rgb-inputs {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .rgb-input-item {
+      flex: 1;
+    }
+    
+    .rgb-input-item label {
+      font-size: 11px;
+      color: #999;
+      margin-bottom: 4px;
+    }
+    
+    .rgb-input-item input {
+      width: 100%;
+      padding: 8px;
+      text-align: center;
+    }
+    
+    .modal-footer {
+      padding: 16px 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    
+    .modal-btn {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .modal-btn.cancel {
+      background: rgba(255, 255, 255, 0.08);
+      color: #ccc;
+    }
+    
+    .modal-btn.cancel:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+    
+    .modal-btn.confirm {
+      background: #00f0ff;
+      color: #000;
+    }
+    
+    .modal-btn.confirm:hover {
+      background: #00d4e6;
+    }
+    
+    /* ========== 반응형 추가 ========== */
+    @media (max-width: 600px) {
+      #speaker-fixed-header {
+        height: 40px;
+      }
+      
+      #speaker-fixed-header .speaker-label {
+        font-size: 16px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -785,6 +1305,20 @@
   <div id="connection-status" class="connecting">
     <div class="status-dot"></div>
     <span>연결 중...</span>
+  
+  <!-- 화자 고정 헤더 -->
+  <div id="speaker-fixed-header">
+    <div class="speaker-label">화자 대기 중</div>
+  </div>
+  
+  <!-- 항상 위 인디케이터 -->
+  <div id="always-on-top-indicator">
+    <span>📌</span>
+    <span>브라우저에서는 지원되지 않습니다</span>
+  </div>
+  
+  <!-- 알림 토스트 -->
+  <div id="notification"></div>
   </div>
   
   <div id="viewer">
@@ -803,14 +1337,55 @@
       </div>
       
       <div class="tab-nav">
-        <button class="tab-btn active" data-tab="tab1">기본 설정</button>
-        <button class="tab-btn" data-tab="tab2">레이아웃</button>
-        <button class="tab-btn" data-tab="tab3">화자 구분</button>
-        <button class="tab-btn" data-tab="tab4">프리셋</button>
+        <button class="tab-btn active" data-tab="tab1">빠른 설정</button>
+        <button class="tab-btn" data-tab="tab2">기본 설정</button>
+        <button class="tab-btn" data-tab="tab3">레이아웃</button>
+        <button class="tab-btn" data-tab="tab4">화자 구분</button>
+        <button class="tab-btn" data-tab="tab5">프리셋</button>
+        <button class="tab-btn" data-tab="tab6">화자 색상</button>
       </div>
       
-      <!-- 탭 1: 기본 설정 -->
+      <!-- 탭 1: 빠른 설정 -->
       <div id="tab1" class="tab-content active">
+        <div class="option-group">
+          <div class="option-group-title">Quick Actions</div>
+          
+          <div class="quick-actions-grid">
+            <div class="quick-action-item" data-action="font-up">
+              <div class="action-icon">A+</div>
+              <div class="action-label">글자 크게</div>
+            </div>
+            
+            <div class="quick-action-item" data-action="font-down">
+              <div class="action-icon">A-</div>
+              <div class="action-label">글자 작게</div>
+            </div>
+            
+            <div class="quick-action-item" data-action="subtitle-toggle">
+              <div class="action-icon">👁️</div>
+              <div class="action-label">자막 숨김/표시</div>
+            </div>
+            
+            <div class="quick-action-item" data-action="save-text">
+              <div class="action-icon">💾</div>
+              <div class="action-label">텍스트 저장</div>
+            </div>
+            
+            <div class="quick-action-item" data-action="fullscreen">
+              <div class="action-icon">⛶</div>
+              <div class="action-label">전체화면</div>
+            </div>
+            
+            <div class="quick-action-item" data-action="scrollbar-toggle">
+              <div class="action-icon">📜</div>
+              <div class="action-label">스크롤바 표시</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 탭 2: 기본 설정 -->
+      <div id="tab2" class="tab-content">
         <div class="option-group">
           <div class="option-group-title">Display</div>
           
@@ -857,6 +1432,21 @@
               <button type="button" id="fontSizeUp">▲</button>
               <button type="button" id="fontSizeDown">▼</button>
             </div>
+          </div>
+          
+          <div class="option-row">
+            <label>글자 굵기</label>
+            <select id="fontWeight">
+              <option value="100">얇게 (100)</option>
+              <option value="200">약간 얇게 (200)</option>
+              <option value="300">조금 얇게 (300)</option>
+              <option value="400" selected>보통 (400)</option>
+              <option value="500">중간 (500)</option>
+              <option value="600">약간 굵게 (600)</option>
+              <option value="700">굵게 (700)</option>
+              <option value="800">더 굵게 (800)</option>
+              <option value="900">가장 굵게 (900)</option>
+            </select>
           </div>
           
           <div class="option-row">
@@ -943,8 +1533,8 @@
         </div>
       </div>
       
-      <!-- 탭 2: 레이아웃 -->
-      <div id="tab2" class="tab-content">
+      <!-- 탭 3: 레이아웃 -->
+      <div id="tab3" class="tab-content">
         <div class="option-group">
           <div class="option-group-title">Display Control</div>
           
@@ -988,7 +1578,7 @@
           
           <div class="option-row">
             <label>상단여백</label>
-            <input type="number" id="marginTop" min="0" max="200" value="10" step="5">
+            <input type="number" id="marginTop" min="0" max="200" value="5" step="5">
             <span class="unit-label">px</span>
             <div class="num-btns">
               <button type="button" id="marginTopUp">▲</button>
@@ -998,7 +1588,7 @@
           
           <div class="option-row">
             <label>하단여백</label>
-            <input type="number" id="marginBottom" min="0" max="400" value="10" step="5">
+            <input type="number" id="marginBottom" min="0" max="400" value="5" step="5">
             <span class="unit-label">px</span>
             <div class="num-btns">
               <button type="button" id="marginBottomUp">▲</button>
@@ -1008,7 +1598,7 @@
           
           <div class="option-row">
             <label>좌측여백</label>
-            <input type="number" id="marginLeft" min="0" max="200" value="15" step="5">
+            <input type="number" id="marginLeft" min="0" max="200" value="5" step="5">
             <span class="unit-label">px</span>
             <div class="num-btns">
               <button type="button" id="marginLeftUp">▲</button>
@@ -1018,7 +1608,7 @@
           
           <div class="option-row">
             <label>우측여백</label>
-            <input type="number" id="marginRight" min="0" max="200" value="15" step="5">
+            <input type="number" id="marginRight" min="0" max="200" value="5" step="5">
             <span class="unit-label">px</span>
             <div class="num-btns">
               <button type="button" id="marginRightUp">▲</button>
@@ -1026,10 +1616,44 @@
             </div>
           </div>
         </div>
+        
+        <div class="option-group">
+          <div class="option-group-title">Word Background</div>
+          
+          <div class="option-row">
+            <label>어절 배경</label>
+            <div class="color-input-group">
+              <input type="checkbox" id="wordBgEnabled">
+              <input type="color" id="wordBgColor" value="#ffffff">
+              <input type="range" id="wordBgAlpha" min="0" max="50" value="15">
+              <span class="unit-label" id="wordBgAlphaLabel" style="min-width: 35px;">15%</span>
+            </div>
+          </div>
+          
+          <div class="option-row">
+            <label>배경 스타일</label>
+            <select id="wordBgStyle">
+              <option value="subtle">은은하게</option>
+              <option value="normal">보통</option>
+              <option value="full">진하게</option>
+            </select>
+          </div>
+          
+          <div class="option-row">
+            <label>연결 배경</label>
+            <input type="checkbox" id="wordBgContinuous">
+          </div>
+          
+          <div class="option-row">
+            <label>어절 페이드인</label>
+            <input type="checkbox" id="wordFadeInEnabled" checked>
+            <span style="color: #888; font-size: 11px; margin-left: 8px;">새 어절 나타날 때 효과</span>
+          </div>
+        </div>
       </div>
       
-      <!-- 탭 3: 화자 구분 -->
-      <div id="tab3" class="tab-content">
+      <!-- 탭 4: 화자 구분 -->
+      <div id="tab4" class="tab-content">
         <div class="option-group">
           <div class="option-group-title">Speaker Identification</div>
           
@@ -1045,6 +1669,7 @@
               <option value="divider">세로선 구분</option>
               <option value="pipe">파이프 문자 ( | )</option>
               <option value="minimal">미니멀 (은은하게)</option>
+              <option value="label">라벨 구분</option>
               <option value="none">구분선 없음</option>
             </select>
           </div>
@@ -1068,10 +1693,112 @@
             </div>
           </div>
         </div>
+        
+        <div class="option-group">
+          <div class="option-group-title">Speaker Name Style</div>
+          
+          <div class="option-row">
+            <label>글자 색상</label>
+            <div class="color-input-group">
+              <input type="color" id="speakerHeaderColor" value="#ffffff">
+              <input type="text" class="color-hex" id="speakerHeaderColorHex" value="#FFFFFF" maxlength="7">
+            </div>
+          </div>
+          
+          <div class="option-row">
+            <label>글자 굵기</label>
+            <select id="speakerHeaderWeight">
+              <option value="100">얇게 (100)</option>
+              <option value="200">가벼움 (200)</option>
+              <option value="300">Light (300)</option>
+              <option value="400">보통 (400)</option>
+              <option value="500">Medium (500)</option>
+              <option value="600">반굵게 (600)</option>
+              <option value="700" selected>굵게 (700)</option>
+              <option value="800">Extra Bold (800)</option>
+              <option value="900">매우굵게 (900)</option>
+            </select>
+          </div>
+          
+          <div class="option-row">
+            <label>투명도</label>
+            <input type="range" id="speakerHeaderOpacity" min="0" max="100" value="100">
+            <span class="unit-label" id="speakerHeaderOpacityLabel" style="min-width: 40px;">100%</span>
+          </div>
+          
+          <div class="option-row">
+            <label>자간</label>
+            <input type="number" id="speakerHeaderLetterSpacing" min="-5" max="10" value="0" step="0.5">
+            <span class="unit-label">px</span>
+            <div class="num-btns">
+              <button type="button" id="speakerHeaderLetterSpacingUp">▲</button>
+              <button type="button" id="speakerHeaderLetterSpacingDown">▼</button>
+            </div>
+          </div>
+          
+          <div class="option-row">
+            <label>외곽선</label>
+            <div class="color-input-group">
+              <input type="checkbox" id="speakerHeaderOutlineOn">
+              <input type="color" id="speakerHeaderOutlineColor" value="#000000">
+              <input type="text" class="color-hex" id="speakerHeaderOutlineColorHex" value="#000000" maxlength="7">
+            </div>
+          </div>
+          
+          <div class="option-row">
+            <label>외곽선 굵기</label>
+            <input type="number" id="speakerHeaderOutlineWidth" min="0" max="10" value="2" step="0.1">
+            <span class="unit-label">px</span>
+            <div class="num-btns">
+              <button type="button" id="speakerHeaderOutlineWidthUp">▲</button>
+              <button type="button" id="speakerHeaderOutlineWidthDown">▼</button>
+            </div>
+          </div>
+          
+          <div class="option-row">
+            <label>그림자</label>
+            <div class="color-input-group">
+              <input type="checkbox" id="speakerHeaderShadowOn" checked>
+              <input type="color" id="speakerHeaderShadowColor" value="#000000">
+              <input type="text" class="color-hex" id="speakerHeaderShadowColorHex" value="#000000" maxlength="7">
+            </div>
+          </div>
+          
+          <div class="option-row">
+            <label>흐림</label>
+            <input type="number" id="speakerHeaderShadowBlur" min="0" max="20" value="4" step="0.5">
+            <span class="unit-label">px</span>
+            <div class="num-btns">
+              <button type="button" id="speakerHeaderShadowBlurUp">▲</button>
+              <button type="button" id="speakerHeaderShadowBlurDown">▼</button>
+            </div>
+          </div>
+          
+          <div class="option-row">
+            <label>X 방향</label>
+            <input type="number" id="speakerHeaderShadowX" min="-20" max="20" value="2" step="0.5">
+            <span class="unit-label">px</span>
+            <div class="num-btns">
+              <button type="button" id="speakerHeaderShadowXUp">▲</button>
+              <button type="button" id="speakerHeaderShadowXDown">▼</button>
+            </div>
+          </div>
+          
+          <div class="option-row">
+            <label>Y 방향</label>
+            <input type="number" id="speakerHeaderShadowY" min="-20" max="20" value="2" step="0.5">
+            <span class="unit-label">px</span>
+            <div class="num-btns">
+              <button type="button" id="speakerHeaderShadowYUp">▲</button>
+              <button type="button" id="speakerHeaderShadowYDown">▼</button>
+            </div>
+          </div>
+        </div>
       </div>
       
-      <!-- 탭 4: 프리셋 -->
-      <div id="tab4" class="tab-content">
+      
+      <!-- 탭 5: 프리셋 -->
+      <div id="tab5" class="tab-content">
         <div class="preset-grid">
           <div class="preset-item" data-preset="basic">
             <div class="preset-name">기본 자막</div>
@@ -1098,6 +1825,101 @@
             </div>
           </div>
         </div>
+      </div>
+      
+      <!-- 탭 6: 화자 색상 -->
+      <div id="tab6" class="tab-content">
+        <div class="speaker-color-section">
+          <div class="speaker-add-form">
+            <div class="speaker-add-row">
+              <input type="text" id="speakerNameInput" placeholder="화자 이름 (예: 김철수)">
+              <input type="color" id="speakerColorInput" value="#FF6B9D">
+            </div>
+            <div class="speaker-add-row">
+              <label style="min-width: 60px; font-size: 12px; color: #666;">투명도</label>
+              <input type="range" id="speakerOpacitySlider" min="0" max="100" value="25">
+              <input type="number" id="speakerOpacityValue" min="0" max="100" value="25">
+              <span style="font-size: 12px; color: #999;">%</span>
+            </div>
+            <div class="speaker-add-row">
+              <label style="flex: 1; font-size: 12px; color: #666;">
+                <input type="checkbox" id="speakerColorContinuous" style="margin-right: 8px;">
+                연속 배경 (한 줄로 연결)
+              </label>
+            </div>
+            <button id="addSpeakerBtn">화자 추가</button>
+          </div>
+          
+          <div class="speaker-color-list" id="speakerColorList">
+            <!-- 화자 목록이 여기에 동적으로 추가됩니다 -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 화자 편집 모달 -->
+  <div id="speakerEditModal" class="modal-overlay" style="display: none;">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 id="speakerEditTitle">화자 색상 편집</h3>
+        <button class="modal-close" onclick="closeSpeakerEditModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="edit-form-group">
+          <label>컬러 피커</label>
+          <input type="color" id="editColorPicker" value="#FF6B9D">
+        </div>
+        
+        <div class="edit-form-group">
+          <label>Hex 코드</label>
+          <input type="text" id="editColorHex" value="#FF6B9D" maxlength="7" placeholder="#FF6B9D">
+        </div>
+        
+        <div class="edit-form-group">
+          <label>RGB 값</label>
+          <div class="rgb-inputs">
+            <div class="rgb-input-item">
+              <label>R</label>
+              <input type="number" id="editColorR" min="0" max="255" value="255">
+            </div>
+            <div class="rgb-input-item">
+              <label>G</label>
+              <input type="number" id="editColorG" min="0" max="255" value="107">
+            </div>
+            <div class="rgb-input-item">
+              <label>B</label>
+              <input type="number" id="editColorB" min="0" max="255" value="157">
+            </div>
+          </div>
+        </div>
+        
+        <div class="edit-form-group">
+          <label>투명도</label>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="range" id="editOpacitySlider" min="0" max="100" value="25" style="flex: 1;">
+            <input type="number" id="editOpacityValue" min="0" max="100" value="25" style="width: 60px;">
+            <span style="font-size: 12px; color: #999;">%</span>
+          </div>
+        </div>
+        
+        <div class="edit-form-group">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="editContinuous">
+            <span>연속 배경 (한 줄로 연결)</span>
+          </label>
+        </div>
+        
+        <div class="edit-form-group">
+          <label>미리보기</label>
+          <div id="editColorPreview" style="height: 50px; border-radius: 8px; background-color: #FF6B9D; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">
+            Sample Text
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" onclick="closeSpeakerEditModal()">취소</button>
+        <button class="modal-btn confirm" onclick="saveSpeakerEdit()">저장</button>
       </div>
     </div>
   </div>
@@ -1128,6 +1950,165 @@ if (!channelCode) {
     window.close();
   }
 }
+
+
+// ========== settingsStore: localStorage 기반 상태 관리 ==========
+const settingsStore = {
+  // 저장 키
+  keys: {
+    settings: 'nua-viewer-settings',
+    speakerColors: 'nua-speaker-colors',
+    presets: 'nua-user-presets'
+  },
+  
+  // Debounce 타이머
+  saveTimer: null,
+  
+  // 설정 로드
+  loadSettings() {
+    try {
+      const saved = localStorage.getItem(this.keys.settings);
+      return saved ? JSON.parse(saved) : this.getDefaultSettings();
+    } catch (error) {
+      console.error('[Settings] 로드 실패:', error);
+      return this.getDefaultSettings();
+    }
+  },
+  
+  // 기본 설정
+  getDefaultSettings() {
+    return {
+      fontSize: 32,
+      lineHeight: 1.5,
+      letterSpacing: 0,
+      fontFamily: "'Noto Sans KR', sans-serif",
+      fontColor: '#ffffff',
+      bgColor: '#000000',
+      bgAlpha: 100,
+      outlineOn: false,
+      outlineColor: '#000000',
+      outlineWidth: 2,
+      textAlign: 'left',
+      marginTop: 5,
+      marginBottom: 5,
+      marginLeft: 5,
+      marginRight: 5,
+      speakerEnabled: true,
+      speakerStyle: 'colon',
+      speakerBgEnabled: true,
+      speakerBgColor: '#ffffff',
+      speakerBgAlpha: 8,
+      speakerHeaderColor: '#ffffff',
+      speakerHeaderWeight: '700',
+      speakerHeaderOpacity: 100,
+      speakerHeaderLetterSpacing: 0,
+      speakerHeaderOutlineOn: false,
+      speakerHeaderOutlineColor: '#000000',
+      speakerHeaderOutlineWidth: 2,
+      speakerHeaderShadowOn: true,
+      speakerHeaderShadowColor: '#000000',
+      speakerHeaderShadowBlur: 4,
+      speakerHeaderShadowX: 2,
+      speakerHeaderShadowY: 2,
+      wordBgEnabled: false,
+      wordBgColor: '#00f0ff',
+      wordBgAlpha: 30,
+      scrollbarVisible: true
+    };
+  },
+  
+  // 설정 저장 (Debounced)
+  saveSettings(settings) {
+    if (this.saveTimer) {
+      clearTimeout(this.saveTimer);
+    }
+    
+    this.saveTimer = setTimeout(() => {
+      try {
+        localStorage.setItem(this.keys.settings, JSON.stringify(settings));
+        console.log('[Settings] 저장 완료');
+      } catch (error) {
+        console.error('[Settings] 저장 실패:', error);
+      }
+      this.saveTimer = null;
+    }, 500);
+  },
+  
+  // 화자 색상 로드
+  loadSpeakerColors() {
+    try {
+      const saved = localStorage.getItem(this.keys.speakerColors);
+      if (!saved) return {};
+      
+      const loaded = JSON.parse(saved);
+      
+      // 마이그레이션: 문자열 → 객체
+      const migrated = {};
+      let needsMigration = false;
+      
+      for (const [name, data] of Object.entries(loaded)) {
+        const cleanName = name.replace(/^-+/, '').replace(/:+$/, '').trim();
+        
+        if (typeof data === 'string') {
+          migrated[cleanName] = { color: data, continuous: false };
+          needsMigration = true;
+        } else if (typeof data === 'object' && data.color) {
+          migrated[cleanName] = data;
+        } else {
+          migrated[cleanName] = { color: '#FF6B9D40', continuous: false };
+          needsMigration = true;
+        }
+      }
+      
+      if (needsMigration) {
+        this.saveSpeakerColorsImmediate(migrated);
+        console.log('[SpeakerColors] 마이그레이션 완료');
+      }
+      
+      return migrated;
+    } catch (error) {
+      console.error('[SpeakerColors] 로드 실패:', error);
+      return {};
+    }
+  },
+  
+  // 화자 색상 저장 (즉시)
+  saveSpeakerColorsImmediate(colors) {
+    try {
+      localStorage.setItem(this.keys.speakerColors, JSON.stringify(colors));
+      console.log('[SpeakerColors] 저장 완료:', Object.keys(colors).length, '개');
+    } catch (error) {
+      console.error('[SpeakerColors] 저장 실패:', error);
+    }
+  },
+  
+  // 프리셋 로드
+  loadPresets() {
+    try {
+      const saved = localStorage.getItem(this.keys.presets);
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      console.error('[Presets] 로드 실패:', error);
+      return [];
+    }
+  },
+  
+  // 프리셋 저장
+  savePresets(presets) {
+    try {
+      localStorage.setItem(this.keys.presets, JSON.stringify(presets));
+      console.log('[Presets] 저장 완료');
+    } catch (error) {
+      console.error('[Presets] 저장 실패:', error);
+    }
+  }
+};
+
+// 전역 상태
+let currentSettings = settingsStore.loadSettings();
+let speakerColors = settingsStore.loadSpeakerColors();
+let userPresets = settingsStore.loadPresets();
+let currentActiveSpeaker = null;
 
 // DOM 요소
 const viewerText = document.getElementById('viewer-text');
@@ -1661,8 +2642,21 @@ function updateDisplay(text, isImmediate = false) {
   // 더 정확한 바닥 감지 (1px 허용치)
   const wasAtBottom = (scrollTop + clientHeight) >= (scrollHeight - 1);
   
-  // 화자 구분 처리 - 항상 renderFormattedText 사용
-  renderFormattedText(finalDisplayText);
+  // ========== Incremental update: 새 어절만 추가 ==========
+  const isIncremental = finalDisplayText.startsWith(lastRenderedText) && 
+                        finalDisplayText.length > lastRenderedText.length &&
+                        lastRenderedText !== '' &&
+                        lastRenderedText !== '자막 대기 중...';
+  
+  if (isIncremental) {
+    // 새 어절만 추가 (깜박임 없음)
+    const addedText = finalDisplayText.substring(lastRenderedText.length);
+    appendNewText(addedText);
+  } else {
+    // 전체 재렌더링 (백스페이스, 삭제, 전체 교체 등)
+    shouldApplyFadeIn = false;
+    renderFormattedText(finalDisplayText);
+  }
   
   // 렌더링된 텍스트 기록
   lastRenderedText = finalDisplayText;
@@ -1677,8 +2671,688 @@ function updateDisplay(text, isImmediate = false) {
   }
 }
 
+
+// ========== 화자 색상 관리 ==========
+
+// 화자 색상 목록 렌더링
+function renderSpeakerColorList() {
+  const listEl = document.getElementById('speakerColorList');
+  if (!listEl) return;
+  
+  listEl.innerHTML = '';
+  
+  const speakers = Object.entries(speakerColors);
+  if (speakers.length === 0) {
+    listEl.innerHTML = '<div style="padding: 20px; text-align: center; color: #999; font-size: 13px;">등록된 화자가 없습니다</div>';
+    return;
+  }
+  
+  speakers.sort((a, b) => a[0].localeCompare(b[0]));
+  
+  speakers.forEach(([name, data]) => {
+    const item = document.createElement('div');
+    item.className = 'speaker-color-item';
+    
+    const color = typeof data === 'string' ? data : data.color;
+    const continuous = typeof data === 'object' ? data.continuous : false;
+    
+    let opacity = 25;
+    if (color && color.length === 9) {
+      opacity = Math.round((parseInt(color.slice(7, 9), 16) / 255) * 100);
+    }
+    
+    item.innerHTML = `
+      <div class="speaker-color-preview" style="background-color: ${color}"></div>
+      <div style="flex: 1;">
+        <div class="speaker-color-name">${escapeHtml(name)}</div>
+        <div class="speaker-color-code">${color} (${opacity}%)</div>
+        <label style="font-size: 11px; color: #666; display: flex; align-items: center; gap: 4px; margin-top: 4px;">
+          <input type="checkbox" class="speaker-continuous-toggle" data-name="${escapeHtml(name)}" ${continuous ? 'checked' : ''} style="margin: 0;">
+          <span>한 줄로 연결</span>
+        </label>
+      </div>
+      <div class="speaker-color-actions">
+        <button class="speaker-color-btn edit" data-name="${escapeHtml(name)}" title="색상 변경">✎</button>
+        <button class="speaker-color-btn delete" data-name="${escapeHtml(name)}" title="삭제">×</button>
+      </div>
+    `;
+    
+    listEl.appendChild(item);
+  });
+  
+  // 이벤트 위임
+  listEl.onclick = async (e) => {
+    const editBtn = e.target.closest('.speaker-color-btn.edit');
+    const deleteBtn = e.target.closest('.speaker-color-btn.delete');
+    const continuousToggle = e.target.closest('.speaker-continuous-toggle');
+    
+    if (editBtn) {
+      await handleEditSpeaker(editBtn.dataset.name);
+    } else if (deleteBtn) {
+      await handleDeleteSpeaker(deleteBtn.dataset.name);
+    } else if (continuousToggle) {
+      // 체크박스 토글은 자동으로 처리되므로, 설정만 업데이트
+      const name = continuousToggle.dataset.name;
+      const isChecked = continuousToggle.checked;
+      
+      if (speakerColors[name]) {
+        const speakerData = speakerColors[name];
+        const color = typeof speakerData === 'string' ? speakerData : speakerData.color;
+        speakerColors[name] = {
+          color: color,
+          continuous: isChecked
+        };
+        
+        settingsStore.saveSpeakerColorsImmediate(speakerColors);
+        
+        // 즉시 화면에 반영
+        if (accumulatedText) {
+          lastRenderedText = ''; // 강제 재렌더링
+          renderFormattedText(accumulatedText);
+        }
+        
+        showNotification(isChecked ? '한 줄로 연결됨' : '어절 단위로 표시');
+      }
+    }
+  };
+}
+
+// 화자 편집 - 모달 사용
+let currentEditingSpeaker = null;
+
+async function handleEditSpeaker(name) {
+  const speakerData = speakerColors[name];
+  if (!speakerData) return;
+  
+  currentEditingSpeaker = name;
+  
+  const currentColor = typeof speakerData === 'string' ? speakerData : speakerData.color;
+  const rgbColor = currentColor.substring(0, 7);
+  
+  let currentOpacity = 25;
+  if (currentColor.length === 9) {
+    currentOpacity = Math.round((parseInt(currentColor.slice(7, 9), 16) / 255) * 100);
+  }
+  
+  const continuous = typeof speakerData === 'object' ? speakerData.continuous : false;
+  
+  // 모달에 현재 값 설정
+  document.getElementById('speakerEditTitle').textContent = `${name} 화자 색상 편집`;
+  document.getElementById('editColorPicker').value = rgbColor;
+  document.getElementById('editColorHex').value = rgbColor.toUpperCase();
+  
+  // RGB 값 계산
+  const r = parseInt(rgbColor.slice(1, 3), 16);
+  const g = parseInt(rgbColor.slice(3, 5), 16);
+  const b = parseInt(rgbColor.slice(5, 7), 16);
+  
+  document.getElementById('editColorR').value = r;
+  document.getElementById('editColorG').value = g;
+  document.getElementById('editColorB').value = b;
+  
+  document.getElementById('editOpacitySlider').value = currentOpacity;
+  document.getElementById('editOpacityValue').value = currentOpacity;
+  document.getElementById('editContinuous').checked = continuous;
+  
+  // 미리보기 업데이트
+  updateEditPreview();
+  
+  // 모달 표시
+  document.getElementById('speakerEditModal').style.display = 'flex';
+}
+
+// 모달 닫기
+function closeSpeakerEditModal() {
+  document.getElementById('speakerEditModal').style.display = 'none';
+  currentEditingSpeaker = null;
+}
+
+// 편집 저장
+function saveSpeakerEdit() {
+  if (!currentEditingSpeaker) return;
+  
+  const colorHex = document.getElementById('editColorHex').value;
+  const opacity = parseInt(document.getElementById('editOpacityValue').value);
+  const continuous = document.getElementById('editContinuous').checked;
+  
+  // Hex 유효성 검사
+  if (!/^#[0-9A-F]{6}$/i.test(colorHex)) {
+    alert('올바른 Hex 코드를 입력해주세요 (예: #FF6B9D)');
+    return;
+  }
+  
+  const alphaHex = Math.round((opacity / 100) * 255).toString(16).padStart(2, '0').toUpperCase();
+  const finalColor = colorHex.toUpperCase() + alphaHex;
+  
+  speakerColors[currentEditingSpeaker] = {
+    color: finalColor,
+    continuous: continuous
+  };
+  
+  settingsStore.saveSpeakerColorsImmediate(speakerColors);
+  renderSpeakerColorList();
+  
+  if (accumulatedText) {
+    lastRenderedText = ''; // 강제 재렌더링
+    renderFormattedText(accumulatedText);
+  }
+  
+  showNotification('화자 색상이 수정되었습니다');
+  closeSpeakerEditModal();
+}
+
+// 편집 미리보기 업데이트
+function updateEditPreview() {
+  const colorHex = document.getElementById('editColorHex').value;
+  const opacity = parseInt(document.getElementById('editOpacityValue').value) || 0;
+  
+  if (/^#[0-9A-F]{6}$/i.test(colorHex)) {
+    const r = parseInt(colorHex.slice(1, 3), 16);
+    const g = parseInt(colorHex.slice(3, 5), 16);
+    const b = parseInt(colorHex.slice(5, 7), 16);
+    const alpha = opacity / 100;
+    
+    const preview = document.getElementById('editColorPreview');
+    preview.style.backgroundColor = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    
+    // 텍스트 색상 자동 조정
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    preview.style.color = brightness > 128 ? '#000' : '#fff';
+  }
+}
+
+// 컬러 피커 변경 시
+document.getElementById('editColorPicker')?.addEventListener('input', (e) => {
+  const hexColor = e.target.value.toUpperCase();
+  document.getElementById('editColorHex').value = hexColor;
+  
+  // RGB 값 업데이트
+  const r = parseInt(hexColor.slice(1, 3), 16);
+  const g = parseInt(hexColor.slice(3, 5), 16);
+  const b = parseInt(hexColor.slice(5, 7), 16);
+  
+  document.getElementById('editColorR').value = r;
+  document.getElementById('editColorG').value = g;
+  document.getElementById('editColorB').value = b;
+  
+  updateEditPreview();
+});
+
+// Hex 입력 변경 시
+document.getElementById('editColorHex')?.addEventListener('input', (e) => {
+  let hexColor = e.target.value.trim().toUpperCase();
+  
+  // # 자동 추가
+  if (hexColor && !hexColor.startsWith('#')) {
+    hexColor = '#' + hexColor;
+    e.target.value = hexColor;
+  }
+  
+  if (/^#[0-9A-F]{6}$/i.test(hexColor)) {
+    document.getElementById('editColorPicker').value = hexColor;
+    
+    // RGB 값 업데이트
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    
+    document.getElementById('editColorR').value = r;
+    document.getElementById('editColorG').value = g;
+    document.getElementById('editColorB').value = b;
+    
+    updateEditPreview();
+  }
+});
+
+// RGB 값 변경 시
+['editColorR', 'editColorG', 'editColorB'].forEach(id => {
+  document.getElementById(id)?.addEventListener('input', () => {
+    const r = Math.min(255, Math.max(0, parseInt(document.getElementById('editColorR').value) || 0));
+    const g = Math.min(255, Math.max(0, parseInt(document.getElementById('editColorG').value) || 0));
+    const b = Math.min(255, Math.max(0, parseInt(document.getElementById('editColorB').value) || 0));
+    
+    // 범위 보정
+    document.getElementById('editColorR').value = r;
+    document.getElementById('editColorG').value = g;
+    document.getElementById('editColorB').value = b;
+    
+    const hexColor = '#' + 
+      r.toString(16).padStart(2, '0').toUpperCase() + 
+      g.toString(16).padStart(2, '0').toUpperCase() + 
+      b.toString(16).padStart(2, '0').toUpperCase();
+    
+    document.getElementById('editColorPicker').value = hexColor;
+    document.getElementById('editColorHex').value = hexColor;
+    
+    updateEditPreview();
+  });
+});
+
+// 투명도 슬라이더 동기화
+document.getElementById('editOpacitySlider')?.addEventListener('input', (e) => {
+  document.getElementById('editOpacityValue').value = e.target.value;
+  updateEditPreview();
+});
+
+document.getElementById('editOpacityValue')?.addEventListener('input', (e) => {
+  const value = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+  e.target.value = value;
+  document.getElementById('editOpacitySlider').value = value;
+  updateEditPreview();
+});
+
+// 모달 외부 클릭 시 닫기
+document.getElementById('speakerEditModal')?.addEventListener('click', (e) => {
+  if (e.target.id === 'speakerEditModal') {
+    closeSpeakerEditModal();
+  }
+});
+
+// ESC 키로 모달 닫기
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('speakerEditModal').style.display === 'flex') {
+    closeSpeakerEditModal();
+  }
+});
+
+// 화자 삭제
+async function handleDeleteSpeaker(name) {
+  if (!confirm(`"${name}" 화자를 삭제하시겠습니까?`)) return;
+  
+  delete speakerColors[name];
+  settingsStore.saveSpeakerColorsImmediate(speakerColors);
+  renderSpeakerColorList();
+  
+  if (accumulatedText) {
+    renderFormattedText(accumulatedText);
+  }
+  
+  showNotification('화자가 삭제되었습니다');
+}
+
+// HTML 이스케이프
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// 화자 고정 헤더 업데이트
+function updateSpeakerHeader(speakerName) {
+  const header = document.getElementById('speaker-fixed-header');
+  const label = header.querySelector('.speaker-label');
+  
+  if (!speakerName) {
+    header.classList.remove('active');
+    currentActiveSpeaker = null;
+    return;
+  }
+  
+  if (currentActiveSpeaker !== speakerName) {
+    currentActiveSpeaker = speakerName;
+    label.textContent = speakerName;
+    
+    const speakerData = speakerColors[speakerName];
+    if (speakerData) {
+      const color = typeof speakerData === 'string' ? speakerData : speakerData.color;
+      label.style.backgroundColor = color;
+      
+      // 텍스트 색상 자동 조정
+      const rgb = color.match(/[0-9A-F]{2}/gi);
+      if (rgb) {
+        const brightness = (parseInt(rgb[0], 16) * 299 + parseInt(rgb[1], 16) * 587 + parseInt(rgb[2], 16) * 114) / 1000;
+        label.style.color = brightness > 128 ? '#000' : '#fff';
+      }
+    } else {
+      label.style.backgroundColor = 'rgba(0, 240, 255, 0.3)';
+      label.style.color = '#fff';
+    }
+    
+    header.classList.add('active');
+  }
+}
+
+// ========== 어절 페이드인 적용 함수 ==========
+let shouldApplyFadeIn = false; // 새 어절에만 페이드인 적용
+let isBulkRender = false; // 풀 리렌더링 구간 체크
+
+// 마지막 토큰만 1회 페이드
+function fadeOnlyTail(container) {
+  const fadeEnabled = document.getElementById('wordFadeInEnabled')?.checked;
+  if (!fadeEnabled) return;
+  
+  const lastEl = container.lastElementChild;
+  if (!lastEl) return;
+  lastEl.classList.add('word-fade');
+  lastEl.addEventListener('animationend', () => {
+    lastEl.classList.remove('word-fade');
+  }, { once: true });
+}
+
+// ========== Incremental Update: 새 어절만 추가 (깜박임 제거) ==========
+function appendNewText(addedText) {
+  const container = document.getElementById('viewer-text');
+  const lastLine = container.querySelector('.speaker-line:last-child');
+  
+  if (!lastLine) {
+    // DOM이 비어있으면 전체 렌더링
+    shouldApplyFadeIn = false;
+    renderFormattedText(lastRenderedText + addedText);
+    return;
+  }
+  
+  const lastContent = lastLine.querySelector('.speaker-content');
+  if (!lastContent) {
+    shouldApplyFadeIn = false;
+    renderFormattedText(lastRenderedText + addedText);
+    return;
+  }
+  
+  // ========== 마지막 라인의 스타일 상태 파악 ==========
+  const useWordBg = document.getElementById('wordBgEnabled')?.checked;
+  const fadeEnabled = document.getElementById('wordFadeInEnabled')?.checked;
+  
+  // 화자 정보 파악
+  const speakerNameEl = lastLine.querySelector('.speaker-name');
+  let speakerData = null;
+  let speakerName = null;
+  
+  if (speakerNameEl) {
+    // 화자 있음: 화자 이름 추출
+    speakerName = speakerNameEl.textContent.replace(':', '').trim();
+    speakerData = speakerColors[speakerName];
+  } else if (lastLine.classList.contains('no-speaker') && currentActiveSpeaker) {
+    // 화자 없는 라인이지만 마지막 활성 화자 색상 유지
+    speakerData = speakerColors[currentActiveSpeaker];
+  }
+  
+  // ========== 조건에 따라 어절 생성 ==========
+  const words = addedText.split(/(\s+)/);
+  
+  if (speakerData && addedText.trim()) {
+    // 1. 화자 색상 적용
+    const color = typeof speakerData === 'string' ? speakerData : speakerData.color;
+    const continuous = typeof speakerData === 'object' ? speakerData.continuous : false;
+    
+    // RGBA 변환
+    let bgColorRgba;
+    if (color.length === 9) {
+      const r = parseInt(color.slice(1, 3), 16);
+      const g = parseInt(color.slice(3, 5), 16);
+      const b = parseInt(color.slice(5, 7), 16);
+      const a = parseInt(color.slice(7, 9), 16) / 255;
+      bgColorRgba = `rgba(${r}, ${g}, ${b}, ${a})`;
+    } else {
+      const r = parseInt(color.slice(1, 3), 16);
+      const g = parseInt(color.slice(3, 5), 16);
+      const b = parseInt(color.slice(5, 7), 16);
+      bgColorRgba = `rgba(${r}, ${g}, ${b}, 0.25)`;
+    }
+    
+    if (continuous) {
+      // 연속 모드는 전체를 하나의 span으로
+      const span = document.createElement('span');
+      span.style.display = 'inline';
+      span.style.backgroundColor = bgColorRgba;
+      span.style.padding = '2px 4px';
+      span.style.borderRadius = '4px';
+      span.style.whiteSpace = 'pre-wrap';
+      span.style.wordBreak = 'keep-all';
+      span.style.overflowWrap = 'break-word';
+      span.textContent = addedText;
+      
+      if (fadeEnabled) {
+        span.classList.add('word-fade');
+        span.addEventListener('animationend', () => span.classList.remove('word-fade'), { once: true });
+      }
+      
+      lastContent.appendChild(span);
+    } else {
+      // 어절 단위
+      words.forEach(word => {
+        if (word.trim()) {
+          const wordSpan = document.createElement('span');
+          wordSpan.style.display = 'inline-block';
+          wordSpan.style.backgroundColor = bgColorRgba;
+          wordSpan.style.padding = '2px 4px';
+          wordSpan.style.borderRadius = '4px';
+          wordSpan.style.marginRight = '2px';
+          wordSpan.style.marginBottom = '2px';
+          wordSpan.style.whiteSpace = 'pre-wrap';
+          wordSpan.style.wordBreak = 'keep-all';
+          wordSpan.style.overflowWrap = 'break-word';
+          wordSpan.textContent = word;
+          
+          if (fadeEnabled) {
+            wordSpan.classList.add('word-fade');
+            wordSpan.addEventListener('animationend', () => wordSpan.classList.remove('word-fade'), { once: true });
+          }
+          
+          lastContent.appendChild(wordSpan);
+        } else if (word) {
+          lastContent.appendChild(document.createTextNode(word));
+        }
+      });
+    }
+    
+  } else if (useWordBg && addedText.trim()) {
+    // 2. 어절 배경 적용
+    const wordBgColor = document.getElementById('wordBgColor').value;
+    const wordBgAlpha = parseInt(document.getElementById('wordBgAlpha').value) / 100;
+    const wordBgContinuous = document.getElementById('wordBgContinuous')?.checked;
+    const wordBgStyle = document.querySelector('input[name="wordBgStyle"]:checked')?.value || 'normal';
+    
+    const r = parseInt(wordBgColor.slice(1, 3), 16);
+    const g = parseInt(wordBgColor.slice(3, 5), 16);
+    const b = parseInt(wordBgColor.slice(5, 7), 16);
+    const bgColorRgba = `rgba(${r}, ${g}, ${b}, ${wordBgAlpha})`;
+    
+    let paddingY = '1px';
+    let paddingX = '4px';
+    if (wordBgStyle === 'compact') {
+      paddingY = '0px';
+      paddingX = '2px';
+    } else if (wordBgStyle === 'full') {
+      paddingY = '3px';
+      paddingX = '6px';
+    }
+    
+    if (wordBgContinuous) {
+      // 연속 모드
+      const span = document.createElement('span');
+      span.style.display = 'inline';
+      span.style.backgroundColor = bgColorRgba;
+      span.style.padding = `${paddingY} ${paddingX}`;
+      span.style.borderRadius = '4px';
+      span.style.whiteSpace = 'pre-wrap';
+      span.style.wordBreak = 'keep-all';
+      span.style.overflowWrap = 'break-word';
+      span.textContent = addedText;
+      
+      if (fadeEnabled) {
+        span.classList.add('word-fade');
+        span.addEventListener('animationend', () => span.classList.remove('word-fade'), { once: true });
+      }
+      
+      lastContent.appendChild(span);
+    } else {
+      // 어절 단위
+      words.forEach(word => {
+        if (word.trim()) {
+          const wordSpan = document.createElement('span');
+          wordSpan.style.display = 'inline-block';
+          wordSpan.style.backgroundColor = bgColorRgba;
+          wordSpan.style.padding = `${paddingY} ${paddingX}`;
+          wordSpan.style.borderRadius = '4px';
+          wordSpan.style.marginRight = '2px';
+          wordSpan.style.marginBottom = '2px';
+          wordSpan.style.whiteSpace = 'pre-wrap';
+          wordSpan.style.wordBreak = 'keep-all';
+          wordSpan.style.overflowWrap = 'break-word';
+          wordSpan.textContent = word;
+          
+          if (fadeEnabled) {
+            wordSpan.classList.add('word-fade');
+            wordSpan.addEventListener('animationend', () => wordSpan.classList.remove('word-fade'), { once: true });
+          }
+          
+          lastContent.appendChild(wordSpan);
+        } else if (word) {
+          lastContent.appendChild(document.createTextNode(word));
+        }
+      });
+    }
+    
+  } else if (addedText.trim()) {
+    // 3. 일반 텍스트 (배경 없음)
+    words.forEach(word => {
+      if (word.trim()) {
+        const wordSpan = document.createElement('span');
+        wordSpan.style.display = 'inline';
+        wordSpan.textContent = word;
+        
+        if (fadeEnabled) {
+          wordSpan.classList.add('word-fade');
+          wordSpan.addEventListener('animationend', () => wordSpan.classList.remove('word-fade'), { once: true });
+        }
+        
+        lastContent.appendChild(wordSpan);
+      } else if (word) {
+        lastContent.appendChild(document.createTextNode(word));
+      }
+    });
+  } else {
+    // 공백/개행만 추가
+    lastContent.appendChild(document.createTextNode(addedText));
+  }
+}
+
+// ========== 어절 배경 적용 함수 ==========
+function applyWordBackground(container, text) {
+  const wordBgColor = document.getElementById('wordBgColor').value;
+  const wordBgAlpha = parseInt(document.getElementById('wordBgAlpha').value) / 100;
+  const wordBgStyle = document.getElementById('wordBgStyle').value;
+  const wordBgContinuous = document.getElementById('wordBgContinuous').checked;
+  
+  const r = parseInt(wordBgColor.slice(1, 3), 16);
+  const g = parseInt(wordBgColor.slice(3, 5), 16);
+  const b = parseInt(wordBgColor.slice(5, 7), 16);
+  const bgColorRgba = `rgba(${r}, ${g}, ${b}, ${wordBgAlpha})`;
+  
+  // 스타일별 padding 설정
+  let paddingY = '2px';
+  let paddingX = '4px';
+  if (wordBgStyle === 'subtle') {
+    paddingY = '1px';
+    paddingX = '3px';
+  } else if (wordBgStyle === 'full') {
+    paddingY = '3px';
+    paddingX = '6px';
+  }
+  
+  if (wordBgContinuous) {
+    // 한 줄로 연결 모드
+    const span = document.createElement('span');
+    span.style.display = 'inline';
+    span.style.backgroundColor = bgColorRgba;
+    span.style.padding = `${paddingY} ${paddingX}`;
+    span.style.borderRadius = '4px';
+    span.style.whiteSpace = 'pre-wrap';
+    span.style.wordBreak = 'keep-all';
+    span.style.overflowWrap = 'break-word';
+    span.textContent = text;
+    container.appendChild(span);
+  } else {
+    // 어절 단위로 배경 적용
+    const words = text.split(/(\s+)/);
+    words.forEach(word => {
+      if (word.trim()) {
+        const wordSpan = document.createElement('span');
+        wordSpan.style.display = 'inline-block';
+        wordSpan.style.backgroundColor = bgColorRgba;
+        wordSpan.style.padding = `${paddingY} ${paddingX}`;
+        wordSpan.style.borderRadius = '4px';
+        wordSpan.style.marginRight = '2px';
+        wordSpan.style.marginBottom = '2px';
+        wordSpan.style.whiteSpace = 'pre-wrap';
+        wordSpan.style.wordBreak = 'keep-all';
+        wordSpan.style.overflowWrap = 'break-word';
+        wordSpan.textContent = word;
+        container.appendChild(wordSpan);
+      } else if (word) {
+        container.appendChild(document.createTextNode(word));
+      }
+    });
+  }
+}
+
+// ========== 화자 색상 적용 함수 ==========
+function applySpeakerColorToContent(container, text, color, continuous = false) {
+  // RGBA 형식 지원 (#RRGGBB 또는 #RRGGBBAA)
+  let bgColorRgba;
+  if (color.length === 9) {
+    // #RRGGBBAA 형식
+    const r = parseInt(color.slice(1, 3), 16);
+    const g = parseInt(color.slice(3, 5), 16);
+    const b = parseInt(color.slice(5, 7), 16);
+    const a = parseInt(color.slice(7, 9), 16) / 255;
+    bgColorRgba = `rgba(${r}, ${g}, ${b}, ${a})`;
+  } else {
+    // #RRGGBB 형식 (기본 투명도 25%)
+    const r = parseInt(color.slice(1, 3), 16);
+    const g = parseInt(color.slice(3, 5), 16);
+    const b = parseInt(color.slice(5, 7), 16);
+    bgColorRgba = `rgba(${r}, ${g}, ${b}, 0.25)`;
+  }
+  
+  if (continuous) {
+    // 한 줄로 연결 모드: 연속된 배경
+    const span = document.createElement('span');
+    span.style.display = 'inline';
+    span.style.backgroundColor = bgColorRgba;
+    span.style.padding = '2px 4px';
+    span.style.borderRadius = '4px';
+    span.style.whiteSpace = 'pre-wrap';
+    span.style.wordBreak = 'keep-all';
+    span.style.overflowWrap = 'break-word';
+    span.textContent = text;
+    container.appendChild(span);
+  } else {
+    // 어절 단위로 배경 적용
+    const words = text.split(/(\s+)/);
+    words.forEach(word => {
+      if (word.trim()) {
+        const wordSpan = document.createElement('span');
+        wordSpan.style.display = 'inline-block';
+        wordSpan.style.backgroundColor = bgColorRgba;
+        wordSpan.style.padding = '2px 4px';
+        wordSpan.style.borderRadius = '4px';
+        wordSpan.style.marginRight = '2px';
+        wordSpan.style.marginBottom = '2px';
+        wordSpan.style.whiteSpace = 'pre-wrap';
+        wordSpan.style.wordBreak = 'keep-all';
+        wordSpan.style.overflowWrap = 'break-word';
+        wordSpan.textContent = word;
+        container.appendChild(wordSpan);
+      } else if (word) {
+        container.appendChild(document.createTextNode(word));
+      }
+    });
+  }
+}
+
 // ========== 화자 구분 형식 렌더링 함수 (GPT 권장사항 완전 적용) ==========
 function renderFormattedText(text) {
+  // 🔥 풀 리렌더링 시작
+  isBulkRender = true;
+  
+  // 🔥 새로운 내용인지 확인 (마지막 30자 비교)
+  const isNewContent = !lastRenderedText || text.length > lastRenderedText.length;
+  const textDiff = text.length - lastRenderedText.length;
+  
+  // 🔥 새로운 내용이 추가되었고, 변경이 적을 때만 페이드인 (전체 재렌더링 방지)
+  shouldApplyFadeIn = isNewContent && textDiff > 0 && textDiff < 100;
+  
   const lines = text.split('\n');
   const speakerEnabled = document.getElementById('speakerEnabled').checked;
   const speakerStyle = document.getElementById('speakerStyle').value;
@@ -1707,6 +3381,11 @@ function renderFormattedText(text) {
     const lineDiv = document.createElement('div');
     lineDiv.className = 'speaker-line';
     
+    // 라벨 스타일인 경우 클래스 추가
+    if (speakerStyle === 'label') {
+      lineDiv.classList.add('label-style');
+    }
+    
     // 모든 라인에 line-height 명시적 적용
     lineDiv.style.lineHeight = currentLineHeight;
     
@@ -1721,7 +3400,11 @@ function renderFormattedText(text) {
       speakerSpan.className = 'speaker-name';
       speakerSpan.textContent = speaker;
       
-      // 배경색 설정
+      // 화자 고정 헤더 업데이트
+      updateSpeakerHeader(speaker);
+      currentActiveSpeaker = speaker; // 현재 활성 화자 기록
+      
+      // 화자명 배경은 일반 설정만 적용 (화자 색상은 내용에 적용)
       if (useBg) {
         const bgColor = document.getElementById('speakerBgColor').value;
         const r = parseInt(bgColor.slice(1, 3), 16);
@@ -1732,10 +3415,46 @@ function renderFormattedText(text) {
         speakerSpan.style.background = 'transparent';
       }
       
+      // 🎨 화자명 스타일 적용 (일렉트론 뷰어와 동일)
+      const speakerHeaderColor = document.getElementById('speakerHeaderColor')?.value || '#ffffff';
+      const speakerHeaderWeight = document.getElementById('speakerHeaderWeight')?.value || '700';
+      const speakerHeaderOpacity = parseInt(document.getElementById('speakerHeaderOpacity')?.value || '100') / 100;
+      const speakerHeaderLetterSpacing = parseFloat(document.getElementById('speakerHeaderLetterSpacing')?.value || '0');
+      
+      speakerSpan.style.color = speakerHeaderColor;
+      speakerSpan.style.fontWeight = speakerHeaderWeight;
+      speakerSpan.style.opacity = speakerHeaderOpacity;
+      speakerSpan.style.letterSpacing = `${speakerHeaderLetterSpacing}px`;
+      
+      // 외곽선
+      const speakerHeaderOutlineOn = document.getElementById('speakerHeaderOutlineOn')?.checked;
+      if (speakerHeaderOutlineOn) {
+        const outlineColor = document.getElementById('speakerHeaderOutlineColor')?.value || '#000000';
+        const outlineWidth = parseFloat(document.getElementById('speakerHeaderOutlineWidth')?.value || '2');
+        speakerSpan.style.webkitTextStroke = `${outlineWidth}px ${outlineColor}`;
+      } else {
+        speakerSpan.style.webkitTextStroke = '';
+      }
+      
+      // 그림자
+      const speakerHeaderShadowOn = document.getElementById('speakerHeaderShadowOn')?.checked;
+      if (speakerHeaderShadowOn) {
+        const sx = parseFloat(document.getElementById('speakerHeaderShadowX')?.value || '2');
+        const sy = parseFloat(document.getElementById('speakerHeaderShadowY')?.value || '2');
+        const sb = parseFloat(document.getElementById('speakerHeaderShadowBlur')?.value || '4');
+        const sc = document.getElementById('speakerHeaderShadowColor')?.value || '#000000';
+        speakerSpan.style.textShadow = `${sx}px ${sy}px ${sb}px ${sc}`;
+      } else {
+        speakerSpan.style.textShadow = '';
+      }
+      
       lineDiv.appendChild(speakerSpan);
       
-      // 구분 스타일 적용
-      if (speakerStyle === 'divider') {
+      // 구분 스타일 적용 (label 스타일은 구분선 없음)
+      if (speakerStyle === 'label') {
+        // 라벨 스타일: 구분선 없이 바로 내용으로
+        // CSS로 세로 배치가 처리됨
+      } else if (speakerStyle === 'divider') {
         const divider = document.createElement('div');
         divider.className = 'speaker-divider';
         
@@ -1773,12 +3492,45 @@ function renderFormattedText(text) {
         }
         
         lineDiv.appendChild(divider);
+      } else if (speakerStyle === 'none') {
+        // 구분선 없음: 공백만 추가
+        const space = document.createTextNode('  ');
+        lineDiv.appendChild(space);
       }
       
-      // 내용 요소
+      // 내용 요소 - 🎨 화자 색상을 여기에 적용!
       const contentSpan = document.createElement('span');
       contentSpan.className = 'speaker-content';
-      contentSpan.textContent = content || '\u200B'; // 빈 줄 처리
+      
+      // 화자 색상이 있으면 content에 배경 적용, 없으면 어절 배경 적용
+      const speakerData = speakerColors[speaker];
+      const useWordBg = document.getElementById('wordBgEnabled')?.checked;
+      
+      if (speakerData && content.trim()) {
+        // 화자 색상 우선
+        const color = typeof speakerData === 'string' ? speakerData : speakerData.color;
+        const continuous = typeof speakerData === 'object' ? speakerData.continuous : false;
+        applySpeakerColorToContent(contentSpan, content, color, continuous);
+      } else if (useWordBg && content.trim()) {
+        // 어절 배경 적용
+        applyWordBackground(contentSpan, content);
+      } else if (content.trim()) {
+        // 일반 텍스트 - 어절 단위로 span 생성
+        const words = content.split(/(\s+)/);
+        words.forEach(word => {
+          if (word.trim()) {
+            const wordSpan = document.createElement('span');
+            wordSpan.style.display = 'inline';
+            wordSpan.textContent = word;
+            contentSpan.appendChild(wordSpan);
+          } else if (word) {
+            contentSpan.appendChild(document.createTextNode(word));
+          }
+        });
+      } else {
+        contentSpan.textContent = '\u200B'; // 빈 줄 처리
+      }
+      
       lineDiv.appendChild(contentSpan);
       
     } else {
@@ -1787,12 +3539,53 @@ function renderFormattedText(text) {
       
       const contentSpan = document.createElement('span');
       contentSpan.className = 'speaker-content';
-      contentSpan.textContent = line || '\u200B'; // 빈 줄 처리
+      
+      // 🎨 마지막 활성 화자의 색상을 유지 (엔터 후에도 계속 적용)
+      const speakerData = currentActiveSpeaker ? speakerColors[currentActiveSpeaker] : null;
+      const useWordBg = document.getElementById('wordBgEnabled')?.checked;
+      
+      if (speakerData && line.trim()) {
+        // 화자 색상 우선
+        const color = typeof speakerData === 'string' ? speakerData : speakerData.color;
+        const continuous = typeof speakerData === 'object' ? speakerData.continuous : false;
+        applySpeakerColorToContent(contentSpan, line, color, continuous);
+      } else if (useWordBg && line.trim()) {
+        // 어절 배경 적용
+        applyWordBackground(contentSpan, line);
+      } else if (line.trim()) {
+        // 일반 텍스트 - 어절 단위로 span 생성
+        const words = line.split(/(\s+)/);
+        words.forEach(word => {
+          if (word.trim()) {
+            const wordSpan = document.createElement('span');
+            wordSpan.style.display = 'inline';
+            wordSpan.textContent = word;
+            contentSpan.appendChild(wordSpan);
+          } else if (word) {
+            contentSpan.appendChild(document.createTextNode(word));
+          }
+        });
+      } else {
+        contentSpan.textContent = '\u200B'; // 빈 줄 처리
+      }
+      
       lineDiv.appendChild(contentSpan);
     }
     
     container.appendChild(lineDiv);
   });
+  
+  // 🔥 풀 리렌더링 종료
+  isBulkRender = false;
+  
+  // 🔥 선택: 마지막 라인의 마지막 단어만 1회 페이드 (새 입력일 때만)
+  if (shouldApplyFadeIn) {
+    const lastLine = container.querySelector('.speaker-line:last-child .speaker-content');
+    if (lastLine && lastLine.lastChild && lastLine.lastChild.nodeType === 1) { // span 등 요소 노드
+      lastLine.lastChild.classList.add('word-fade');
+      lastLine.lastChild.addEventListener('animationend', () => lastLine.lastChild.classList.remove('word-fade'), { once: true });
+    }
+  }
 }
 
 // ========== 수동 스크롤 감지 ==========
@@ -1962,22 +3755,196 @@ tabBtns.forEach(btn => {
   });
 });
 
-// 정렬 버튼들
-document.querySelectorAll('.align-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.align-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    applyBasicOptions();
+// ========== 탭 5: 화자 색상 초기화 ==========
+let isAddingSpeaker = false; // 중복 실행 방지
+let addSpeakerBtnRegistered = false; // 이벤트 리스너 중복 등록 방지
+
+if (!addSpeakerBtnRegistered) {
+  addSpeakerBtnRegistered = true;
+  
+  document.getElementById('addSpeakerBtn')?.addEventListener('click', () => {
+    if (isAddingSpeaker) {
+      console.log('[Debug] 이미 화자 추가 중...');
+      return; // 이미 처리 중이면 무시
+    }
+    isAddingSpeaker = true;
+    
+    // 비동기 처리를 위한 즉시 실행 함수
+    setTimeout(() => {
+      const nameInput = document.getElementById('speakerNameInput');
+      const colorInput = document.getElementById('speakerColorInput');
+      const opacityValue = document.getElementById('speakerOpacityValue');
+      
+      let name = nameInput.value.trim();
+      name = name.replace(/^-+/, '').replace(/:+$/, '').trim();
+      
+      if (!name) {
+        alert('화자 이름을 입력해주세요');
+        isAddingSpeaker = false;
+        return;
+      }
+      
+      if (speakerColors[name]) {
+        alert('이미 존재하는 화자입니다');
+        isAddingSpeaker = false;
+        return;
+      }
+      
+      let color = colorInput.value.toUpperCase();
+      const opacity = parseInt(opacityValue.value);
+      const alphaHex = Math.round((opacity / 100) * 255).toString(16).padStart(2, '0').toUpperCase();
+      color = color + alphaHex;
+      
+      const continuous = document.getElementById('speakerColorContinuous').checked;
+      
+      speakerColors[name] = {
+        color: color,
+        continuous: continuous
+      };
+      
+      settingsStore.saveSpeakerColorsImmediate(speakerColors);
+      renderSpeakerColorList();
+      
+      nameInput.value = '';
+      colorInput.value = '#FF6B9D';
+      opacityValue.value = 25;
+      document.getElementById('speakerOpacitySlider').value = 25;
+      document.getElementById('speakerColorContinuous').checked = false;
+  
+      if (accumulatedText) {
+        renderFormattedText(accumulatedText);
+      }
+      
+      showNotification('화자가 추가되었습니다');
+      
+      isAddingSpeaker = false; // 플래그 해제
+    }, 0); // 즉시 실행하되 이벤트 루프 분리
   });
+}
+
+// 투명도 슬라이더 동기화
+document.getElementById('speakerOpacitySlider')?.addEventListener('input', (e) => {
+  document.getElementById('speakerOpacityValue').value = e.target.value;
 });
 
-document.querySelectorAll('.valign-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.valign-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    applyBasicOptions();
-  });
+document.getElementById('speakerOpacityValue')?.addEventListener('input', (e) => {
+  document.getElementById('speakerOpacitySlider').value = e.target.value;
 });
+
+// Enter 키로 추가 (중복 방지)
+document.getElementById('speakerNameInput')?.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault(); // 기본 동작 방지
+    document.getElementById('addSpeakerBtn')?.click();
+  }
+});
+
+// 화자 색상 목록 초기 렌더링
+renderSpeakerColorList();
+
+// ========== 빠른 설정 액션 핸들러 (중복 등록 방지) ==========
+let quickActionRegistered = false;
+if (!quickActionRegistered) {
+  quickActionRegistered = true;
+  
+  document.querySelectorAll('.quick-action-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const action = item.dataset.action;
+      handleQuickAction(action);
+    });
+  });
+}
+
+let isHandlingQuickAction = false; // 중복 실행 방지
+
+function handleQuickAction(action) {
+  if (isHandlingQuickAction) return;
+  isHandlingQuickAction = true;
+  
+  switch(action) {
+    case 'font-up':
+      document.getElementById('fontSizeUp')?.click();
+      break;
+      
+    case 'font-down':
+      document.getElementById('fontSizeDown')?.click();
+      break;
+      
+    case 'subtitle-toggle':
+      toggleSubtitleVisibility();
+      break;
+      
+    case 'save-text':
+      saveTextToFile();
+      break;
+      
+    case 'fullscreen':
+      toggleFullscreen();
+      break;
+      
+    case 'scrollbar-toggle':
+      toggleScrollbar();
+      break;
+  }
+  
+  setTimeout(() => { isHandlingQuickAction = false; }, 300); // 300ms 후 플래그 해제
+}
+
+// 텍스트 파일로 저장
+function saveTextToFile() {
+  const fullText = accumulatedText || '저장할 텍스트가 없습니다.';
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+  const filename = `자막_${channelCode}_${timestamp}.txt`;
+  
+  const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  showNotification(`텍스트 저장됨: ${filename}`);
+}
+
+// 스크롤바 표시/숨김 토글
+function toggleScrollbar() {
+  const isHidden = viewerText.classList.contains('hide-scrollbar');
+  
+  if (isHidden) {
+    viewerText.classList.remove('hide-scrollbar');
+    showNotification('스크롤바 표시');
+  } else {
+    viewerText.classList.add('hide-scrollbar');
+    showNotification('스크롤바 숨김');
+  }
+}
+
+// 정렬 버튼들 (중복 등록 방지)
+let alignBtnsRegistered = false;
+if (!alignBtnsRegistered) {
+  alignBtnsRegistered = true;
+  
+  document.querySelectorAll('.align-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.align-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      applyBasicOptions();
+    });
+  });
+  
+  document.querySelectorAll('.valign-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.valign-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      applyBasicOptions();
+    });
+  });
+}
 
 // 여백 조절기 토글
 marginAdjusterToggle.addEventListener('change', () => {
@@ -2038,19 +4005,24 @@ document.addEventListener('mouseup', () => {
   }
 });
 
-// 프리셋 적용
-document.querySelectorAll('.preset-item').forEach(item => {
-  item.addEventListener('click', () => {
-    const presetName = item.dataset.preset;
-    applyPreset(presets[presetName]);
-    
-    // 선택 표시
-    document.querySelectorAll('.preset-item').forEach(p => p.classList.remove('selected'));
-    item.classList.add('selected');
-    
-    showNotification(`${presets[presetName].name} 적용됨`);
+// 프리셋 적용 (중복 등록 방지)
+let presetBtnsRegistered = false;
+if (!presetBtnsRegistered) {
+  presetBtnsRegistered = true;
+  
+  document.querySelectorAll('.preset-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const presetName = item.dataset.preset;
+      applyPreset(presets[presetName]);
+      
+      // 선택 표시
+      document.querySelectorAll('.preset-item').forEach(p => p.classList.remove('selected'));
+      item.classList.add('selected');
+      
+      showNotification(`${presets[presetName].name} 적용됨`);
+    });
   });
-});
+}
 
 function applyPreset(preset) {
   if (preset.bgColor) document.getElementById('bgColor').value = preset.bgColor;
@@ -2118,6 +4090,7 @@ function applyBasicOptions() {
   viewerText.style.color = document.getElementById('fontColor').value;
   viewerText.style.fontSize = document.getElementById('fontSize').value + 'px';
   viewerText.style.fontFamily = document.getElementById('fontFamily').value;
+  viewerText.style.fontWeight = document.getElementById('fontWeight').value;
   viewerText.style.letterSpacing = document.getElementById('letterSpacing').value + 'px';
   
   // line-height를 em 단위로 설정
@@ -2200,6 +4173,7 @@ document.getElementById('bgAlpha').addEventListener('input', (e) => {
 });
 document.getElementById('fontColor').addEventListener('input', applyBasicOptions);
 document.getElementById('fontSize').addEventListener('input', applyBasicOptions);
+document.getElementById('fontWeight').addEventListener('change', applyBasicOptions);
 document.getElementById('fontFamily').addEventListener('change', applyBasicOptions);
 document.getElementById('letterSpacing').addEventListener('input', applyBasicOptions);
 document.getElementById('lineHeight').addEventListener('input', applyBasicOptions);
@@ -2255,6 +4229,126 @@ document.getElementById('colorDividerEnabled').addEventListener('change', () => 
 });
 
 document.getElementById('dividerColor').addEventListener('input', () => {
+  lastRenderedText = '';
+  const currentText = accumulatedText + currentActiveInput;
+  updateDisplay(currentText, true);
+});
+
+// 화자명 스타일 설정 변경 시 적용
+['speakerHeaderColor', 'speakerHeaderWeight', 'speakerHeaderOpacity', 'speakerHeaderLetterSpacing',
+ 'speakerHeaderOutlineOn', 'speakerHeaderOutlineColor', 'speakerHeaderOutlineWidth',
+ 'speakerHeaderShadowOn', 'speakerHeaderShadowColor', 'speakerHeaderShadowBlur',
+ 'speakerHeaderShadowX', 'speakerHeaderShadowY'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', () => {
+      lastRenderedText = '';
+      const currentText = accumulatedText + currentActiveInput;
+      updateDisplay(currentText, true);
+    });
+  }
+});
+
+// 화자명 투명도 레이블 동기화
+document.getElementById('speakerHeaderOpacity')?.addEventListener('input', (e) => {
+  document.getElementById('speakerHeaderOpacityLabel').textContent = e.target.value + '%';
+});
+
+// 화자명 숫자 조절 버튼
+document.getElementById('speakerHeaderLetterSpacingUp')?.addEventListener('click', () => {
+  const input = document.getElementById('speakerHeaderLetterSpacing');
+  input.value = Math.min(10, Number(input.value) + 0.5);
+  input.dispatchEvent(new Event('input'));
+});
+
+document.getElementById('speakerHeaderLetterSpacingDown')?.addEventListener('click', () => {
+  const input = document.getElementById('speakerHeaderLetterSpacing');
+  input.value = Math.max(-5, Number(input.value) - 0.5);
+  input.dispatchEvent(new Event('input'));
+});
+
+document.getElementById('speakerHeaderOutlineWidthUp')?.addEventListener('click', () => {
+  const input = document.getElementById('speakerHeaderOutlineWidth');
+  input.value = Math.min(10, Number(input.value) + 0.1).toFixed(1);
+  input.dispatchEvent(new Event('input'));
+});
+
+document.getElementById('speakerHeaderOutlineWidthDown')?.addEventListener('click', () => {
+  const input = document.getElementById('speakerHeaderOutlineWidth');
+  input.value = Math.max(0, Number(input.value) - 0.1).toFixed(1);
+  input.dispatchEvent(new Event('input'));
+});
+
+document.getElementById('speakerHeaderShadowBlurUp')?.addEventListener('click', () => {
+  const input = document.getElementById('speakerHeaderShadowBlur');
+  input.value = Math.min(20, Number(input.value) + 0.5);
+  input.dispatchEvent(new Event('input'));
+});
+
+document.getElementById('speakerHeaderShadowBlurDown')?.addEventListener('click', () => {
+  const input = document.getElementById('speakerHeaderShadowBlur');
+  input.value = Math.max(0, Number(input.value) - 0.5);
+  input.dispatchEvent(new Event('input'));
+});
+
+document.getElementById('speakerHeaderShadowXUp')?.addEventListener('click', () => {
+  const input = document.getElementById('speakerHeaderShadowX');
+  input.value = Math.min(20, Number(input.value) + 0.5);
+  input.dispatchEvent(new Event('input'));
+});
+
+document.getElementById('speakerHeaderShadowXDown')?.addEventListener('click', () => {
+  const input = document.getElementById('speakerHeaderShadowX');
+  input.value = Math.max(-20, Number(input.value) - 0.5);
+  input.dispatchEvent(new Event('input'));
+});
+
+document.getElementById('speakerHeaderShadowYUp')?.addEventListener('click', () => {
+  const input = document.getElementById('speakerHeaderShadowY');
+  input.value = Math.min(20, Number(input.value) + 0.5);
+  input.dispatchEvent(new Event('input'));
+});
+
+document.getElementById('speakerHeaderShadowYDown')?.addEventListener('click', () => {
+  const input = document.getElementById('speakerHeaderShadowY');
+  input.value = Math.max(-20, Number(input.value) - 0.5);
+  input.dispatchEvent(new Event('input'));
+});
+
+// 어절 배경 설정 변경 시 적용
+document.getElementById('wordBgEnabled')?.addEventListener('change', () => {
+  lastRenderedText = '';
+  const currentText = accumulatedText + currentActiveInput;
+  updateDisplay(currentText, true);
+});
+
+document.getElementById('wordBgColor')?.addEventListener('input', () => {
+  lastRenderedText = '';
+  const currentText = accumulatedText + currentActiveInput;
+  updateDisplay(currentText, true);
+});
+
+// 어절 페이드인 설정 변경 시 적용
+document.getElementById('wordFadeInEnabled')?.addEventListener('change', () => {
+  lastRenderedText = '';
+  const currentText = accumulatedText + currentActiveInput;
+  updateDisplay(currentText, true);
+});
+
+document.getElementById('wordBgAlpha')?.addEventListener('input', (e) => {
+  document.getElementById('wordBgAlphaLabel').textContent = e.target.value + '%';
+  lastRenderedText = '';
+  const currentText = accumulatedText + currentActiveInput;
+  updateDisplay(currentText, true);
+});
+
+document.getElementById('wordBgStyle')?.addEventListener('change', () => {
+  lastRenderedText = '';
+  const currentText = accumulatedText + currentActiveInput;
+  updateDisplay(currentText, true);
+});
+
+document.getElementById('wordBgContinuous')?.addEventListener('change', () => {
   lastRenderedText = '';
   const currentText = accumulatedText + currentActiveInput;
   updateDisplay(currentText, true);
@@ -2443,6 +4537,46 @@ document.addEventListener('keydown', (e) => {
     case 'H':
       e.preventDefault();
       toggleSubtitleVisibility();
+      
+    case 's':
+    case 'S':
+      // 스크롤바 토글
+      e.preventDefault();
+      const scrollbarVisible = !viewerText.classList.contains('hide-scrollbar');
+      if (scrollbarVisible) {
+        viewerText.classList.add('hide-scrollbar');
+        showNotification('스크롤바 숨김');
+      } else {
+        viewerText.classList.remove('hide-scrollbar');
+        showNotification('스크롤바 표시');
+      }
+      currentSettings.scrollbarVisible = !scrollbarVisible;
+      settingsStore.saveSettings(currentSettings);
+      break;
+      
+    case 'b':
+    case 'B':
+      // 테두리 토글
+      e.preventDefault();
+      const outlineOn = document.getElementById('outlineOn');
+      outlineOn.checked = !outlineOn.checked;
+      applyBasicOptions();
+      showNotification(outlineOn.checked ? '테두리 켜짐' : '테두리 꺼짐');
+      break;
+      
+    case '+':
+    case '=':
+      // 글자 크기 증가
+      e.preventDefault();
+      document.getElementById('fontSizeUp')?.click();
+      break;
+      
+    case '-':
+    case '_':
+      // 글자 크기 감소
+      e.preventDefault();
+      document.getElementById('fontSizeDown')?.click();
+      break;
       break;
   }
 });
@@ -2458,6 +4592,9 @@ window.addEventListener('load', () => {
   setupColorSync('outlineColor', 'outlineColorHex');
   setupColorSync('shadowColor', 'shadowColorHex');
   setupColorSync('dividerColor', 'dividerColorHex');
+  setupColorSync('speakerHeaderColor', 'speakerHeaderColorHex');
+  setupColorSync('speakerHeaderOutlineColor', 'speakerHeaderOutlineColorHex');
+  setupColorSync('speakerHeaderShadowColor', 'speakerHeaderShadowColorHex');
   
   // 옵션창 드래그 설정
   setupOptionsDrag();
@@ -2501,5 +4638,89 @@ window.addEventListener('beforeunload', () => {
 });
   </script>
 </body>
+
+// ========== 설정 저장/로드 통합 ==========
+
+// applyBasicOptions에서 설정 저장
+const originalApplyBasicOptions = window.applyBasicOptions || function() {};
+function applyBasicOptions() {
+  // 기존 로직 실행
+  originalApplyBasicOptions.call(this);
+  
+  // 설정 저장
+  currentSettings.fontSize = parseInt(document.getElementById('fontSize').value);
+  currentSettings.lineHeight = parseFloat(document.getElementById('lineHeight').value);
+  currentSettings.letterSpacing = parseFloat(document.getElementById('letterSpacing').value);
+  currentSettings.fontFamily = document.getElementById('fontFamily').value;
+  currentSettings.fontColor = document.getElementById('fontColor').value;
+  currentSettings.bgColor = document.getElementById('bgColor').value;
+  currentSettings.bgAlpha = parseInt(document.getElementById('bgAlpha').value);
+  currentSettings.outlineOn = document.getElementById('outlineOn').checked;
+  currentSettings.outlineColor = document.getElementById('outlineColor').value;
+  currentSettings.outlineWidth = parseFloat(document.getElementById('outlineWidth').value);
+  currentSettings.textAlign = document.querySelector('.align-btn.active')?.dataset.align || 'left';
+  currentSettings.marginTop = parseInt(marginAdjuster.style.top) || 10;
+  currentSettings.speakerEnabled = document.getElementById('speakerEnabled').checked;
+  currentSettings.speakerStyle = document.getElementById('speakerStyle').value;
+  currentSettings.speakerBgEnabled = document.getElementById('speakerBgEnabled').checked;
+  currentSettings.speakerBgColor = document.getElementById('speakerBgColor').value;
+  currentSettings.speakerBgAlpha = parseInt(document.getElementById('speakerBgAlpha').value);
+  
+  settingsStore.saveSettings(currentSettings);
+}
+
+// 페이지 로드 시 설정 복원
+function loadSettings() {
+  const settings = settingsStore.loadSettings();
+  
+  document.getElementById('fontSize').value = settings.fontSize;
+  document.getElementById('lineHeight').value = settings.lineHeight;
+  document.getElementById('letterSpacing').value = settings.letterSpacing;
+  document.getElementById('fontFamily').value = settings.fontFamily;
+  document.getElementById('fontColor').value = settings.fontColor;
+  document.getElementById('fontColorHex').value = settings.fontColor;
+  document.getElementById('bgColor').value = settings.bgColor;
+  document.getElementById('bgColorHex').value = settings.bgColor;
+  document.getElementById('bgAlpha').value = settings.bgAlpha;
+  document.getElementById('bgAlphaLabel').textContent = settings.bgAlpha + '%';
+  document.getElementById('outlineOn').checked = settings.outlineOn;
+  document.getElementById('outlineColor').value = settings.outlineColor;
+  document.getElementById('outlineColorHex').value = settings.outlineColor;
+  document.getElementById('outlineWidth').value = settings.outlineWidth;
+  document.getElementById('speakerEnabled').checked = settings.speakerEnabled;
+  document.getElementById('speakerStyle').value = settings.speakerStyle;
+  document.getElementById('speakerBgEnabled').checked = settings.speakerBgEnabled;
+  document.getElementById('speakerBgColor').value = settings.speakerBgColor;
+  document.getElementById('speakerBgAlpha').value = settings.speakerBgAlpha;
+  
+  // 정렬 버튼 활성화
+  document.querySelectorAll('.align-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.align === settings.textAlign);
+  });
+  
+  // 스크롤바 상태
+  if (!settings.scrollbarVisible) {
+    viewerText.classList.add('hide-scrollbar');
+  }
+  
+  // 마진 조정
+  if (settings.marginTop) {
+    marginAdjuster.style.top = settings.marginTop + 'px';
+    document.getElementById('viewer').style.paddingTop = settings.marginTop + 'px';
+  }
+  
+  // 설정 적용
+  applyBasicOptions();
+  
+  console.log('[Settings] 로드 및 적용 완료');
+}
+
+// 초기화
+window.addEventListener('load', () => {
+  loadSettings();
+  renderSpeakerColorList();
+  showNotification('뷰어 준비 완료', 2000);
+});
+
 </html>
 
